@@ -1,0 +1,126 @@
+// ============================================================================
+// ClearCost Type Definitions
+// Matches the database schema in supabase/schema.sql
+// ============================================================================
+
+// -- Billing code types supported by the system --
+export type BillingCodeType = 'cpt' | 'hcpcs' | 'ms_drg';
+
+// -- Care setting --
+export type ChargeSetting = 'inpatient' | 'outpatient' | 'both';
+
+// -- CPT Code (used by AI translation layer) --
+export interface CPTCode {
+  code: string;
+  description: string;
+  category: string;
+  codeType?: BillingCodeType; // Which billing system this code belongs to
+}
+
+// -- Provider (hospital, imaging center, ASC, lab, clinic) --
+export interface Provider {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  lat?: number;
+  lng?: number;
+  phone?: string;
+  website?: string;
+  providerType?: string;
+}
+
+// -- Charge Result (main search result item) --
+export interface ChargeResult {
+  id: string;
+  provider: Provider;
+  description?: string;
+  setting?: ChargeSetting;
+  billingClass?: string;
+
+  // Billing codes (a charge may have codes in multiple systems)
+  cpt?: string;
+  hcpcs?: string;
+  msDrg?: string;
+
+  // Prices
+  grossCharge?: number;
+  cashPrice?: number;
+  minPrice?: number;
+  maxPrice?: number;
+
+  // Aggregate negotiated rate stats
+  avgNegotiatedRate?: number;
+  minNegotiatedRate?: number;
+  maxNegotiatedRate?: number;
+  payerCount?: number;
+
+  // Metadata
+  source?: string;
+  lastUpdated?: string;
+  distanceKm?: number;
+  distanceMiles?: number;
+}
+
+// -- Payer Rate (insurance-specific negotiated rate for a charge) --
+export interface PayerRate {
+  payerName: string;
+  planName?: string;
+  rate?: number;
+  methodology?: string;
+}
+
+// -- Payer (canonical payer for UI dropdown) --
+export interface Payer {
+  id: string;
+  name: string;
+  displayName: string;
+}
+
+// -- Search Query (user input) --
+export interface SearchQuery {
+  query: string;
+  location: {
+    zip?: string;
+    lat?: number;
+    lng?: number;
+    city?: string;
+    state?: string;
+  };
+  radiusMiles?: number;
+}
+
+// -- Search Result (full response from search API) --
+export interface SearchResult {
+  cptCodes: CPTCode[];
+  results: ChargeResult[];
+  query: string;
+  location: string;
+  interpretation?: string;
+  totalResults: number;
+}
+
+// -- Saved Search (user bookmark) --
+export interface SavedSearch {
+  id: string;
+  user_id: string;
+  query: string;
+  location: string;
+  cpt_codes: string[];
+  lat?: number;
+  lng?: number;
+  created_at: string;
+}
+
+// ============================================================================
+// Legacy type aliases for backward compatibility during migration
+// Remove these once all components are updated to use new types.
+// ============================================================================
+
+/** @deprecated Use ChargeResult instead */
+export type PriceResult = ChargeResult;
+
+/** @deprecated Use PayerRate instead */
+export type NegotiatedRate = PayerRate;
