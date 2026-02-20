@@ -47,3 +47,12 @@ next-env.d.ts
 lib/data/parquet/
 lib/data/*.duckdb
 lib/data/*.zip
+
+# IDE
+.vscode/
+
+# logs
+import.log
+
+# scratch files
+Untitled

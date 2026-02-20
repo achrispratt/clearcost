@@ -160,6 +160,17 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - State-by-state processing keeps DuckDB memory manageable
 - Import script uses `db.stream()` (not `db.all()`) — never loads full state into JS heap
 
+### MVP Data Scope
+
+The MVP imports ~4.8% of the full Oria dataset:
+- **274M total rows → ~13.1M imported** (1,010 codes × outpatient only)
+- **6B payer detail rows → 0 imported** (using pre-aggregated avg/min/max instead)
+- **120K+ distinct billing codes → 1,010 curated** (0.4% of unique codes)
+- The 1,010 codes cover the most common shoppable procedures but the Parquet files contain 95%+ more data available for future phases
+- Inpatient exclusion drops ~18.5% of all source rows (50.8M of 274M)
+- Expansion path: more codes, inpatient, payer details → Phases 6-8 in roadmap
+- Full breakdown with precise numbers: see `docs/prd.md` Section 4.2.1
+
 ### Data Import Workflow
 
 **Fresh import** (wipe and reload all data):
@@ -191,14 +202,15 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Current Status
 
-**Phases 1-5 code complete. Data import in progress.**
+**Phases 1-5 code complete. Data import complete. Ready for deployment.**
 
 - 5,419 providers imported (5,034 geocoded via zipcodes package, 385 missing zip)
 - 1,010 curated codes in `lib/data/final-codes.json`
-- 2.7M charges imported across 10 states (AK, AL, AR, AZ, CA, CO, CT, DC, DE, FL)
-- Remaining ~42 states pending import
-- **Anthropic API key**: Placeholder in `.env.local`. Needed for live search, not data import.
-- **Google Maps API key**: Placeholder in `.env.local`. Needed for map UI, not data import.
+- **12,574,168 charges** imported across all 52 states (50 states + DC + PR)
+- 7 indexes built (pkey + 6 custom: cpt, hcpcs, ms_drg, provider, cpt+provider, description GIN)
+- ANALYZE run on charges table
+- **Anthropic API key**: Required for live search (billing code translation).
+- **Google Maps API key**: Required for map UI and geocoding.
 
 ## Environment Variables
 

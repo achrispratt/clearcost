@@ -119,6 +119,69 @@ Sources merged into `lib/data/final-codes.json`:
 3. **Top 500** — Most universally reported codes by hospital coverage count
 4. **FAIR Health 300+** — Consumer-oriented shoppable services from the leading healthcare cost database
 
+### 4.2.1 Data Scope & Exclusions
+
+The MVP imports a curated subset of the full Oria dataset — roughly 4.8% of source rows. This section documents what's included, what's excluded, and why.
+
+**Data Funnel: Full Dataset → MVP Import**
+
+```
+Trilliant Oria Full Dataset
+├── 274M standard_charges rows
+├── 6B standard_charge_details rows (payer-specific)
+├── 120K distinct CPT codes, 109K HCPCS, 5.6K MS-DRG
+└── 6,039 hospitals
+        │
+        ▼ Filter 1: Code filter (1,010 curated codes)
+        │   Keeps rows where cpt OR hcpcs matches our code list
+        │   Drops ~95% of rows (most hospital line items are for codes outside our list)
+        │
+        ▼ Filter 2: Outpatient only
+        │   Drops rows where setting = 'inpatient' (~7% of code-matched rows)
+        │   Inpatient pricing is complex, not consumer-shoppable
+        │
+        ▼ Filter 3: Aggregated payer stats only
+        │   Uses pre-computed avg/min/max from standard_charges
+        │   Skips ALL 6 billion payer detail rows entirely
+        │
+        ▼ Result: MVP Import
+            ~13.1M charges rows (~4.8% of standard_charges)
+            0 payer detail rows (0% of standard_charge_details)
+            5,419 providers
+            ~3.9 GB in Supabase
+```
+
+**What's excluded and why:**
+
+| Exclusion | Rows Dropped | % of Total | Reason |
+|-----------|-------------|------------|--------|
+| Non-matching codes | ~261M | ~95.2% | MVP focuses on 1,010 most shoppable procedures |
+| Inpatient rows | ~62K of matched | ~7% of matched | Not consumer-shoppable (complex multi-day stays) |
+| Payer detail rows | ~6B | 100% | Pre-aggregated stats sufficient for MVP; plan-level pricing is Phase 7 |
+| Revenue/ICD/other codes | (overlap with above) | — | Too generic (revenue) or not procedure-based (ICD) |
+
+**Precise source counts (from DuckDB queries on full Oria dataset):**
+
+| Metric | Value |
+|--------|-------|
+| Total standard_charges | 274,299,828 |
+| Total standard_charge_details (payer-specific) | ~6 billion |
+| Distinct CPT codes | 120,097 |
+| Distinct HCPCS codes | 109,354 |
+| Distinct MS-DRG codes | 5,628 |
+| Inpatient rows | 50,777,849 (18.5%) |
+| Outpatient/null rows | 223,521,979 (81.5%) |
+| Hospitals total | 6,039 |
+| Hospitals with data | 5,419 |
+| Curated MVP codes | 1,010 |
+| Estimated MVP rows | ~13.1M |
+
+**Expansion path:**
+- More codes → import more of the 120K CPT / 109K HCPCS codes
+- Inpatient → add MS-DRG data (~50.8M rows, Phase 7+)
+- Payer detail → 6B rows, requires self-hosted Postgres (~50-100GB, Phase 7)
+- Full dataset → ~274M charges + 6B details, requires dedicated infrastructure (Phase 8+)
+
 ### 4.3 Billing Code Types
 
 | Code Type | What It Covers | MVP Use |

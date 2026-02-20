@@ -472,41 +472,70 @@ async function importCharges(
   }
   console.log(`  Processing ${states.length} states: ${states.join(", ")}`);
 
+  // Auto-resume: check which states already have data in the DB
+  let completedStates = new Set<string>();
+  if (!config.fresh) {
+    const existingRes = await pgPool.query(`
+      SELECT p.state, COUNT(*) as cnt
+      FROM charges c JOIN providers p ON c.provider_id = p.id
+      WHERE c.source = 'trilliant_oria'
+      GROUP BY p.state
+    `);
+    for (const row of existingRes.rows) {
+      if (row.state && parseInt(row.cnt, 10) > 0) {
+        completedStates.add(row.state);
+      }
+    }
+    if (completedStates.size > 0) {
+      console.log(`  Auto-resume: ${completedStates.size} states already have data: ${[...completedStates].sort().join(", ")}`);
+    }
+  }
+
   // Handle existing data based on mode
   if (config.fresh) {
     console.log("  TRUNCATING charges table for fresh import...");
     await pgPool.query("TRUNCATE charges CASCADE");
-    console.log("  Truncated");
-  } else if (config.skipStates.length > 0) {
-    console.log(`  Preserving existing charges, resuming import (skipping ${config.skipStates.length} states)...`);
-  } else {
-    console.log("  Clearing existing trilliant_oria charges...");
-    try {
-      await pgPool.query(`DELETE FROM charges WHERE source = 'trilliant_oria'`);
-    } catch (err) {
-      console.warn(`  Warning: could not clear existing charges: ${err instanceof Error ? err.message : err}`);
-    }
+    console.log("  Truncated — verifying connection survived DDL...");
+    await new Promise((r) => setTimeout(r, 2000));
+    await pgPool.query("SELECT 1");
+    console.log("  Connection healthy after TRUNCATE");
+    completedStates = new Set(); // clear after truncate
   }
 
-  const MAX_CONCURRENT = 1;
+  const CIRCUIT_BREAKER_THRESHOLD = 10;
   let totalInserted = 0;
   let totalSkipped = 0;
   const importStart = Date.now();
+  const numCols = CHARGE_COLUMNS.length;
 
   for (const state of states) {
-    // Skip already-imported states
-    if (config.skipStates.includes(state)) {
-      console.log(`  ${state}: skipping (already imported)`);
+    // Skip already-imported states (from --skip-states flag OR auto-resume)
+    if (config.skipStates.includes(state) || completedStates.has(state)) {
+      console.log(`  ${state}: skipping (already has data)`);
       continue;
+    }
+
+    // Health check before committing to a state scan
+    try {
+      await pgPool.query("SELECT 1");
+    } catch {
+      console.warn(`  ${state}: Postgres health check failed, waiting 10s...`);
+      await new Promise((r) => setTimeout(r, 10000));
+      try {
+        await pgPool.query("SELECT 1");
+        console.log(`  ${state}: reconnected after retry`);
+      } catch (retryErr) {
+        console.error(`  ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`);
+        continue;
+      }
     }
 
     const stateStart = Date.now();
     let stateInserted = 0;
     let stateSkipped = 0;
+    let consecutiveFailures = 0;
+    let batchNum = 0;
 
-    // Stream from DuckDB instead of loading all rows into memory.
-    // db.stream() returns an AsyncIterable<RowData> — rows arrive one at a time
-    // so Node never holds more than batchSize rows in memory.
     const stream = db.stream(
       `SELECT charge_id, hospital_id, description, gross_charge, discounted_cash,
               minimum, maximum, setting, billing_class, modifiers,
@@ -517,53 +546,9 @@ async function importCharges(
        ${config.limit > 0 ? `LIMIT ${config.limit}` : ""}`
     );
 
-    // Batch buffer + concurrent insert pool
     let batch: Record<string, unknown>[] = [];
-    const insertPool: Promise<void>[] = [];
-
-    // Helper: insert a batch with retry logic via direct Postgres
-    const numCols = CHARGE_COLUMNS.length;
-    const flushBatch = (rows: Record<string, unknown>[], label: string): Promise<void> => {
-      const toInsert = [...rows]; // snapshot the batch
-      return (async () => {
-        // Build multi-row INSERT: INSERT INTO charges (col1, ...) VALUES ($1,...), ($21,...), ...
-        const values: unknown[] = [];
-        const rowPlaceholders: string[] = [];
-
-        for (let r = 0; r < toInsert.length; r++) {
-          const row = toInsert[r];
-          const placeholders: string[] = [];
-          for (let c = 0; c < numCols; c++) {
-            values.push(row[CHARGE_COLUMNS[c]] ?? null);
-            placeholders.push(`$${r * numCols + c + 1}`);
-          }
-          rowPlaceholders.push(`(${placeholders.join(",")})`);
-        }
-
-        const sql = `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")}`;
-
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            await pgPool.query(sql, values);
-            stateInserted += toInsert.length;
-            totalInserted += toInsert.length;
-            return;
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            if (attempt < 3) {
-              const wait = attempt * 2000; // 2s, 4s backoff
-              console.warn(`  ${label}: error on attempt ${attempt}, retrying in ${wait / 1000}s... (${msg})`);
-              await new Promise((r) => setTimeout(r, wait));
-            } else {
-              console.error(`  ${label}: FAILED after 3 attempts: ${msg} (${toInsert.length} rows lost)`);
-            }
-          }
-        }
-      })();
-    };
 
     for await (const row of stream) {
-      // DuckDB returns BigInt for integer columns — convert to Number for JSON
       const charge = row as unknown as OraStandardCharge;
       const providerId = providerIdMap.get(Number(charge.hospital_id));
       if (!providerId) {
@@ -594,27 +579,27 @@ async function importCharges(
         source: "trilliant_oria",
       });
 
-      // When batch is full, flush it to Supabase
       if (batch.length >= config.batchSize) {
-        // If pool is full, wait for one to finish before adding more
-        if (insertPool.length >= MAX_CONCURRENT) {
-          await Promise.race(insertPool);
-          // Remove resolved promises from pool
-          for (let i = insertPool.length - 1; i >= 0; i--) {
-            const status = await Promise.race([
-              insertPool[i].then(() => "resolved" as const),
-              Promise.resolve("pending" as const),
-            ]);
-            if (status === "resolved") insertPool.splice(i, 1);
-          }
+        // DIRECT AWAIT — guarantees backpressure. Nothing buffers while this runs.
+        const inserted = await flushOneBatch(pgPool, batch, `charges [${state}]`, numCols);
+        if (inserted > 0) {
+          stateInserted += inserted;
+          totalInserted += inserted;
+          consecutiveFailures = 0;
+        } else {
+          consecutiveFailures++;
+        }
+        batch = [];
+        batchNum++;
+
+        // Circuit breaker
+        if (consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
+          console.error(`  ${state}: CIRCUIT BREAKER — ${consecutiveFailures} consecutive failures, skipping rest of state`);
+          break;
         }
 
-        const promise = flushBatch(batch, `charges [${state}]`);
-        insertPool.push(promise);
-        batch = [];
-
-        // Progress logging every 10,000 rows
-        if ((stateInserted + stateSkipped) % 10000 < config.batchSize) {
+        // Progress logging every 20 batches (~10,000 rows)
+        if (batchNum % 20 === 0) {
           const heapMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
           const elapsed = (Date.now() - importStart) / 1000;
           const rowsPerSec = totalInserted > 0 ? (totalInserted / elapsed).toFixed(0) : "—";
@@ -627,11 +612,14 @@ async function importCharges(
       }
     }
 
-    // Flush remaining batch + drain pool
+    // Flush remaining partial batch
     if (batch.length > 0) {
-      insertPool.push(flushBatch(batch, `charges [${state}]`));
+      const inserted = await flushOneBatch(pgPool, batch, `charges [${state}]`, numCols);
+      if (inserted > 0) {
+        stateInserted += inserted;
+        totalInserted += inserted;
+      }
     }
-    await Promise.all(insertPool);
 
     totalSkipped += stateSkipped;
     const stateDuration = ((Date.now() - stateStart) / 1000).toFixed(1);
@@ -653,6 +641,50 @@ async function importCharges(
     `\n  Charges import complete: ${totalInserted.toLocaleString()} inserted, ` +
       `${totalSkipped.toLocaleString()} skipped (${totalDuration} min)`
   );
+}
+
+// Single batch INSERT with retry. Returns number of rows inserted (0 on total failure).
+// Each attempt gets a FRESH connection from the pool — no reusing broken ones.
+async function flushOneBatch(
+  pgPool: PgPool,
+  rows: Record<string, unknown>[],
+  label: string,
+  numCols: number
+): Promise<number> {
+  // Build the SQL and values array
+  const values: unknown[] = [];
+  const rowPlaceholders: string[] = [];
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    const placeholders: string[] = [];
+    for (let c = 0; c < numCols; c++) {
+      values.push(row[CHARGE_COLUMNS[c]] ?? null);
+      placeholders.push(`$${r * numCols + c + 1}`);
+    }
+    rowPlaceholders.push(`(${placeholders.join(",")})`);
+  }
+  const sql = `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")}`;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    let client: import("pg").PoolClient | null = null;
+    try {
+      client = await pgPool.connect();
+      await client.query(sql, values);
+      client.release();
+      return rows.length;
+    } catch (err: unknown) {
+      if (client) client.release(true); // destroy broken connection
+      const msg = err instanceof Error ? err.message : String(err);
+      if (attempt < 3) {
+        const wait = attempt * 5000; // 5s, 10s backoff — give Supabase time to recover
+        console.warn(`  ${label}: attempt ${attempt} failed, retrying in ${wait / 1000}s... (${msg})`);
+        await new Promise((r) => setTimeout(r, wait));
+      } else {
+        console.error(`  ${label}: FAILED after 3 attempts: ${msg} (${rows.length} rows lost)`);
+      }
+    }
+  }
+  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -706,21 +738,28 @@ async function main() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Connect directly to Postgres for charge inserts (bypasses REST API timeouts)
-  console.log("  Connecting to Postgres directly...");
+  // Use Supabase's connection pooler (port 6543, transaction mode) instead of
+  // direct Postgres (port 5432). The pooler handles reconnection and multiplexing
+  // on Supabase's side — critical for sustained bulk inserts over the internet.
+  // Direct connections get killed by Supabase's load balancer under sustained load.
+  const poolerUrl = dbUrl.replace(/:5432\//, ":6543/");
+  const isPooler = poolerUrl !== dbUrl;
+  console.log(`  Connecting via ${isPooler ? "Supabase pooler (port 6543)" : "direct Postgres"}...`);
+
   const pgPool = new PgPool({
-    connectionString: dbUrl,
-    ssl: { rejectUnauthorized: false },   // required by Supabase
-    max: 1,                                // single connection — conservative, proven stable
-    idleTimeoutMillis: 0,                  // keep alive during DuckDB scan pauses
-    connectionTimeoutMillis: 10000,        // 10s to establish connection
-    statement_timeout: 60000,              // 60s per statement
-    keepAlive: true,                       // TCP keepalive prevents LB idle disconnect
+    connectionString: poolerUrl,
+    ssl: { rejectUnauthorized: false },
+    max: 3,                                // small pool — pooler manages the real connections
+    idleTimeoutMillis: 30000,              // release idle connections after 30s
+    connectionTimeoutMillis: 30000,        // 30s to get a connection from pooler
+    keepAlive: true,
     keepAliveInitialDelayMillis: 10000,
   });
-  // Test the connection immediately
+  pgPool.on("error", (err) => {
+    console.warn(`  Pool background error (non-fatal): ${err.message}`);
+  });
   await pgPool.query("SELECT 1");
-  console.log("  Postgres pool connected (SSL, keepalive, max=1)");
+  console.log(`  Postgres pool connected (SSL, keepalive, pooler=${isPooler})`);
 
   // Open DuckDB — MUST use the directory containing the DB as CWD
   // because the views reference relative paths to parquet/ files
@@ -733,9 +772,9 @@ async function main() {
   const db = await Database.create(config.dbPath, { access_mode: "READ_ONLY" });
 
   // Prevent DuckDB from consuming all RAM when scanning 81GB of Parquet
-  await db.run(`SET memory_limit = '4GB'`);
+  await db.run(`SET memory_limit = '2GB'`);
   await db.run(`SET threads = 2`);
-  console.log("  DuckDB memory_limit=4GB, threads=2");
+  console.log("  DuckDB memory_limit=2GB, threads=2");
 
   // Load the curated code list (1,010 codes from CMS 70 + CMS 200 + top 500 + FAIR Health)
   const codesPath = resolve(dbDir, "final-codes.json");
