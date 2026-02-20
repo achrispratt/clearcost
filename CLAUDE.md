@@ -104,6 +104,7 @@ lib/
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
   data/               — Import pipeline, code lists, DuckDB/Parquet data
   supabase/           — Three Supabase clients (browser, server, middleware)
+scripts/              — DB migration utilities (full-migration.sql, run-migration-api.ts)
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
@@ -243,7 +244,7 @@ See `.env.local.example` for required keys:
 
 | Phase | What | Status |
 |-------|------|--------|
-| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Code complete, import pending |
+| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete (12.5M rows imported) |
 | **Phase 6** | Independent MRF crawler (replace Trilliant dependency) | Deferred |
 | **Phase 7** | Plan-level insurance pricing from hospital MRFs | Future |
 | **Phase 8** | Payer Transparency in Coverage data — all provider types | Future |
