@@ -36,7 +36,13 @@ export async function translateQueryToCPT(
     throw new Error("Unexpected response type from Claude API");
   }
 
-  const parsed = JSON.parse(content.text);
+  // Strip markdown code fences if present (Claude sometimes wraps JSON in ```json...```)
+  let text = content.text.trim();
+  if (text.startsWith("```")) {
+    text = text.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  }
+
+  const parsed = JSON.parse(text);
 
   // Map Claude's response to our CPTCode type
   // No verification gate — we trust Claude's output and let the database filter
