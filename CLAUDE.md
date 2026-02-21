@@ -203,7 +203,10 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Current Status
 
-**Phases 1-5 code complete. Data import complete. Ready for deployment.**
+**Phases 1-5 complete. Data import complete. Deployed to Vercel.**
+
+- **Live URL:** https://clearcost-orcin.vercel.app
+- Search pipeline working end-to-end (Claude AI translation → Supabase geo query → results)
 
 - 5,419 providers imported (5,034 geocoded via zipcodes package, 385 missing zip)
 - 1,010 curated codes in `lib/data/final-codes.json`
