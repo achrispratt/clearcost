@@ -15,6 +15,9 @@ function ResultsContent() {
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
   const locationDisplay = searchParams.get("loc") || "";
+  const directCodes = searchParams.get("codes")?.split(",").filter(Boolean) || [];
+  const directCodeType = searchParams.get("codeType") || "";
+  const directInterp = searchParams.get("interp") || "";
 
   const [results, setResults] = useState<ChargeResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<ChargeResult[]>([]);
@@ -26,24 +29,37 @@ function ResultsContent() {
   const [view, setView] = useState<"list" | "map">("list");
 
   useEffect(() => {
-    if (!query || !lat || !lng) return;
+    if ((!query && directCodes.length === 0) || !lat || !lng) return;
 
     const search = async () => {
       setLoading(true);
       setError(null);
-      setLoadingStage("Translating your query...");
+
+      // Direct code lookup skips AI translation
+      const hasDirectCodes = directCodes.length > 0;
+      setLoadingStage(hasDirectCodes ? "Finding prices near you..." : "Translating your query...");
 
       try {
+        const requestBody: Record<string, unknown> = {
+          query,
+          location: { lat, lng },
+        };
+
+        // Pass codes directly if from guided search
+        if (hasDirectCodes) {
+          requestBody.codes = directCodes;
+          requestBody.codeType = directCodeType || "cpt";
+        }
+
         const response = await fetch("/api/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query,
-            location: { lat, lng },
-          }),
+          body: JSON.stringify(requestBody),
         });
 
-        setLoadingStage("Finding prices near you...");
+        if (!hasDirectCodes) {
+          setLoadingStage("Finding prices near you...");
+        }
 
         if (!response.ok) {
           const data = await response.json();
@@ -53,8 +69,8 @@ function ResultsContent() {
         const data = await response.json();
         setResults(data.results);
         setFilteredResults(data.results);
-        setCptCodes(data.cptCodes);
-        setInterpretation(data.interpretation);
+        setCptCodes(data.cptCodes || []);
+        setInterpretation(data.interpretation || directInterp);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Search failed");
       } finally {
@@ -64,7 +80,8 @@ function ResultsContent() {
     };
 
     search();
-  }, [query, lat, lng]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, lat, lng, directCodes.join(","), directCodeType, directInterp]);
 
   const handleNewSearch = (
     newQuery: string,
@@ -76,8 +93,8 @@ function ResultsContent() {
       lng: location.lng.toString(),
       loc: location.display,
     });
-    window.history.pushState({}, "", `/results?${params.toString()}`);
-    window.location.reload();
+    // Route new searches through guided search for clarification
+    window.location.href = `/guided-search?${params.toString()}`;
   };
 
   const handleFilteredResults = useCallback((filtered: ChargeResult[]) => {

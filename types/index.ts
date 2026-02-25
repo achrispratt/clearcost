@@ -102,6 +102,43 @@ export interface SearchResult {
   totalResults: number;
 }
 
+// -- Guided Search: Clarification Flow Types --
+
+export interface ClarificationOption {
+  label: string;
+  description?: string;
+  codes?: string[];           // Billing codes this resolves to (if terminal)
+  codeType?: BillingCodeType;
+  refinedQuery?: string;      // Rewritten query for re-interpretation
+}
+
+export interface ClarificationQuestion {
+  id: string;
+  question: string;
+  helpText?: string;
+  options: ClarificationOption[];
+  allowFreeText?: boolean;    // Default: true — always show "Other" input
+}
+
+export interface ClarificationTurn {
+  questionId: string;
+  selectedOption: string;     // Label of selected option, or "other"
+  freeText?: string;          // What user typed if "other"
+}
+
+export type QueryType = 'procedure' | 'symptom' | 'condition' | 'code';
+export type ConfidenceLevel = 'high' | 'low';
+
+export interface TranslationResponse {
+  codes: CPTCode[];
+  interpretation: string;
+  searchTerms?: string;
+  confidence: ConfidenceLevel;
+  queryType?: QueryType;
+  nextQuestion?: ClarificationQuestion;
+  conversationComplete?: boolean;
+}
+
 // -- Saved Search (user bookmark) --
 export interface SavedSearch {
   id: string;

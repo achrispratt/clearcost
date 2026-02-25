@@ -6,11 +6,43 @@ import type { BillingCodeType } from "@/types";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, location } = body;
+    const { query, location, codes: directCodes, codeType: directCodeType } = body;
 
-    if (!query || !location) {
+    if (!location) {
       return NextResponse.json(
-        { error: "Query and location are required" },
+        { error: "Location is required" },
+        { status: 400 }
+      );
+    }
+
+    const radiusMiles = location.radiusMiles || 25;
+    let allResults = [];
+
+    // Fast path: direct code lookup (from guided search flow)
+    // Skips AI translation entirely — codes are already known
+    if (directCodes && directCodes.length > 0) {
+      const results = await lookupCharges({
+        codes: directCodes,
+        codeType: directCodeType || "cpt",
+        lat: location.lat,
+        lng: location.lng,
+        radiusMiles,
+      });
+      allResults.push(...results);
+
+      return NextResponse.json({
+        query: query || "",
+        interpretation: "",
+        cptCodes: [],
+        results: allResults,
+        totalResults: allResults.length,
+      });
+    }
+
+    // Standard path: AI translation → code lookup → fallback
+    if (!query) {
+      return NextResponse.json(
+        { error: "Query or codes are required" },
         { status: 400 }
       );
     }
@@ -35,9 +67,6 @@ export async function POST(request: NextRequest) {
       existing.push(code.code);
       codesByType.set(type, existing);
     }
-
-    const radiusMiles = location.radiusMiles || 25;
-    let allResults = [];
 
     // Query each code type
     for (const [codeType, codeList] of codesByType) {

@@ -18,7 +18,7 @@ export default function Home() {
       lng: location.lng.toString(),
       loc: location.display,
     });
-    router.push(`/results?${params.toString()}`);
+    router.push(`/guided-search?${params.toString()}`);
   };
 
   return (
