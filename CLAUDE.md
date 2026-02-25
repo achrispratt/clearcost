@@ -45,18 +45,29 @@ Next.js/Turbopack builds can consume 40GB+ RAM, causing the system to swap and f
 The critical path through the app — how a user query becomes price results:
 
 ```
-User types "knee MRI near 90210"
+User types query on homepage
   ↓
-SearchBar component → navigates to /results?q=...&lat=...&lng=...
+SearchBar component → navigates to /guided-search?q=...&lat=...&lng=...
+  ↓
+Guided Search page (app/guided-search/page.tsx) → POST /api/cpt
+  ↓
+Step 1: translateQueryToCPT() (lib/cpt/translate.ts)
+  Claude API assesses the query → returns confidence level + billing codes
+  If confidence "high" → redirect to /results with codes
+  If confidence "low"  → show clarifying questions (one at a time)
+  ↓
+Step 1b (if clarification needed): Multi-turn Q&A loop
+  POST /api/clarify with query + previous answers
+  Claude generates next question based on full context
+  Repeats until Claude resolves to specific codes (max 6 turns)
+  ↓
+Navigate to /results?q=...&codes=73721&codeType=cpt&lat=...&lng=...
   ↓
 Results page (app/results/page.tsx) → POST /api/search
   ↓
-Step 1: translateQueryToCPT() (lib/cpt/translate.ts)
-  Claude API interprets plain English → returns 1-5 billing codes (CPTCode[])
-  Uses system prompt from lib/cpt/prompts.ts
-  ↓
 Step 2: lookupCharges() (lib/cpt/lookup.ts)
-  Groups codes by type (CPT/HCPCS/MS-DRG)
+  If codes provided → direct lookup (skip translation)
+  Otherwise → translate then lookup (legacy path)
   Calls Supabase RPC: search_charges_nearby(code_type, codes[], lat, lng, radius)
   PostGIS ST_DWithin() for geographic filtering
   ↓
@@ -67,6 +78,20 @@ Step 3 (fallback): lookupChargesByDescription()
 Results rendered: FilterBar + ResultsList/MapView toggle
   All filtering/sorting is client-side after initial fetch
 ```
+
+### Guided Search Clarification Flow
+
+The guided search is an AI-driven diagnostic conversation that helps users narrow vague queries to specific billing codes. Key design:
+
+- **Multi-turn loop**: Each answer + conversation history goes back to Claude for the next question
+- **Step-by-step UI**: One question at a time, breadcrumb summary of previous answers, back button
+- **Hybrid knowledge**: System prompt contains clinical triage protocols (the moat) + Claude's medical knowledge
+- **Three resolution states** after max 6 turns:
+  1. Confident → specific codes → results
+  2. Category → knows the area → show grouped results
+  3. Unclear → suggest primary care visit (with option to search anyway)
+- **Handles all user types**: referral holders, self-directed, symptom-based
+- **API routes**: `/api/cpt` (single-shot), `/api/clarify` (multi-turn), `/api/search` (accepts direct codes)
 
 ## Architecture: Supabase Client Pattern
 
@@ -91,14 +116,16 @@ Three client types — using the wrong one causes auth/cookie bugs:
 ```
 app/
   api/search/         — Main search endpoint (query → codes → prices)
-  api/cpt/            — Billing code translation only
+  api/cpt/            — Billing code translation (single-shot assessment)
+  api/clarify/        — Multi-turn clarification Q&A endpoint
   api/saved/          — Saved searches CRUD (requires auth)
   api/geocode/        — Location geocoding via Google Maps
   api/payers/         — Payer list for insurance dropdown
   auth/callback/      — Supabase OAuth callback handler
+  guided-search/      — Diagnostic clarification page (pre-results Q&A)
   results/            — Search results page
   saved/              — Saved searches page
-components/           — UI: SearchBar, LocationInput, ResultCard, FilterBar, MapView, etc.
+components/           — UI: SearchBar, LocationInput, ResultCard, FilterBar, MapView, ClarificationStep, etc.
 lib/
   anthropic.ts        — Claude API client singleton
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
@@ -203,7 +230,7 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Current Status
 
-**Phases 1-5 complete. Data import complete. Deployed to Vercel.**
+**Phases 1-5 complete. Data import complete. Deployed to Vercel. Guided Search (Phase 5.5) in active development.**
 
 - **Live URL:** https://clearcost-orcin.vercel.app
 - Search pipeline working end-to-end (Claude AI translation → Supabase geo query → results)
@@ -248,9 +275,18 @@ See `.env.local.example` for required keys:
 | Phase | What | Status |
 |-------|------|--------|
 | **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete (12.5M rows imported) |
+| **Phase 5.5** | Guided Search — AI diagnostic clarification flow (see `.claude/plans/groovy-popping-wind.md`) | **In Progress** |
 | **Phase 6** | Independent MRF crawler (replace Trilliant dependency) | Deferred |
 | **Phase 7** | Plan-level insurance pricing from hospital MRFs | Future |
 | **Phase 8** | Payer Transparency in Coverage data — all provider types | Future |
 | **Phase 9** | Non-hospital cash prices (crowdsourced/partnerships/state data) | Future |
+
+**Future UX enhancements** (post-Phase 5.5):
+- Smart typeahead/suggestions in search bar
+- Conversational follow-up for deeply ambiguous queries
+- Results grouped by procedure type when query isn't fully resolved
+- Educational content: "How to work with your doctor to understand what you need"
+- Scheduling integration (e.g., Zocdoc partnership — ClearCost finds prices, they handle booking)
+- Primary care funnel for symptom-based users
 
 See `docs/prd.md` for full product requirements.
