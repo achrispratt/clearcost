@@ -53,9 +53,12 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 ### Market Size
 
 - **28M uninsured Americans** (direct cash payers)
-- **100M+ on high-deductible plans** (effective cash payers for sub-deductible care)
+- **100M+ on high-deductible plans** (33% of covered workers, doubled from a decade ago; effective cash payers for sub-deductible care)
+- **Average family health premiums:** $26,993/year in 2025 (+6% YoY); average single deductible $1,886 (+43% over 10 years)
+- **30M consumers** borrowed money in the past year to pay for healthcare
 - **Shoppable healthcare spending:** ~$400B annually in procedures where patients have time and ability to compare prices
-- **TAM for a consumer pricing tool:** Even capturing 1% of shoppable procedure decision-making represents a massive user base
+- **Full transparency implementation savings potential:** $17.6-$80.7 billion
+- **The adoption gap:** 89% of consumers want to price-shop healthcare; only 2-3.5% actually use available tools. This 86-point gap is ClearCost's entire addressable market.
 
 ---
 
@@ -149,17 +152,85 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 
 ## 5. Competitive Landscape & Differentiation
 
+### Market Context (as of Q1 2026)
+
+**Regulatory enforcement is accelerating:**
+- CMS has conducted 5,149 compliance reviews across 3,764 hospitals (~half of all hospitals subject to the rule)
+- Hospital compliance with MRF format requirements is ~91%+, though only ~44% are fully compliant with all requirements
+- CMS raised maximum penalties from ~$110K/year to **$2M/year** — 27 monetary penalties issued to date
+- The **CY 2026 Final Rule** (enforcement starts April 1, 2026) requires actual prices, median/percentile allowed amounts, and hospital NPI encoding
+- Trump's Feb 2025 Executive Order directed "rapid implementation and enforcement" of transparency rules
+- Payer MRF Schema 2.0 required as of early February 2026
+
+**The consumer adoption gap IS the opportunity:**
+- 89% of consumers express interest in shopping for healthcare
+- Only **2-3.5%** actually use available price transparency tools
+- 77% of patients search online before booking an appointment
+- 33% of covered workers are on high-deductible plans (doubled from a decade ago)
+- Average family health premiums reached $26,993 in 2025 (+6% YoY)
+- 30 million consumers borrowed money in the past year to pay for healthcare
+
+**Market funding signals validation:**
+- AI-powered health tech funding reached $10.7B in 2025 (+24.4% YoY)
+- Daffodil Health raised $16M for AI-powered price transparency
+- Turquoise Health raised $30M Series B (a16z-backed)
+- Healthcare Bluebook was acquired by Valenz Healthcare; ClearCost Health (separate company) was acquired by MacroHealth
+- Full transparency implementation could yield **$17.6-$80.7 billion** in savings
+
+### Detailed Competitor Profiles
+
+**Turquoise Health** — $30M Series B, a16z-backed, 160+ healthcare org customers
+- B2B-primary: serves providers, payers, employers, life sciences companies
+- Has a consumer search tool but it's secondary to B2B business
+- Pivoting from compliance to "Clear Contracts" (rate negotiation platform)
+- *ClearCost advantage:* Consumer-first product design vs. Turquoise's B2B afterthought
+
+**Healthcare Bluebook (now Valenz Bluebook)** — Acquired by Valenz Healthcare
+- B2B2C model: sold to employers, used by plan members
+- "Green/Yellow/Red" quality-and-cost rating system; cash rewards ($50-$1,500) for choosing high-value providers
+- Launched Engagement Rewards Program (Jan 2026)
+- *ClearCost advantage:* Free and open to all vs. employer-gated access
+
+**FAIR Health** — Nonprofit, claims-based data, free consumer tools
+- Tens of billions of commercial healthcare claims in database
+- Free cost estimator at fairhealthconsumer.org with Body Part Procedure Locator
+- Shows statistical ranges by ZIP code, NOT hospital-specific prices
+- *ClearCost advantage:* Real hospital-specific MRF prices vs. statistical claims averages
+
+**GoodRx** — Massive consumer brand, pharmacy-first
+- Enormous domain authority; ranks for nearly every "how much does [procedure] cost" query
+- Procedure content is **informational only** — no comparison shopping tool for procedures
+- Expanding into telehealth (weight loss), not hospital pricing
+- *ClearCost advantage:* Actual price comparison tool vs. informational content
+
+**MDsave** — Direct-to-consumer marketplace (transactional)
+- Consumers buy procedure vouchers at pre-negotiated cash prices
+- Strong SEO with programmatic state/procedure pages
+- Limited to ~250 participating facilities
+- *ClearCost advantage:* 5,200+ hospitals with real MRF data vs. small opt-in network
+
+**Sesame Care** — Consumer marketplace, $10.99/month membership
+- Transparent upfront cash pricing with actual booking capability
+- Focused on telehealth and office visits, NOT hospital procedures
+- *ClearCost advantage:* Hospital procedure pricing at national scale vs. telehealth/office visits
+
+**New Choice Health** — Consumer cost comparison + lead generation
+- Strong SEO presence with programmatic pages for procedure costs
+- Data freshness/sourcing unclear; dated UX; shows averages not actual posted prices
+- *ClearCost advantage:* Real MRF data + AI search vs. unclear data sources + rigid menus
+
 ### Competitive Matrix
 
-| Feature | ClearCost | Turquoise Health | Healthcare Bluebook | FAIR Health | GoodRx | MDsave |
-|---------|-----------|-----------------|-------------------|------------|--------|--------|
-| **Consumer-facing** | Yes (primary) | No (B2B focus) | Partial (employer tool) | Partial (consumer lookup) | Yes (pharmacy focus) | Yes (booking focus) |
-| **National hospital coverage** | 5,200+ hospitals | Yes (data API) | ~1,000 markets | Reference data only | No (pharmacy + telehealth) | ~250 facilities |
-| **Plain English AI search** | Yes (Claude) | No | No | No | No | No |
-| **Guided diagnostic Q&A** | Yes (Phase 5.5) | No | No | No | No | No |
-| **Real-time hospital MRF data** | Yes | Yes | No (survey-based) | No (claims-based) | N/A | No (contracted prices) |
-| **Free to consumers** | Yes | N/A (B2B) | Employer-subsidized | Yes | Yes | Procedure bundles for sale |
-| **Map view** | Yes | No consumer UI | Limited | No | No | No |
+| Feature | ClearCost | Turquoise Health | Valenz Bluebook | FAIR Health | GoodRx | MDsave | Sesame |
+|---------|-----------|-----------------|-----------------|------------|--------|--------|--------|
+| **Consumer-facing** | Yes (primary) | No (B2B) | No (employer) | Partial | Yes (pharmacy) | Yes (marketplace) | Yes (marketplace) |
+| **National hospital coverage** | 5,200+ | Yes (data API) | ~1,000 markets | Reference only | No | ~250 facilities | No |
+| **Plain English AI search** | Yes (Claude) | No | No | No | No | No | No |
+| **Guided diagnostic Q&A** | Yes | No | No | No | No | No | No |
+| **Real hospital MRF data** | Yes | Yes | No (survey) | No (claims) | No | No (contracted) | No |
+| **Free to consumers** | Yes | N/A | Employer-gated | Yes | Yes | Pay-per-procedure | $10.99/mo |
+| **Map view** | Yes | No consumer UI | Limited | No | No | No | No |
+| **Booking/transactional** | No (future) | No | No | No | No | Yes | Yes |
 
 ### ClearCost's Unique Advantages
 
@@ -167,18 +238,28 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 
 2. **Guided diagnostic clarification** — When a query is vague ("my back hurts"), ClearCost's multi-turn AI conversation narrows to specific procedures through clinical triage logic. This is the product moat — competitors show a blank screen for ambiguous queries.
 
-3. **National scale, consumer-first** — Turquoise Health has the data but sells to businesses. Healthcare Bluebook serves employers. FAIR Health shows reference prices without real hospital-specific data. ClearCost is the only consumer-first tool with real prices from 5,200+ hospitals.
+3. **National scale, consumer-first** — Turquoise Health has the data but sells to businesses. Valenz Bluebook serves employers. FAIR Health shows statistical ranges, not hospital-specific prices. ClearCost is the only consumer-first tool with real posted prices from 5,200+ hospitals.
 
 4. **Trust through transparency** — Every result shows the data source, freshness date, and billing context. Competitors either hide their methodology or show opaque "fair price" ranges.
 
 ### Competitive Positioning
 
 ClearCost does NOT compete with:
-- **GoodRx** (pharmacy/drug pricing — different market entirely)
+- **GoodRx** (pharmacy/drug pricing — different market; procedure content is informational only, not a shopping tool)
 - **Zocdoc** (appointment booking — potential future partner, not competitor)
 - **Insurance company cost estimators** (require login, only show in-network, opaque data)
+- **MDsave/Sesame** (marketplaces with limited provider networks — ClearCost is an information tool covering ALL hospitals)
 
-ClearCost's real competitor is **inaction** — the 90%+ of patients who don't price-compare because no tool makes it easy enough.
+ClearCost's real competitor is **inaction** — the 96.5% of patients who don't use price tools despite 89% saying they want to. The product's job is to close this intention-action gap with a radically simpler UX.
+
+### Competitive Risks & Responses
+
+| Risk | Likelihood | Response |
+|------|-----------|----------|
+| GoodRx adds actual price comparison to procedure content | Medium | Their core business is pharmacy; procedure pricing is a content play. But their domain authority means they'd rank immediately. **Counter:** Deepen AI search moat, build brand in niche before they move. |
+| Turquoise invests in consumer tool | Low-Medium | They're pivoting to contract management (B2B), not consumer. **Counter:** Consumer-first DNA is hard to replicate from B2B. |
+| New entrant with VC funding | Medium | Transparency space is attracting capital. **Counter:** First-mover advantage in consumer AI search; programmatic SEO at scale creates defensible organic presence. |
+| CMS enforcement weakens under current admin | Low-Medium | Despite strong EO language, workforce reductions could slow enforcement. **Counter:** 91%+ compliance with MRF format means data already exists regardless of enforcement. |
 
 ---
 
@@ -417,6 +498,8 @@ Reddit is where healthcare cost conversations already happen organically. This i
 
 ### Keyword Strategy
 
+**Landscape context:** Healthcare keywords average $4-$35 CPC, indicating high commercial value. Top-ranking pages are on domains with massive backlink profiles (GoodRx, Healthline, CareCredit). Ranking content is typically 1,500-3,000+ words. Google AI Overviews are compressing organic CTR. Average page-one result is 2+ years old. Expected SEO timeline: 6-12 months for initial traction, 12-24 months for competitive terms. SEO delivers ~8x ROI vs. PPC's ~4x.
+
 **Head terms (high volume, high competition — long-term targets):**
 - "hospital prices" / "hospital costs"
 - "medical procedure costs"
@@ -429,12 +512,18 @@ Reddit is where healthcare cost conversations already happen organically. This i
 - "cheapest hospital for MRI in [city]"
 - "blood work cost comparison"
 - "CT scan price [city]"
+- "[procedure] cost without insurance near [city]" (highly aligned, less competitive)
 
 **Question-based terms (featured snippet opportunities):**
 - "why do hospital prices vary so much?"
 - "can I compare hospital prices?"
 - "how to find out hospital costs before going?"
 - "what is a cash price at a hospital?"
+
+**GEO (Generative Engine Optimization) — new priority:**
+- Structure data for AI assistants (ChatGPT, Perplexity, Google AI) to cite ClearCost in zero-click answers
+- Schema markup, clear data attribution, and factual content increase the likelihood of AI citation
+- This is an emerging channel that competitors have not yet optimized for
 
 ### Link Building Strategy
 
