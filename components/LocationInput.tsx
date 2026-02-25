@@ -8,9 +8,10 @@ interface LocationInputProps {
     lng: number;
     display: string;
   }) => void;
+  compact?: boolean;
 }
 
-export function LocationInput({ onLocationSelect }: LocationInputProps) {
+export function LocationInput({ onLocationSelect, compact }: LocationInputProps) {
   const [value, setValue] = useState("");
   const [detectingLocation, setDetectingLocation] = useState(false);
 
@@ -60,7 +61,7 @@ export function LocationInput({ onLocationSelect }: LocationInputProps) {
   }, [onLocationSelect]);
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center">
       <input
         type="text"
         value={value}
@@ -72,30 +73,39 @@ export function LocationInput({ onLocationSelect }: LocationInputProps) {
             handleZipOrCity(value);
           }
         }}
-        placeholder="ZIP code or city"
-        className="input input-bordered w-full bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:outline-none pr-10"
+        placeholder="ZIP or city"
+        className={`w-full bg-transparent focus:outline-none placeholder:text-[var(--cc-text-tertiary)] ${
+          compact
+            ? "py-2.5 text-sm"
+            : "py-4 sm:py-3.5 text-sm"
+        }`}
+        style={{ color: "var(--cc-text)" }}
       />
       <button
         type="button"
         onClick={detectLocation}
         disabled={detectingLocation}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500"
+        className="shrink-0 p-1.5 rounded-md transition-colors hover:bg-[var(--cc-surface-alt)]"
         title="Use my location"
+        style={{ color: "var(--cc-text-tertiary)" }}
       >
         {detectingLocation ? (
-          <span className="loading loading-spinner loading-xs" />
+          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         ) : (
           <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path
-              fillRule="evenodd"
-              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-              clipRule="evenodd"
-            />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
           </svg>
         )}
       </button>

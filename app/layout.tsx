@@ -1,17 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, DM_Sans } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
+  weight: "400",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2563EB",
+  themeColor: "#0F766E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -36,7 +39,8 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="light">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white min-h-screen`}
+        className={`${instrumentSerif.variable} ${dmSans.variable} antialiased min-h-screen`}
+        style={{ fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
       >
         <Providers>
           <Navbar />

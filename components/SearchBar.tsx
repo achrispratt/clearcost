@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LocationInput } from "./LocationInput";
 
 interface SearchBarProps {
@@ -10,6 +10,7 @@ interface SearchBarProps {
   ) => void;
   loading?: boolean;
   initialQuery?: string;
+  compact?: boolean;
 }
 
 const placeholders = [
@@ -23,6 +24,7 @@ export function SearchBar({
   onSearch,
   loading,
   initialQuery = "",
+  compact,
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const [location, setLocation] = useState<{
@@ -31,9 +33,11 @@ export function SearchBar({
     display: string;
   } | null>(null);
 
-  const [placeholder] = useState(
-    placeholders[Math.floor(Math.random() * placeholders.length)]
-  );
+  const [placeholder, setPlaceholder] = useState(placeholders[0]);
+
+  useEffect(() => {
+    setPlaceholder(placeholders[Math.floor(Math.random() * placeholders.length)]);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,28 +46,162 @@ export function SearchBar({
     }
   };
 
+  if (compact) {
+    return (
+      <form onSubmit={handleSubmit} className="w-full">
+        <div
+          className="search-container flex flex-col sm:flex-row items-stretch rounded-xl border bg-[var(--cc-surface)] overflow-hidden"
+          style={{ borderColor: "var(--cc-border)" }}
+        >
+          <div className="flex items-center flex-1 px-3 gap-2">
+            <svg
+              className="w-4 h-4 shrink-0"
+              style={{ color: "var(--cc-text-tertiary)" }}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={placeholder}
+              className="w-full py-2.5 bg-transparent text-sm focus:outline-none placeholder:text-[var(--cc-text-tertiary)]"
+              style={{ color: "var(--cc-text)" }}
+            />
+          </div>
+
+          <div
+            className="hidden sm:block w-px my-2"
+            style={{ background: "var(--cc-border)" }}
+          />
+          <div
+            className="sm:hidden h-px mx-3"
+            style={{ background: "var(--cc-border)" }}
+          />
+
+          <div className="flex items-center px-3 sm:w-44">
+            <svg
+              className="w-3.5 h-3.5 shrink-0 mr-1.5"
+              style={{ color: "var(--cc-text-tertiary)" }}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <LocationInput onLocationSelect={setLocation} compact />
+          </div>
+
+          <button
+            type="submit"
+            disabled={!query.trim() || !location || loading}
+            className="m-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+            style={{
+              background: !query.trim() || !location || loading
+                ? "var(--cc-text-tertiary)"
+                : "var(--cc-primary)",
+            }}
+          >
+            {loading ? (
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            ) : (
+              "Search"
+            )}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+      <div
+        className="search-container flex flex-col sm:flex-row items-stretch rounded-2xl border bg-[var(--cc-surface)] shadow-sm overflow-hidden"
+        style={{ borderColor: "var(--cc-border)" }}
+      >
+        {/* Query input */}
+        <div className="flex items-center flex-1 px-4 gap-3">
+          <svg
+            className="w-5 h-5 shrink-0"
+            style={{ color: "var(--cc-text-tertiary)" }}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="input input-bordered w-full bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:outline-none"
+            className="w-full py-4 sm:py-3.5 bg-transparent text-base focus:outline-none placeholder:text-[var(--cc-text-tertiary)]"
+            style={{ color: "var(--cc-text)" }}
           />
         </div>
-        <div className="sm:w-64">
+
+        {/* Dividers */}
+        <div
+          className="hidden sm:block w-px my-3"
+          style={{ background: "var(--cc-border)" }}
+        />
+        <div
+          className="sm:hidden h-px mx-4"
+          style={{ background: "var(--cc-border)" }}
+        />
+
+        {/* Location input */}
+        <div className="flex items-center px-4 sm:w-52">
+          <svg
+            className="w-4 h-4 shrink-0 mr-2"
+            style={{ color: "var(--cc-text-tertiary)" }}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
           <LocationInput onLocationSelect={setLocation} />
         </div>
+
+        {/* Search button */}
         <button
           type="submit"
           disabled={!query.trim() || !location || loading}
-          className="btn btn-primary"
+          className="m-2 px-6 py-3 rounded-xl text-white font-medium transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed hover:brightness-110"
+          style={{
+            background: !query.trim() || !location || loading
+              ? "var(--cc-text-tertiary)"
+              : "var(--cc-primary)",
+          }}
         >
           {loading ? (
-            <span className="loading loading-spinner loading-sm" />
+            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
           ) : (
             "Search"
           )}

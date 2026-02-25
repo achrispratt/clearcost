@@ -12,6 +12,38 @@ interface MapViewProps {
 
 let optionsSet = false;
 
+const MAP_STYLES = [
+  {
+    featureType: "poi",
+    elementType: "labels",
+    stylers: [{ visibility: "off" }],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry.fill",
+    stylers: [{ color: "#d4eaf7" }],
+  },
+  {
+    featureType: "landscape",
+    elementType: "geometry.fill",
+    stylers: [{ color: "#f5f3ef" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry.fill",
+    stylers: [{ color: "#ffffff" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#e8e5df" }],
+  },
+  {
+    featureType: "transit",
+    stylers: [{ visibility: "off" }],
+  },
+];
+
 export function MapView({ results, center, onMarkerClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -36,13 +68,12 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
         const mapInstance = new Map(mapRef.current, {
           center: center || { lat: 40.7128, lng: -74.006 },
           zoom: 11,
-          styles: [
-            {
-              featureType: "poi",
-              elementType: "labels",
-              stylers: [{ visibility: "off" }],
-            },
-          ],
+          styles: MAP_STYLES,
+          disableDefaultUI: false,
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
         });
 
         setMap(mapInstance);
@@ -59,7 +90,6 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
     const bounds = new google.maps.LatLngBounds();
 
     results.forEach((result, i) => {
-      // Skip results without valid coordinates
       if (result.provider.lat == null || result.provider.lng == null) return;
 
       const position = { lat: result.provider.lat, lng: result.provider.lng };
@@ -70,15 +100,15 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
         label: {
           text: `${i + 1}`,
           color: "white",
-          fontSize: "12px",
-          fontWeight: "bold",
+          fontSize: "11px",
+          fontWeight: "600",
         },
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 14,
-          fillColor: "#2563EB",
+          fillColor: "#0F766E",
           fillOpacity: 1,
-          strokeColor: "#1D4ED8",
+          strokeColor: "#115E59",
           strokeWeight: 2,
         },
       });
@@ -89,11 +119,11 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
 
       const infoWindow = new google.maps.InfoWindow({
         content: `
-          <div style="padding: 8px; max-width: 220px;">
-            <p style="font-weight: 600; margin: 0;">${result.provider.name}</p>
-            ${addressDisplay ? `<p style="color: #6B7280; font-size: 12px; margin: 4px 0;">${addressDisplay}</p>` : ""}
-            ${priceDisplay ? `<p style="font-size: 18px; font-weight: 700; color: #2563EB; margin: 4px 0;">${priceDisplay}</p>` : ""}
-            ${distanceDisplay ? `<p style="color: #9CA3AF; font-size: 11px; margin: 2px 0;">${distanceDisplay} away</p>` : ""}
+          <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
+            <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${result.provider.name}</p>
+            ${addressDisplay ? `<p style="color: #5C5C6F; font-size: 12px; margin: 4px 0 0;">${addressDisplay}</p>` : ""}
+            ${priceDisplay ? `<p style="font-size: 20px; font-weight: 700; color: #0F766E; margin: 8px 0 0;">${priceDisplay}</p>` : ""}
+            ${distanceDisplay ? `<p style="color: #9B9BA8; font-size: 11px; margin: 4px 0 0;">${distanceDisplay} away</p>` : ""}
           </div>
         `,
       });
@@ -118,8 +148,16 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
 
   if (error) {
     return (
-      <div className="bg-gray-100 rounded-lg flex items-center justify-center h-96">
-        <p className="text-gray-500 text-sm">{error}</p>
+      <div
+        className="rounded-xl flex items-center justify-center h-96"
+        style={{
+          background: "var(--cc-surface-alt)",
+          border: "1px solid var(--cc-border)",
+        }}
+      >
+        <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
+          {error}
+        </p>
       </div>
     );
   }
@@ -127,7 +165,8 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
   return (
     <div
       ref={mapRef}
-      className="w-full h-96 rounded-lg border border-gray-200"
+      className="w-full h-96 rounded-xl overflow-hidden"
+      style={{ border: "1px solid var(--cc-border)" }}
     />
   );
 }

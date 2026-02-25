@@ -12,13 +12,6 @@ interface FilterBarProps {
   onSortChange: (sort: SortOption) => void;
 }
 
-const RADIUS_OPTIONS = [
-  { label: "25 mi", value: 25 },
-  { label: "50 mi", value: 50 },
-  { label: "100 mi", value: 100 },
-  { label: "250 mi", value: 250 },
-];
-
 export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBarProps) {
   const [sort, setSort] = useState<SortOption>("price-asc");
   const [setting, setSetting] = useState<SettingFilter>("all");
@@ -26,7 +19,6 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
   const [payers, setPayers] = useState<Payer[]>([]);
   const [selectedPayer, setSelectedPayer] = useState<string>("");
 
-  // Fetch available payers on mount
   useEffect(() => {
     const fetchPayers = async () => {
       try {
@@ -42,25 +34,21 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
     fetchPayers();
   }, []);
 
-  // Apply filters + sort whenever inputs change
   useEffect(() => {
     let filtered = [...results];
 
-    // Filter by setting
     if (setting !== "all") {
       filtered = filtered.filter(
         (r) => r.setting === setting || r.setting === "both" || !r.setting
       );
     }
 
-    // Filter by max price
     if (maxPrice != null) {
       filtered = filtered.filter(
         (r) => r.cashPrice != null && r.cashPrice <= maxPrice
       );
     }
 
-    // Sort
     filtered.sort((a, b) => {
       switch (sort) {
         case "price-asc":
@@ -84,30 +72,53 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
     onSortChange(newSort);
   };
 
+  const hasFilters = setting !== "all" || maxPrice != null || selectedPayer;
+
+  const selectStyles = {
+    background: "var(--cc-surface)",
+    borderColor: "var(--cc-border)",
+    color: "var(--cc-text)",
+    borderRadius: "8px",
+    fontSize: "13px",
+    padding: "4px 24px 4px 8px",
+    height: "32px",
+    border: "1px solid var(--cc-border)",
+    outline: "none",
+    cursor: "pointer",
+    appearance: "none" as const,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239B9BA8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 6px center",
+  };
+
+  const labelStyles = {
+    fontSize: "12px",
+    fontWeight: 500 as const,
+    color: "var(--cc-text-tertiary)",
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-3 py-3">
-      {/* Sort */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-gray-500 font-medium">Sort:</span>
+        <span style={labelStyles}>Sort</span>
         <select
           value={sort}
           onChange={(e) => handleSortChange(e.target.value as SortOption)}
-          className="select select-bordered select-xs bg-white"
+          style={selectStyles}
         >
-          <option value="price-asc">Price: Low → High</option>
-          <option value="price-desc">Price: High → Low</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
           <option value="distance">Distance</option>
           <option value="name">Name</option>
         </select>
       </div>
 
-      {/* Setting filter */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-gray-500 font-medium">Setting:</span>
+        <span style={labelStyles}>Setting</span>
         <select
           value={setting}
           onChange={(e) => setSetting(e.target.value as SettingFilter)}
-          className="select select-bordered select-xs bg-white"
+          style={selectStyles}
         >
           <option value="all">All</option>
           <option value="outpatient">Outpatient</option>
@@ -115,15 +126,14 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
         </select>
       </div>
 
-      {/* Max price filter */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-gray-500 font-medium">Max price:</span>
+        <span style={labelStyles}>Max price</span>
         <select
           value={maxPrice ?? ""}
           onChange={(e) =>
             setMaxPrice(e.target.value ? parseInt(e.target.value) : null)
           }
-          className="select select-bordered select-xs bg-white"
+          style={selectStyles}
         >
           <option value="">Any</option>
           <option value="500">$500</option>
@@ -134,14 +144,13 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
         </select>
       </div>
 
-      {/* Insurance payer selector */}
       {payers.length > 0 && (
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-500 font-medium">Insurance:</span>
+          <span style={labelStyles}>Insurance</span>
           <select
             value={selectedPayer}
             onChange={(e) => setSelectedPayer(e.target.value)}
-            className="select select-bordered select-xs bg-white"
+            style={selectStyles}
           >
             <option value="">Cash / Self-Pay</option>
             {payers.map((payer) => (
@@ -153,15 +162,26 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
         </div>
       )}
 
-      {/* Active filter count */}
-      {(setting !== "all" || maxPrice != null || selectedPayer) && (
+      {hasFilters && (
         <button
           onClick={() => {
             setSetting("all");
             setMaxPrice(null);
             setSelectedPayer("");
           }}
-          className="btn btn-ghost btn-xs text-gray-400 hover:text-gray-600"
+          className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors"
+          style={{
+            color: "var(--cc-text-tertiary)",
+            background: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--cc-surface-alt)";
+            e.currentTarget.style.color = "var(--cc-text-secondary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--cc-text-tertiary)";
+          }}
         >
           Clear filters
         </button>

@@ -57,7 +57,6 @@ export default function SavedPage() {
   };
 
   const handleSearchClick = (search: SavedSearch) => {
-    // Use stored coordinates if available, fall back to NYC as default
     const params = new URLSearchParams({
       q: search.query,
       loc: search.location,
@@ -79,22 +78,51 @@ export default function SavedPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg" />
+      <div className="flex justify-center py-16">
+        <svg
+          className="w-6 h-6 animate-spin"
+          style={{ color: "var(--cc-primary)" }}
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
       </div>
     );
   }
 
   if (!authenticated) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-5"
+          style={{
+            background: "var(--cc-primary-light)",
+            color: "var(--cc-primary)",
+          }}
+        >
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+          </svg>
+        </div>
+        <h1
+          className="text-2xl mb-2"
+          style={{
+            fontFamily: "var(--font-instrument-serif), Georgia, serif",
+            color: "var(--cc-text)",
+          }}
+        >
           Saved Searches
         </h1>
-        <p className="text-gray-500 mb-6">
-          Sign in to save and revisit your searches.
+        <p className="text-sm mb-8" style={{ color: "var(--cc-text-secondary)" }}>
+          Sign in to save and revisit your price comparisons.
         </p>
-        <button onClick={handleSignIn} className="btn btn-primary">
+        <button
+          onClick={handleSignIn}
+          className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-colors hover:brightness-110"
+          style={{ background: "var(--cc-primary)" }}
+        >
           Sign in with Google
         </button>
       </div>
@@ -102,64 +130,119 @@ export default function SavedPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Saved Searches</h1>
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <h1
+        className="text-2xl mb-6"
+        style={{
+          fontFamily: "var(--font-instrument-serif), Georgia, serif",
+          color: "var(--cc-text)",
+        }}
+      >
+        Saved Searches
+      </h1>
 
       {searches.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No saved searches yet.</p>
+        <div
+          className="text-center py-16 rounded-xl border"
+          style={{
+            background: "var(--cc-surface)",
+            borderColor: "var(--cc-border)",
+          }}
+        >
+          <svg
+            className="w-10 h-10 mx-auto mb-3"
+            style={{ color: "var(--cc-border-strong)" }}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+          </svg>
+          <p className="font-medium" style={{ color: "var(--cc-text-secondary)" }}>
+            No saved searches yet
+          </p>
+          <p className="text-sm mt-1 mb-5" style={{ color: "var(--cc-text-tertiary)" }}>
+            Save a search to quickly revisit it later.
+          </p>
           <button
             onClick={() => router.push("/")}
-            className="btn btn-primary btn-sm mt-4"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors hover:brightness-110"
+            style={{ background: "var(--cc-primary)" }}
           >
             Start Searching
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {searches.map((search) => (
+        <div className="space-y-2">
+          {searches.map((search, i) => (
             <div
               key={search.id}
-              className="card bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              className="card-hover rounded-xl border cursor-pointer overflow-hidden animate-fade-up"
+              style={{
+                background: "var(--cc-surface)",
+                borderColor: "var(--cc-border)",
+                animationDelay: `${i * 0.05}s`,
+              }}
               onClick={() => handleSearchClick(search)}
             >
-              <div className="card-body p-4 flex flex-row items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
+              <div className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h3
+                    className="font-semibold truncate"
+                    style={{ color: "var(--cc-text)" }}
+                  >
                     {search.query}
                   </h3>
-                  <p className="text-sm text-gray-500">{search.location}</p>
-                  <div className="flex gap-1 mt-1">
-                    {search.cpt_codes.map((code) => (
-                      <span
-                        key={code}
-                        className="badge badge-sm bg-gray-100 text-gray-600 border-none"
-                      >
-                        {code}
-                      </span>
-                    ))}
-                  </div>
+                  <p
+                    className="text-sm mt-0.5"
+                    style={{ color: "var(--cc-text-secondary)" }}
+                  >
+                    {search.location}
+                  </p>
+                  {search.cpt_codes.length > 0 && (
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      {search.cpt_codes.map((code) => (
+                        <span
+                          key={code}
+                          className="text-xs px-1.5 py-0.5 rounded font-medium"
+                          style={{
+                            background: "var(--cc-surface-alt)",
+                            color: "var(--cc-text-tertiary)",
+                          }}
+                        >
+                          {code}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(search.id);
                   }}
-                  className="btn btn-ghost btn-sm text-gray-400 hover:text-red-500"
+                  className="shrink-0 p-2 rounded-lg transition-colors hover:bg-[var(--cc-error-light)]"
+                  style={{ color: "var(--cc-text-tertiary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--cc-error)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--cc-text-tertiary)";
+                  }}
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
+                    className="w-4 h-4"
                     viewBox="0 0 24 24"
+                    fill="none"
                     stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
+                    <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                   </svg>
                 </button>
               </div>

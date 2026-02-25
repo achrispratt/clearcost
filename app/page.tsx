@@ -22,54 +22,188 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-          Find <span className="text-blue-600">real prices</span> for healthcare
-        </h1>
-        <p className="text-lg text-gray-500 max-w-xl mx-auto">
-          Search in plain English. Compare real prices from hospitals near you.
-          No insurance needed.
-        </p>
+    <div className="min-h-[calc(100vh-56px)] flex flex-col">
+      {/* Hero Section */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-16 sm:py-24 relative hero-gradient">
+        {/* Dot grid background */}
+        <div className="absolute inset-0 dot-grid opacity-40 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
+          {/* Label */}
+          <span
+            className="text-xs font-semibold tracking-widest uppercase mb-6 animate-fade-up"
+            style={{
+              color: "var(--cc-primary)",
+              animationDelay: "0s",
+            }}
+          >
+            Healthcare Pricing Transparency
+          </span>
+
+          {/* Heading */}
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl leading-tight mb-5 animate-fade-up"
+            style={{
+              fontFamily: "var(--font-instrument-serif), Georgia, serif",
+              color: "var(--cc-text)",
+              animationDelay: "0.08s",
+            }}
+          >
+            Know what you&rsquo;ll pay
+            <br />
+            <span style={{ color: "var(--cc-primary)" }}>before you go.</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p
+            className="text-base sm:text-lg max-w-lg mb-10 animate-fade-up"
+            style={{
+              color: "var(--cc-text-secondary)",
+              animationDelay: "0.16s",
+            }}
+          >
+            Compare real hospital prices across 5,200+ providers.
+            Search in plain English. No insurance required.
+          </p>
+
+          {/* Search Bar */}
+          <div
+            className="w-full animate-fade-up"
+            style={{ animationDelay: "0.24s" }}
+          >
+            <SearchBar onSearch={handleSearch} loading={loading} />
+          </div>
+
+          {/* Stats Row */}
+          <div
+            className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 mt-10 animate-fade-up"
+            style={{ animationDelay: "0.32s" }}
+          >
+            {[
+              { value: "5,200+", label: "hospitals" },
+              { value: "12.5M", label: "prices" },
+              { value: "1,010", label: "procedures" },
+            ].map((stat, i) => (
+              <div key={i} className="flex items-baseline gap-1.5">
+                <span
+                  className="text-lg sm:text-xl font-semibold"
+                  style={{ color: "var(--cc-text)" }}
+                >
+                  {stat.value}
+                </span>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-tertiary)" }}
+                >
+                  {stat.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <SearchBar onSearch={handleSearch} loading={loading} />
+      {/* How It Works Section */}
+      <div
+        className="border-t px-4 py-16 sm:py-20"
+        style={{
+          borderColor: "var(--cc-border)",
+          background: "var(--cc-surface)",
+        }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <h2
+            className="text-center text-sm font-semibold tracking-widest uppercase mb-12"
+            style={{ color: "var(--cc-text-tertiary)" }}
+          >
+            How It Works
+          </h2>
 
-      <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl w-full">
-        <div className="text-center p-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">
+            {[
+              {
+                num: "01",
+                title: "Search in plain English",
+                desc: "Describe what you need. Our AI translates it into the exact billing codes hospitals use.",
+                icon: (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                ),
+              },
+              {
+                num: "02",
+                title: "Compare real prices",
+                desc: "See actual cash prices from hospital pricing data, mandated by federal law since 2021.",
+                icon: (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                ),
+              },
+              {
+                num: "03",
+                title: "Find nearby providers",
+                desc: "Map and list views help you find the best price at a convenient location near you.",
+                icon: (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                ),
+              },
+            ].map((step, i) => (
+              <div key={i} className="text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-3 mb-4">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "var(--cc-primary-light)",
+                      color: "var(--cc-primary)",
+                    }}
+                  >
+                    {step.icon}
+                  </div>
+                  <span
+                    className="text-3xl font-light"
+                    style={{
+                      fontFamily: "var(--font-instrument-serif), Georgia, serif",
+                      color: "var(--cc-border-strong)",
+                    }}
+                  >
+                    {step.num}
+                  </span>
+                </div>
+                <h3
+                  className="font-semibold text-base mb-2"
+                  style={{ color: "var(--cc-text)" }}
+                >
+                  {step.title}
+                </h3>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  {step.desc}
+                </p>
+              </div>
+            ))}
           </div>
-          <h3 className="font-semibold text-gray-900">Search in plain English</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Just describe what you need. We translate it to medical codes.
-          </p>
         </div>
-        <div className="text-center p-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="font-semibold text-gray-900">Compare real prices</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            See actual hospital prices, sourced from public data.
-          </p>
-        </div>
-        <div className="text-center p-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <h3 className="font-semibold text-gray-900">Find nearby providers</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Map view shows locations and prices at a glance.
-          </p>
-        </div>
+      </div>
+
+      {/* Footer */}
+      <div
+        className="border-t px-4 py-6 text-center text-xs"
+        style={{
+          borderColor: "var(--cc-border)",
+          color: "var(--cc-text-tertiary)",
+        }}
+      >
+        Data sourced from hospital Machine Readable Files (MRFs) as required by CMS.
+        Prices shown are self-pay / cash rates and may not reflect your final cost.
       </div>
     </div>
   );

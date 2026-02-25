@@ -50,35 +50,46 @@ export function SaveButton({ query, location, cptCodes, lat, lng }: SaveButtonPr
     <button
       onClick={handleSave}
       disabled={saving || saved}
-      className={`btn btn-sm ${
-        saved
-          ? "btn-success"
-          : "btn-outline border-gray-300 text-gray-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-      }`}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-60"
+      style={{
+        background: saved ? "var(--cc-success-light)" : "transparent",
+        color: saved ? "var(--cc-success)" : "var(--cc-text-secondary)",
+        border: saved ? "1px solid rgba(5, 150, 105, 0.2)" : "1px solid var(--cc-border)",
+      }}
+      onMouseEnter={(e) => {
+        if (!saved && !saving) {
+          e.currentTarget.style.borderColor = "var(--cc-primary)";
+          e.currentTarget.style.color = "var(--cc-primary)";
+          e.currentTarget.style.background = "var(--cc-primary-light)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!saved && !saving) {
+          e.currentTarget.style.borderColor = "var(--cc-border)";
+          e.currentTarget.style.color = "var(--cc-text-secondary)";
+          e.currentTarget.style.background = "transparent";
+        }
+      }}
     >
       {saving ? (
-        <span className="loading loading-spinner loading-xs" />
-      ) : saved ? (
-        "Saved"
+        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
       ) : (
-        <>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-            />
-          </svg>
-          Save
-        </>
+        <svg
+          className="w-4 h-4"
+          viewBox="0 0 24 24"
+          fill={saved ? "currentColor" : "none"}
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+        </svg>
       )}
+      {saved ? "Saved" : "Save"}
     </button>
   );
 }

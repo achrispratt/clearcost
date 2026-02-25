@@ -9,6 +9,7 @@ export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -36,6 +37,13 @@ export function AuthButton() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = () => setOpen(false);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [open]);
+
   const handleSignIn = async () => {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
@@ -50,6 +58,7 @@ export function AuthButton() {
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
+    setOpen(false);
   };
 
   if (loading) {
@@ -62,38 +71,68 @@ export function AuthButton() {
 
   if (user) {
     return (
-      <div className="dropdown dropdown-end">
-        <div
-          tabIndex={0}
-          role="button"
-          className="btn btn-ghost btn-circle avatar placeholder"
+      <div className="relative">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(!open);
+          }}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-opacity hover:opacity-80"
+          style={{
+            background: "var(--cc-primary-muted)",
+            color: "var(--cc-primary)",
+          }}
         >
-          <div className="bg-blue-100 text-blue-600 rounded-full w-8">
-            <span className="text-sm">
-              {user.email?.[0]?.toUpperCase()}
-            </span>
+          {user.email?.[0]?.toUpperCase()}
+        </button>
+
+        {open && (
+          <div
+            className="absolute right-0 top-full mt-2 w-56 rounded-xl border p-1.5 shadow-lg animate-slide-down"
+            style={{
+              background: "var(--cc-surface)",
+              borderColor: "var(--cc-border)",
+            }}
+          >
+            <div
+              className="px-3 py-2 text-xs truncate"
+              style={{ color: "var(--cc-text-tertiary)" }}
+            >
+              {user.email}
+            </div>
+            <Link
+              href="/saved"
+              className="block px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--cc-surface-alt)]"
+              style={{ color: "var(--cc-text)" }}
+              onClick={() => setOpen(false)}
+            >
+              Saved Searches
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--cc-surface-alt)]"
+              style={{ color: "var(--cc-text-secondary)" }}
+            >
+              Sign Out
+            </button>
           </div>
-        </div>
-        <ul
-          tabIndex={0}
-          className="dropdown-content menu bg-white rounded-box z-10 w-52 p-2 shadow-lg border border-gray-200"
-        >
-          <li className="menu-title text-xs text-gray-500 px-2">
-            {user.email}
-          </li>
-          <li>
-            <Link href="/saved">Saved Searches</Link>
-          </li>
-          <li>
-            <button onClick={handleSignOut}>Sign Out</button>
-          </li>
-        </ul>
+        )}
       </div>
     );
   }
 
   return (
-    <button onClick={handleSignIn} className="btn btn-primary btn-sm">
+    <button
+      onClick={handleSignIn}
+      className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-white transition-colors"
+      style={{ background: "var(--cc-primary)" }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--cc-primary-hover)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "var(--cc-primary)";
+      }}
+    >
       Sign In
     </button>
   );
