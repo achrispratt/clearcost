@@ -270,6 +270,19 @@ See `.env.local.example` for required keys:
 - DaisyUI component library for consistent UI
 - Light mode only for MVP
 
+## Visual Learning — ClearCost-Specific
+
+When explaining changes to the search flow, guided search, or any part of the query-to-results pipeline, **always include an ASCII diagram** of the affected portion of the pipeline. The search flow is the critical path through the app and visual context prevents misunderstandings.
+
+Specifically, diagram the pipeline when changes touch:
+- `SearchBar` → `/guided-search` → `/results` navigation flow
+- `/api/cpt`, `/api/clarify`, or `/api/search` request/response paths
+- `translateQueryToCPT()` → `lookupCharges()` → results rendering
+- The guided search state machine (turns, resolution states, back navigation)
+- Supabase RPC calls (`search_charges_nearby`, `search_charges_by_description`)
+
+Show where in the pipeline the change lives and what it affects downstream. Reference the full pipeline in the "Architecture: Search Flow" section above as the canonical diagram.
+
 ## Product Roadmap
 
 | Phase | What | Status |
