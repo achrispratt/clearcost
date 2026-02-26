@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LocationInput } from "./LocationInput";
 
 interface SearchBarProps {
@@ -32,6 +32,7 @@ export function SearchBar({
     lng: number;
     display: string;
   } | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
 
   const [placeholder, setPlaceholder] = useState(placeholders[0]);
 
@@ -39,11 +40,42 @@ export function SearchBar({
     setPlaceholder(placeholders[Math.floor(Math.random() * placeholders.length)]);
   }, []);
 
+  const handleGeocodingChange = useCallback((isGeocoding: boolean) => {
+    setGeocoding(isGeocoding);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && location) {
       onSearch(query.trim(), location);
     }
+  };
+
+  const isDisabled = !query.trim() || !location || loading;
+  const isWaitingForLocation = !!(query.trim() && !location && geocoding);
+
+  // Button label logic
+  const getButtonContent = (size: "compact" | "full") => {
+    if (loading) {
+      return (
+        <svg className={`${size === "compact" ? "w-4 h-4" : "w-5 h-5"} animate-spin`} viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    if (isWaitingForLocation) {
+      return (
+        <span className="flex items-center gap-1.5">
+          <svg className={`${size === "compact" ? "w-3.5 h-3.5" : "w-4 h-4"} animate-spin`} viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          Locating...
+        </span>
+      );
+    }
+    return "Search";
   };
 
   if (compact) {
@@ -100,27 +132,24 @@ export function SearchBar({
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            <LocationInput onLocationSelect={setLocation} compact />
+            <LocationInput
+              onLocationSelect={setLocation}
+              onGeocodingChange={handleGeocodingChange}
+              compact
+            />
           </div>
 
           <button
             type="submit"
-            disabled={!query.trim() || !location || loading}
+            disabled={isDisabled}
             className="m-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
             style={{
-              background: !query.trim() || !location || loading
+              background: isDisabled
                 ? "var(--cc-text-tertiary)"
                 : "var(--cc-primary)",
             }}
           >
-            {loading ? (
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            ) : (
-              "Search"
-            )}
+            {getButtonContent("compact")}
           </button>
         </div>
       </form>
@@ -183,28 +212,24 @@ export function SearchBar({
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
-          <LocationInput onLocationSelect={setLocation} />
+          <LocationInput
+            onLocationSelect={setLocation}
+            onGeocodingChange={handleGeocodingChange}
+          />
         </div>
 
         {/* Search button */}
         <button
           type="submit"
-          disabled={!query.trim() || !location || loading}
+          disabled={isDisabled}
           className="m-2 px-6 py-3 rounded-xl text-white font-medium transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed hover:brightness-110"
           style={{
-            background: !query.trim() || !location || loading
+            background: isDisabled
               ? "var(--cc-text-tertiary)"
               : "var(--cc-primary)",
           }}
         >
-          {loading ? (
-            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          ) : (
-            "Search"
-          )}
+          {getButtonContent("full")}
         </button>
       </div>
     </form>

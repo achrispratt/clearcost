@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface LocationInputProps {
   onLocationSelect: (location: {
@@ -8,17 +8,30 @@ interface LocationInputProps {
     lng: number;
     display: string;
   }) => void;
+  onGeocodingChange?: (geocoding: boolean) => void;
   compact?: boolean;
 }
 
-export function LocationInput({ onLocationSelect, compact }: LocationInputProps) {
+export function LocationInput({
+  onLocationSelect,
+  onGeocodingChange,
+  compact,
+}: LocationInputProps) {
   const [value, setValue] = useState("");
   const [detectingLocation, setDetectingLocation] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleZipOrCity = useCallback(
+  // Notify parent of geocoding state changes
+  useEffect(() => {
+    onGeocodingChange?.(geocoding || detectingLocation);
+  }, [geocoding, detectingLocation, onGeocodingChange]);
+
+  const geocodeAddress = useCallback(
     async (input: string) => {
       if (!input.trim()) return;
 
+      setGeocoding(true);
       try {
         const response = await fetch(
           `/api/geocode?address=${encodeURIComponent(input)}`
@@ -34,10 +47,46 @@ export function LocationInput({ onLocationSelect, compact }: LocationInputProps)
         }
       } catch (error) {
         console.error("Geocoding error:", error);
+      } finally {
+        setGeocoding(false);
       }
     },
     [onLocationSelect]
   );
+
+  // Debounced geocoding — triggers 500ms after user stops typing
+  const handleInputChange = useCallback(
+    (input: string) => {
+      setValue(input);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      // Only auto-geocode if input looks like a plausible location
+      // (3+ chars for city names, or 5 digits for ZIP)
+      const trimmed = input.trim();
+      if (trimmed.length >= 3) {
+        debounceRef.current = setTimeout(() => {
+          geocodeAddress(trimmed);
+        }, 500);
+      }
+    },
+    [geocodeAddress]
+  );
+
+  // Immediate geocode on blur or Enter (no debounce)
+  const handleImmediate = useCallback(
+    (input: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      geocodeAddress(input);
+    },
+    [geocodeAddress]
+  );
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) return;
@@ -60,17 +109,19 @@ export function LocationInput({ onLocationSelect, compact }: LocationInputProps)
     );
   }, [onLocationSelect]);
 
+  const isLoading = geocoding || detectingLocation;
+
   return (
     <div className="relative flex items-center">
       <input
         type="text"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={() => handleZipOrCity(value)}
+        onChange={(e) => handleInputChange(e.target.value)}
+        onBlur={() => handleImmediate(value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            handleZipOrCity(value);
+            handleImmediate(value);
           }
         }}
         placeholder="ZIP or city"
@@ -84,12 +135,12 @@ export function LocationInput({ onLocationSelect, compact }: LocationInputProps)
       <button
         type="button"
         onClick={detectLocation}
-        disabled={detectingLocation}
+        disabled={isLoading}
         className="shrink-0 p-1.5 rounded-md transition-colors hover:bg-[var(--cc-surface-alt)]"
         title="Use my location"
         style={{ color: "var(--cc-text-tertiary)" }}
       >
-        {detectingLocation ? (
+        {isLoading ? (
           <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
             <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

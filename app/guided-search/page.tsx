@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SearchBar } from "@/components/SearchBar";
 import { ClarificationStep } from "@/components/ClarificationStep";
@@ -34,6 +34,9 @@ function GuidedSearchContent() {
   // Current step input state
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
+
+  // Response cache for instant back-navigation (keyed by JSON.stringify(turns))
+  const responseCache = useRef<Map<string, TranslationResponse>>(new Map());
 
   // Navigate to results with resolved codes
   const goToResults = useCallback(
@@ -101,25 +104,37 @@ function GuidedSearchContent() {
     [goToResults, query, lat, lng, locationDisplay, router]
   );
 
-  // Initial assessment on mount
-  useEffect(() => {
-    if (!query || !lat || !lng) return;
+  // Consolidated fetch: checks cache first, then calls API and caches the result
+  const fetchOrCacheQuestion = useCallback(
+    async (turnsArray: ClarificationTurn[]) => {
+      const cacheKey = JSON.stringify(turnsArray);
 
-    const assess = async () => {
+      // Check cache first — instant restore for back-navigation
+      const cached = responseCache.current.get(cacheKey);
+      if (cached) {
+        handleResponse(cached);
+        return;
+      }
+
+      // Cache miss — call API
       setLoading(true);
       setError(null);
       try {
         const response = await fetch("/api/clarify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, turns: [] }),
+          body: JSON.stringify({ query, turns: turnsArray }),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to assess query");
+          throw new Error("Failed to process query");
         }
 
         const data: TranslationResponse = await response.json();
+
+        // Cache the response for future back-navigation
+        responseCache.current.set(cacheKey, data);
+
         handleResponse(data);
       } catch (err) {
         setError(
@@ -129,10 +144,15 @@ function GuidedSearchContent() {
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [query, handleResponse]
+  );
 
-    assess();
-  }, [query, lat, lng, handleResponse]);
+  // Initial assessment on mount
+  useEffect(() => {
+    if (!query || !lat || !lng) return;
+    fetchOrCacheQuestion([]);
+  }, [query, lat, lng, fetchOrCacheQuestion]);
 
   // Submit current answer and get next question
   const handleSubmit = async () => {
@@ -147,67 +167,40 @@ function GuidedSearchContent() {
 
     const updatedTurns = [...turns, newTurn];
     setTurns(updatedTurns);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/clarify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, turns: updatedTurns }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to get next question");
-      }
-
-      const data: TranslationResponse = await response.json();
-      handleResponse(data);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Something went wrong"
-      );
-    } finally {
-      setLoading(false);
-    }
+    fetchOrCacheQuestion(updatedTurns);
   };
 
   // Go back to previous question
   const handleBack = () => {
     if (turns.length === 0) {
-      // Go back to home
       router.push("/");
       return;
     }
 
-    // Remove last turn and re-ask from that point
     const previousTurns = turns.slice(0, -1);
     setTurns(previousTurns);
     setSelectedOption(null);
     setFreeText("");
+    fetchOrCacheQuestion(previousTurns);
+  };
 
-    // Re-fetch from the previous state
-    const refetch = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/clarify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, turns: previousTurns }),
-        });
-        if (response.ok) {
-          const data: TranslationResponse = await response.json();
-          if (data.nextQuestion) {
-            setCurrentQuestion(data.nextQuestion);
-          }
-        }
-      } catch {
-        // Keep current question on error
-      } finally {
-        setLoading(false);
-      }
-    };
-    refetch();
+  // Jump to a specific breadcrumb step (click on a previous answer)
+  const handleBreadcrumbClick = (stepIndex: number) => {
+    // stepIndex is the turn index — clicking it restores state after that turn
+    // e.g., clicking step 0 means "go back to the question after turn 0"
+    const targetTurns = turns.slice(0, stepIndex + 1);
+    setTurns(targetTurns);
+    setSelectedOption(null);
+    setFreeText("");
+    fetchOrCacheQuestion(targetTurns);
+  };
+
+  // Jump back to initial question (click the query breadcrumb)
+  const handleQueryBreadcrumbClick = () => {
+    setTurns([]);
+    setSelectedOption(null);
+    setFreeText("");
+    fetchOrCacheQuestion([]);
   };
 
   // Skip clarification — go to results with whatever we have
@@ -321,15 +314,20 @@ function GuidedSearchContent() {
       {/* Clarifying phase */}
       {phase === "clarifying" && (
         <div className="mt-6">
-          {/* Breadcrumb: previous answers */}
+          {/* Breadcrumb: previous answers (clickable) */}
           {turns.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mb-6 animate-fade-in">
-              <span
-                className="text-xs font-medium"
-                style={{ color: "var(--cc-text-tertiary)" }}
+              <button
+                onClick={handleQueryBreadcrumbClick}
+                disabled={loading}
+                className="text-xs font-medium transition-colors hover:underline"
+                style={{
+                  color: "var(--cc-text-tertiary)",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
               >
                 {query}
-              </span>
+              </button>
               {turns.map((turn, i) => (
                 <span key={i} className="flex items-center gap-1.5">
                   <svg
@@ -344,44 +342,23 @@ function GuidedSearchContent() {
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-md"
+                  <button
+                    onClick={() => handleBreadcrumbClick(i)}
+                    disabled={loading}
+                    className="text-xs px-2 py-0.5 rounded-md transition-all hover:brightness-95"
                     style={{
                       background: "var(--cc-primary-light)",
                       color: "var(--cc-primary)",
                       fontWeight: 500,
+                      cursor: loading ? "not-allowed" : "pointer",
                     }}
                   >
                     {turn.freeText || turn.selectedOption}
-                  </span>
+                  </button>
                 </span>
               ))}
             </div>
           )}
-
-          {/* Back button */}
-          <button
-            onClick={handleBack}
-            disabled={loading}
-            className="flex items-center gap-1.5 mb-4 text-sm transition-colors"
-            style={{
-              color: "var(--cc-text-secondary)",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-          >
-            <svg
-              className="w-3.5 h-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            {turns.length === 0 ? "Back to search" : "Previous question"}
-          </button>
 
           {/* Current question */}
           {currentQuestion && (
@@ -392,6 +369,8 @@ function GuidedSearchContent() {
               onSelect={handleOptionSelect}
               onFreeTextChange={handleFreeTextChange}
               onSubmit={handleSubmit}
+              onBack={handleBack}
+              backLabel={turns.length === 0 ? "Back to search" : "Previous"}
               isTerminal={turns.length >= 5}
               loading={loading}
             />

@@ -9,6 +9,8 @@ interface ClarificationStepProps {
   onSelect: (optionLabel: string) => void;
   onFreeTextChange: (value: string) => void;
   onSubmit: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   isTerminal: boolean;
   loading: boolean;
 }
@@ -20,6 +22,8 @@ export function ClarificationStep({
   onSelect,
   onFreeTextChange,
   onSubmit,
+  onBack,
+  backLabel = "Previous",
   isTerminal,
   loading,
 }: ClarificationStepProps) {
@@ -163,8 +167,35 @@ export function ClarificationStep({
         </div>
       )}
 
-      {/* Submit button */}
-      <div className="mt-5">
+      {/* Navigation buttons */}
+      <div className="mt-5 flex items-center gap-3">
+        {onBack && (
+          <button
+            onClick={onBack}
+            disabled={loading}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5"
+            style={{
+              borderColor: "var(--cc-border-strong)",
+              color: loading ? "var(--cc-text-tertiary)" : "var(--cc-text-secondary)",
+              background: "transparent",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            {backLabel}
+          </button>
+        )}
         <button
           onClick={onSubmit}
           disabled={!hasSelection || loading}
@@ -208,7 +239,7 @@ export function ClarificationStep({
           ) : isTerminal ? (
             "Show Prices"
           ) : (
-            "Next"
+            "Next →"
           )}
         </button>
       </div>
