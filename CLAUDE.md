@@ -230,7 +230,7 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Current Status
 
-**Phases 1-5 complete. Data import complete. Deployed to Vercel. Guided Search (Phase 5.5) in active development.**
+**Phases 1-5.5 complete. Data import complete. Deployed to Vercel. Guided Search complete with UX polish. Results page improvements next.**
 
 - **Live URL:** https://clearcost-orcin.vercel.app
 - Search pipeline working end-to-end (Claude AI translation → Supabase geo query → results)
@@ -288,7 +288,8 @@ Show where in the pipeline the change lives and what it affects downstream. Refe
 | Phase | What | Status |
 |-------|------|--------|
 | **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete (12.5M rows imported) |
-| **Phase 5.5** | Guided Search — AI diagnostic clarification flow (see `.claude/plans/groovy-popping-wind.md`) | **In Progress** |
+| **Phase 5.5** | Guided Search — AI diagnostic clarification flow + UX polish (debounced geocoding, paired nav buttons, clickable breadcrumbs with response cache) | **Complete** |
+| **Phase 5.6** | Results page improvements — map+list split view, remove setting filter, distance accuracy, insurance filter | Next Up |
 | **Phase 6** | Independent MRF crawler (replace Trilliant dependency) | Deferred |
 | **Phase 7** | Plan-level insurance pricing from hospital MRFs | Future |
 | **Phase 8** | Payer Transparency in Coverage data — all provider types | Future |
