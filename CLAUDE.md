@@ -263,12 +263,41 @@ See `.env.local.example` for required keys:
 - **API Routes**: Feature-organized in `app/api/`; use server Supabase client (async)
 - **Formatting**: ESLint flat config (v9) extending next/core-web-vitals + next/typescript
 
+## Git Workflow & Development Practices
+
+This is a solo-developer project. Workflow should be simple and low-friction.
+
+**Branching:**
+- **Commit directly to `main`** for most work: bug fixes, features, docs, refactors.
+- **Use feature branches only when** the work is experimental/risky and you might want to throw it away, OR when explicitly asked to create a PR for review.
+- Don't create branches just for documentation or planning artifacts — that adds unnecessary process.
+- If a branch is created, keep it short-lived (merge within 1-2 sessions). Stale branches create confusion about what's current.
+
+**Commits:**
+- Commit frequently with clear messages. Small, focused commits are easier to review and revert.
+- Don't batch up many unrelated changes into one commit.
+
+**Merging:**
+- Merging a behind branch into `main` is safe — Git combines histories, it doesn't overwrite. The only dangerous operation is `git push --force`.
+- When in doubt about branch state: `git log --oneline main..branch-name` shows what the branch adds.
+
+**Planning & Docs:**
+- Planning documents (`docs/sprint-plan.md`, etc.) go directly on `main`. They don't need branch isolation.
+- This file (`CLAUDE.md`) is the primary source of institutional knowledge across sessions. Update it when decisions are made, patterns are established, or the project state changes.
+- Claude Code has **no memory across sessions** — anything not in repo files is lost. Keep CLAUDE.md current.
+
+**Sprint planning:**
+- Current sprint plan: `docs/sprint-plan.md`
+- Priorities shift frequently in a solo project. The sprint plan is a guide, not a contract. Update it when priorities change rather than treating it as immutable.
+
 ## Design Direction
 
-- Clean & clinical: white backgrounds, blue (#2563EB) accents, trustworthy feel
-- Reference: Zocdoc, GoodRx aesthetic
+- **Warm editorial aesthetic**: warm whites (#FAFAF8), teal primary (#0F766E), amber accents (#D97706)
+- Typography: Instrument Serif for headings, DM Sans for body
+- Reference: Zocdoc, GoodRx — trustworthy, clean, approachable
 - DaisyUI component library for consistent UI
 - Light mode only for MVP
+- CSS custom properties defined in `globals.css` (prefixed `--cc-*`) — use these, not raw colors
 
 ## Visual Learning — ClearCost-Specific
 
@@ -289,6 +318,7 @@ Show where in the pipeline the change lives and what it affects downstream. Refe
 |-------|------|--------|
 | **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete (12.5M rows imported) |
 | **Phase 5.5** | Guided Search — AI diagnostic clarification flow + UX polish (debounced geocoding, paired nav buttons, clickable breadcrumbs with response cache) | **Complete** |
+| **Phase 5.5b** | MVP Polish sprint — caching, UX gaps, mobile (see `docs/sprint-plan.md`) | **Planned** |
 | **Phase 5.6** | Results page improvements — map+list split view, remove setting filter, distance accuracy, insurance filter | Next Up |
 | **Phase 6** | Independent MRF crawler (replace Trilliant dependency) | Deferred |
 | **Phase 7** | Plan-level insurance pricing from hospital MRFs | Future |
