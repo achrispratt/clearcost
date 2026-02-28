@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateQueryToCPT } from "@/lib/cpt/translate";
-import { lookupCharges, lookupChargesByDescription } from "@/lib/cpt/lookup";
+import { lookupChargesWithFallback } from "@/lib/cpt/lookup";
+import { handleApiError } from "@/lib/api-helpers";
 import type { BillingCodeType } from "@/types";
 
 export async function POST(request: NextRequest) {
@@ -16,58 +17,25 @@ export async function POST(request: NextRequest) {
     }
 
     const radiusMiles = location.radiusMiles || 25;
-    let allResults = [];
+    const { lat, lng } = location;
 
     // Fast path: direct code lookup (from guided search flow)
     // Skips AI translation entirely — codes are already known
     if (directCodes && directCodes.length > 0) {
-      const codeType = directCodeType || "cpt";
-
-      // Try default radius first
-      let results = await lookupCharges({
-        codes: directCodes,
-        codeType,
-        lat: location.lat,
-        lng: location.lng,
+      const results = await lookupChargesWithFallback({
+        codeGroups: [{ codeType: directCodeType || "cpt", codes: directCodes }],
+        lat,
+        lng,
         radiusMiles,
+        descriptionFallback: query,
       });
-
-      // Auto-expand radius if no results found (some codes have sparse coverage)
-      if (results.length === 0) {
-        const expandedRadius = radiusMiles * 3; // 25mi → 75mi
-        console.log(
-          `Direct code search returned 0 results within ${radiusMiles}mi. Expanding to ${expandedRadius}mi.`
-        );
-        results = await lookupCharges({
-          codes: directCodes,
-          codeType,
-          lat: location.lat,
-          lng: location.lng,
-          radiusMiles: expandedRadius,
-        });
-      }
-
-      // Fall back to description search if still no results
-      if (results.length === 0 && query) {
-        console.log(
-          `Direct code search returned 0 results even at expanded radius. Falling back to description search for "${query}".`
-        );
-        results = await lookupChargesByDescription({
-          searchTerms: query,
-          lat: location.lat,
-          lng: location.lng,
-          radiusMiles: radiusMiles * 3,
-        });
-      }
-
-      allResults.push(...results);
 
       return NextResponse.json({
         query: query || "",
         interpretation: "",
         cptCodes: [],
-        results: allResults,
-        totalResults: allResults.length,
+        results,
+        totalResults: results.length,
       });
     }
 
@@ -90,8 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 2: Look up charges by billing code near the user's location
-    // Group codes by type (most will be CPT, but some may be HCPCS)
+    // Step 2: Group codes by type and look up with cascading fallback
     const codesByType = new Map<BillingCodeType, string[]>();
     for (const code of codes) {
       const type = code.codeType || "cpt";
@@ -100,65 +67,26 @@ export async function POST(request: NextRequest) {
       codesByType.set(type, existing);
     }
 
-    // Query each code type in parallel
-    const lookupResults = await Promise.all(
-      Array.from(codesByType.entries()).map(([codeType, codeList]) =>
-        lookupCharges({
-          codes: codeList,
-          codeType,
-          lat: location.lat,
-          lng: location.lng,
-          radiusMiles,
-        })
-      )
+    const codeGroups = Array.from(codesByType.entries()).map(
+      ([codeType, codeList]) => ({ codeType, codes: codeList })
     );
-    allResults = lookupResults.flat();
 
-    // Step 3: If code-based search returns zero results, expand radius
-    if (allResults.length === 0) {
-      const expandedRadius = radiusMiles * 3;
-      console.log(
-        `Code-based search returned 0 results for "${query}" within ${radiusMiles}mi. Expanding to ${expandedRadius}mi.`
-      );
-      const expandedResults = await Promise.all(
-        Array.from(codesByType.entries()).map(([codeType, codeList]) =>
-          lookupCharges({
-            codes: codeList,
-            codeType,
-            lat: location.lat,
-            lng: location.lng,
-            radiusMiles: expandedRadius,
-          })
-        )
-      );
-      allResults = expandedResults.flat();
-    }
-
-    // Step 4: If still no results, fall back to description search
-    if (allResults.length === 0 && searchTerms) {
-      console.log(
-        `Code-based search returned 0 results for "${query}" even at expanded radius. Falling back to description search: "${searchTerms}"`
-      );
-      allResults = await lookupChargesByDescription({
-        searchTerms,
-        lat: location.lat,
-        lng: location.lng,
-        radiusMiles: radiusMiles * 3,
-      });
-    }
+    const results = await lookupChargesWithFallback({
+      codeGroups,
+      lat,
+      lng,
+      radiusMiles,
+      descriptionFallback: searchTerms,
+    });
 
     return NextResponse.json({
       query,
       interpretation,
       cptCodes: codes,
-      results: allResults,
-      totalResults: allResults.length,
+      results,
+      totalResults: results.length,
     });
   } catch (error) {
-    console.error("Search error:", error);
-    return NextResponse.json(
-      { error: "An error occurred while searching. Please try again." },
-      { status: 500 }
-    );
+    return handleApiError(error, "POST /api/search");
   }
 }

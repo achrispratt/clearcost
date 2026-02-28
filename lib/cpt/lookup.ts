@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { milesToKm, kmToMiles } from "@/lib/units";
 import type { ChargeResult, BillingCodeType } from "@/types";
 
 interface LookupParams {
@@ -38,7 +39,7 @@ export async function lookupCharges({
     p_codes: codes,
     p_lat: lat,
     p_lng: lng,
-    p_radius_km: radiusMiles * 1.60934,
+    p_radius_km: milesToKm(radiusMiles),
   });
 
   if (error) {
@@ -62,7 +63,7 @@ export async function lookupChargesByDescription({
   limit = 50,
 }: FallbackLookupParams): Promise<ChargeResult[]> {
   const supabase = await createClient();
-  const radiusKm = radiusMiles * 1.60934;
+  const radiusKm = milesToKm(radiusMiles);
 
   const { data, error } = await supabase.rpc("search_charges_by_description", {
     p_search_terms: searchTerms,
@@ -78,6 +79,57 @@ export async function lookupChargesByDescription({
   }
 
   return mapRows(data || []);
+}
+
+/**
+ * Lookup with cascading fallback: try codes at default radius → expand 3x → description search.
+ * Accepts multiple code type groups to handle mixed CPT/HCPCS results from AI translation.
+ */
+export async function lookupChargesWithFallback({
+  codeGroups,
+  lat,
+  lng,
+  radiusMiles = 25,
+  descriptionFallback,
+}: {
+  codeGroups: { codeType: BillingCodeType; codes: string[] }[];
+  lat: number;
+  lng: number;
+  radiusMiles?: number;
+  descriptionFallback?: string;
+}): Promise<ChargeResult[]> {
+  // Step 1: Query all code groups in parallel at default radius
+  const results = (
+    await Promise.all(
+      codeGroups.map(({ codeType, codes }) =>
+        lookupCharges({ codes, codeType, lat, lng, radiusMiles })
+      )
+    )
+  ).flat();
+  if (results.length > 0) return results;
+
+  // Step 2: Expand radius 3x
+  const expandedRadius = radiusMiles * 3;
+  const expandedResults = (
+    await Promise.all(
+      codeGroups.map(({ codeType, codes }) =>
+        lookupCharges({ codes, codeType, lat, lng, radiusMiles: expandedRadius })
+      )
+    )
+  ).flat();
+  if (expandedResults.length > 0) return expandedResults;
+
+  // Step 3: Fall back to description search
+  if (descriptionFallback) {
+    return lookupChargesByDescription({
+      searchTerms: descriptionFallback,
+      lat,
+      lng,
+      radiusMiles: expandedRadius,
+    });
+  }
+
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +171,7 @@ interface RpcRow {
 function mapRows(rows: RpcRow[]): ChargeResult[] {
   return rows.map((row) => {
     const distanceKm = row.distance_km ?? undefined;
-    const distanceMiles = distanceKm !== undefined ? distanceKm * 0.621371 : undefined;
+    const distanceMiles = distanceKm !== undefined ? kmToMiles(distanceKm) : undefined;
 
     return {
       id: row.id,

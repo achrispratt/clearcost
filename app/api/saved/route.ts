@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth, handleApiError } from "@/lib/api-helpers";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+    const { supabase, user } = auth;
 
     const { data, error } = await supabase
       .from("saved_searches")
@@ -22,24 +17,15 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Fetch saved searches error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch saved searches" },
-      { status: 500 }
-    );
+    return handleApiError(error, "GET /api/saved");
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+    const { supabase, user } = auth;
 
     const body = await request.json();
     const { query, location, cptCodes, lat, lng } = body;
@@ -61,24 +47,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error("Save search error:", error);
-    return NextResponse.json(
-      { error: "Failed to save search" },
-      { status: 500 }
-    );
+    return handleApiError(error, "POST /api/saved");
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+    const { supabase, user } = auth;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -100,10 +77,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete saved search error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete saved search" },
-      { status: 500 }
-    );
+    return handleApiError(error, "DELETE /api/saved");
   }
 }
