@@ -158,16 +158,29 @@ function parseArgs() {
 // Zip-based geocoding
 // ---------------------------------------------------------------------------
 
-function extractZip(address: string): string | null {
-  // Match 5-digit zip, optionally followed by -XXXX
-  const match = address.match(/\b(\d{5})(?:-\d{4})?\b/);
-  return match ? match[1] : null;
+function extractZip(address: string, state?: string | null): string | null {
+  const normalizedState = state?.trim().toUpperCase();
+  if (normalizedState && normalizedState.length === 2) {
+    const escapedState = normalizedState.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const scopedMatch = address
+      .toUpperCase()
+      .match(new RegExp(`\\b${escapedState}\\s+(\\d{5})(?:-\\d{4})?\\b`));
+    if (scopedMatch?.[1]) return scopedMatch[1];
+  }
+
+  const trailingMatch = address.match(/(\d{5})(?:-\d{4})?\s*$/);
+  if (trailingMatch?.[1]) return trailingMatch[1];
+
+  return null;
 }
 
-function geocodeByZip(address: string | null): { lat: number; lng: number; zip: string } | null {
+function geocodeByZip(
+  address: string | null,
+  state?: string | null
+): { lat: number; lng: number; zip: string } | null {
   if (!address) return null;
 
-  const zip = extractZip(address);
+  const zip = extractZip(address, state);
   if (!zip) return null;
 
   const result = zipcodes.lookup(zip);
@@ -359,12 +372,12 @@ async function importProviders(
   // Geocode using zip codes from addresses
   let geocoded = 0;
   let noZip = 0;
-  let noLookup = 0;
+  const noLookup = 0;
 
   const providerRows: Record<string, unknown>[] = [];
 
   for (const hospital of hospitals) {
-    const geo = geocodeByZip(hospital.hospital_address);
+    const geo = geocodeByZip(hospital.hospital_address, hospital.hospital_state);
 
     if (!hospital.hospital_address) {
       noZip++;

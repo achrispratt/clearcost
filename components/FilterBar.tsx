@@ -11,7 +11,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
-  const [sort, setSort] = useState<SortOption>("price-asc");
+  const [sort, setSort] = useState<SortOption>("distance");
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [payers, setPayers] = useState<Payer[]>([]);
   const [selectedPayer, setSelectedPayer] = useState<string>("");

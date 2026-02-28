@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { milesToKm, kmToMiles } from "@/lib/units";
+// @ts-expect-error zipcodes has no bundled TypeScript declarations.
+import zipcodes from "zipcodes";
 import type {
   ChargeResult,
   BillingCodeType,
@@ -53,6 +55,187 @@ const ENCOUNTER_LABELS: Record<
   specialist: "Specialist visit estimate",
   urgent_care_proxy: "Urgent care visit estimate (office E/M proxy)",
 };
+
+const MAX_PROVIDER_ZIP_DRIFT_MILES = 75;
+const DISTANCE_FILTER_TOLERANCE_MILES = 0.5;
+
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
+function haversineMiles(
+  originLat: number,
+  originLng: number,
+  targetLat: number,
+  targetLng: number
+): number {
+  const earthRadiusMiles = 3958.8;
+  const latDelta = toRadians(targetLat - originLat);
+  const lngDelta = toRadians(targetLng - originLng);
+
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(toRadians(originLat)) *
+      Math.cos(toRadians(targetLat)) *
+      Math.sin(lngDelta / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusMiles * c;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeZip(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const match = value.match(/\b(\d{5})(?:-\d{4})?\b/);
+  return match?.[1];
+}
+
+function extractStateAwareZip(address: string | undefined, state: string | undefined): string | undefined {
+  if (!address) return undefined;
+
+  const normalizedState = state?.trim().toUpperCase();
+  if (normalizedState && normalizedState.length === 2) {
+    const scopedMatch = address
+      .toUpperCase()
+      .match(new RegExp(`\\b${escapeRegex(normalizedState)}\\s+(\\d{5})(?:-\\d{4})?\\b`));
+    if (scopedMatch?.[1]) return scopedMatch[1];
+  }
+
+  const trailingMatch = address.match(/(\d{5})(?:-\d{4})?\s*$/);
+  return trailingMatch?.[1];
+}
+
+function lookupZipCoordinates(zip: string | undefined): { lat: number; lng: number } | undefined {
+  if (!zip) return undefined;
+
+  const match = zipcodes.lookup(zip) as
+    | { latitude?: number; longitude?: number }
+    | null;
+
+  if (match?.latitude == null || match?.longitude == null) return undefined;
+  return { lat: match.latitude, lng: match.longitude };
+}
+
+function resolveProviderCoordinates(result: ChargeResult): { lat: number | undefined; lng: number | undefined } {
+  const providerLat = result.provider.lat;
+  const providerLng = result.provider.lng;
+  const zipFromAddress = extractStateAwareZip(result.provider.address, result.provider.state);
+  const zipFromProvider = normalizeZip(result.provider.zip);
+  const zipCoordinates = lookupZipCoordinates(zipFromAddress || zipFromProvider);
+
+  if (!zipCoordinates) {
+    return { lat: providerLat, lng: providerLng };
+  }
+
+  if (providerLat == null || providerLng == null) {
+    return zipCoordinates;
+  }
+
+  const driftMiles = haversineMiles(
+    providerLat,
+    providerLng,
+    zipCoordinates.lat,
+    zipCoordinates.lng
+  );
+
+  if (driftMiles > MAX_PROVIDER_ZIP_DRIFT_MILES) {
+    return zipCoordinates;
+  }
+
+  return { lat: providerLat, lng: providerLng };
+}
+
+function normalizeAndRankResults({
+  results,
+  userLat,
+  userLng,
+  maxRadiusMiles,
+}: {
+  results: ChargeResult[];
+  userLat: number;
+  userLng: number;
+  maxRadiusMiles: number;
+}): ChargeResult[] {
+  const normalizedResults: ChargeResult[] = [];
+
+  for (const result of results) {
+    const coordinates = resolveProviderCoordinates(result);
+    const latValue = coordinates.lat;
+    const lngValue = coordinates.lng;
+
+    let recomputedDistanceMiles = result.distanceMiles;
+    if (
+      typeof latValue === "number" &&
+      Number.isFinite(latValue) &&
+      typeof lngValue === "number" &&
+      Number.isFinite(lngValue)
+    ) {
+      recomputedDistanceMiles = haversineMiles(userLat, userLng, latValue, lngValue);
+    }
+
+    if (
+      recomputedDistanceMiles != null &&
+      Number.isFinite(recomputedDistanceMiles) &&
+      recomputedDistanceMiles > maxRadiusMiles + DISTANCE_FILTER_TOLERANCE_MILES
+    ) {
+      continue;
+    }
+
+    const nextDistanceMiles =
+      recomputedDistanceMiles != null && Number.isFinite(recomputedDistanceMiles)
+        ? recomputedDistanceMiles
+        : result.distanceMiles;
+    const nextDistanceKm =
+      nextDistanceMiles != null && Number.isFinite(nextDistanceMiles)
+        ? milesToKm(nextDistanceMiles)
+        : result.distanceKm;
+
+    const provider = { ...result.provider };
+    if (coordinates.lat != null) {
+      provider.lat = coordinates.lat;
+    } else {
+      delete provider.lat;
+    }
+    if (coordinates.lng != null) {
+      provider.lng = coordinates.lng;
+    } else {
+      delete provider.lng;
+    }
+
+    normalizedResults.push({
+      ...result,
+      provider,
+      distanceMiles: nextDistanceMiles,
+      distanceKm: nextDistanceKm,
+    });
+  }
+
+  return normalizedResults.sort((a, b) => {
+    const distanceA =
+      a.distanceMiles != null && Number.isFinite(a.distanceMiles)
+        ? a.distanceMiles
+        : Infinity;
+    const distanceB =
+      b.distanceMiles != null && Number.isFinite(b.distanceMiles)
+        ? b.distanceMiles
+        : Infinity;
+
+    if (distanceA !== distanceB) {
+      return distanceA - distanceB;
+    }
+
+    const priceA = a.estimatedTotalMedian ?? a.cashPrice ?? Infinity;
+    const priceB = b.estimatedTotalMedian ?? b.cashPrice ?? Infinity;
+    if (priceA !== priceB) {
+      return priceA - priceB;
+    }
+
+    return a.provider.name.localeCompare(b.provider.name);
+  });
+}
 
 function dedupeResultsById(results: ChargeResult[]): ChargeResult[] {
   const byId = new Map<string, ChargeResult>();
@@ -411,7 +594,7 @@ export async function lookupWithPricingPlan({
     lat,
     lng,
     radiusMiles,
-    descriptionFallback: pricingPlan.mode === "encounter_first" ? undefined : descriptionFallback,
+    descriptionFallback,
   });
 
   const adderResults = await Promise.all(
@@ -426,18 +609,24 @@ export async function lookupWithPricingPlan({
     }))
   );
 
-  if (pricingPlan.mode === "encounter_first") {
-    return buildEncounterFirstResults({
-      pricingPlan,
-      baseResults,
-      adderResults,
-    });
-  }
+  const rawResults =
+    pricingPlan.mode === "encounter_first"
+      ? buildEncounterFirstResults({
+          pricingPlan,
+          baseResults,
+          adderResults,
+        })
+      : buildProcedureFirstResults({
+        pricingPlan,
+        baseResults,
+        adderResults,
+      });
 
-  return buildProcedureFirstResults({
-    pricingPlan,
-    baseResults,
-    adderResults,
+  return normalizeAndRankResults({
+    results: rawResults,
+    userLat: lat,
+    userLng: lng,
+    maxRadiusMiles: radiusMiles * 3,
   });
 }
 

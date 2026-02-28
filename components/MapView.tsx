@@ -61,6 +61,35 @@ const MAP_STYLES = [
   },
 ];
 
+const FIT_MARKER_LIMIT = 24;
+const FIT_RADIUS_MILES = 30;
+const FIT_MIN_ZOOM = 10;
+const FIT_MAX_ZOOM = 13;
+
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
+function haversineMiles(
+  originLat: number,
+  originLng: number,
+  targetLat: number,
+  targetLng: number
+): number {
+  const earthRadiusMiles = 3958.8;
+  const latDelta = toRadians(targetLat - originLat);
+  const lngDelta = toRadians(targetLng - originLng);
+
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(toRadians(originLat)) *
+      Math.cos(toRadians(targetLat)) *
+      Math.sin(lngDelta / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusMiles * c;
+}
+
 export function MapView({ results, center, onMarkerClick, selectedResultId, className }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -118,7 +147,12 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
     if (!map || results.length === 0) return;
 
     const markers: google.maps.Marker[] = [];
-    const bounds = new google.maps.LatLngBounds();
+    let fitListener: google.maps.MapsEventListener | null = null;
+    const positionedResults = results.flatMap((result) => {
+      const { lat, lng } = result.provider;
+      if (lat == null || lng == null) return [];
+      return [{ result, lat, lng }];
+    });
 
     results.forEach((result, i) => {
       if (result.provider.lat == null || result.provider.lng == null) return;
@@ -156,17 +190,66 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
       });
 
       markers.push(marker);
-      bounds.extend(position);
     });
 
-    if (results.length > 1) {
-      map.fitBounds(bounds, 50);
+    if (positionedResults.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+
+      if (centerLat != null && centerLng != null) {
+        bounds.extend({ lat: centerLat, lng: centerLng });
+      }
+
+      const fitCandidates =
+        centerLat != null && centerLng != null
+          ? positionedResults
+              .map((candidate) => ({
+                ...candidate,
+                distanceMiles: haversineMiles(
+                  centerLat,
+                  centerLng,
+                  candidate.lat,
+                  candidate.lng
+                ),
+              }))
+              .sort((a, b) => a.distanceMiles - b.distanceMiles)
+          : positionedResults.map((candidate) => ({ ...candidate, distanceMiles: Infinity }));
+
+      const localCandidates = fitCandidates.filter(
+        (candidate) => candidate.distanceMiles <= FIT_RADIUS_MILES
+      );
+      const selectedCandidates =
+        localCandidates.length > 0 ? localCandidates : fitCandidates;
+
+      selectedCandidates
+        .slice(0, FIT_MARKER_LIMIT)
+        .forEach((candidate) =>
+          bounds.extend({
+            lat: candidate.lat,
+            lng: candidate.lng,
+          })
+        );
+
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, 50);
+        fitListener = google.maps.event.addListenerOnce(map, "idle", () => {
+          const zoom = map.getZoom();
+          if (zoom == null) return;
+          if (zoom > FIT_MAX_ZOOM) {
+            map.setZoom(FIT_MAX_ZOOM);
+            return;
+          }
+          if (centerLat != null && centerLng != null && zoom < FIT_MIN_ZOOM) {
+            map.setZoom(FIT_MIN_ZOOM);
+          }
+        });
+      }
     }
 
     return () => {
+      if (fitListener) fitListener.remove();
       markers.forEach((m) => m.setMap(null));
     };
-  }, [map, results, onMarkerClick, selectedResultId]);
+  }, [map, results, onMarkerClick, selectedResultId, centerLat, centerLng]);
 
   if (!apiKey) {
     return (

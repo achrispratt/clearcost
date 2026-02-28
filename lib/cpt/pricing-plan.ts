@@ -187,10 +187,10 @@ function codesToGroups(codes: CPTCode[] = []): PricingCodeGroup[] {
 }
 
 function inferQueryType(query: string, codes: CPTCode[], explicit?: QueryType): QueryType {
-  if (explicit) return explicit;
   if (CPT_QUERY_REGEX.test(query)) return "code";
   if (EMERGENCY_RED_FLAG_REGEX.test(query) || SYMPTOM_HINT_REGEX.test(query)) return "symptom";
   if (CONDITION_HINT_REGEX.test(query)) return "condition";
+  if (explicit) return explicit;
   if (codes.length > 0 && query.trim().length < 8) return "code";
   return "procedure";
 }
@@ -342,11 +342,10 @@ export function buildPricingPlan({
           ? "office"
           : normalizedModelPlan?.encounterType;
 
-  const mode: PricingPlan["mode"] = emergency
-    ? "encounter_first"
-    : queryTypeResolved === "symptom" || queryTypeResolved === "condition"
+  const mode: PricingPlan["mode"] =
+    emergency || queryTypeResolved === "symptom" || queryTypeResolved === "condition"
       ? "encounter_first"
-      : normalizedModelPlan?.mode || "procedure_first";
+      : "procedure_first";
 
   const defaultBaseGroups =
     mode === "encounter_first"
