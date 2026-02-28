@@ -7,6 +7,7 @@ interface ResultCardProps {
   result: ChargeResult;
   rank: number;
   isSelected?: boolean;
+  codeDescriptionMap?: Record<string, string>;
 }
 
 function formatAdderPriceRange(result: NonNullable<ChargeResult["optionalAdders"]>[number]): string {
@@ -21,11 +22,16 @@ function formatAdderPriceRange(result: NonNullable<ChargeResult["optionalAdders"
   return "N/A";
 }
 
-export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
+export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: ResultCardProps) {
   const billingCode = formatBillingCode(result);
   const distance = formatDistance(result.distanceMiles);
   const lastUpdated = formatDate(result.lastUpdated);
   const priceLabel = result.baseLabel || (result.pricingMode === "encounter_first" ? "Base estimate" : "Cash price");
+
+  const resultCode = result.cpt || result.hcpcs || result.msDrg;
+  const canonicalDescription = resultCode ? codeDescriptionMap?.[resultCode] : undefined;
+  const displayDescription = canonicalDescription || result.description;
+  const rawTooltip = canonicalDescription && result.description ? result.description : undefined;
   const address = [
     result.provider.address,
     result.provider.city,
@@ -110,12 +116,13 @@ export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
                     {billingCode}
                   </span>
                 )}
-                {result.description && (
+                {displayDescription && (
                   <span
                     className="text-xs truncate"
                     style={{ color: "var(--cc-text-tertiary)" }}
+                    title={rawTooltip}
                   >
-                    {result.description}
+                    {displayDescription}
                   </span>
                 )}
               </div>

@@ -67,6 +67,7 @@ export function useResultsSearch() {
   const directInterp = searchParams.get("interp") || "";
   const directPlanParam = searchParams.get("plan") || "";
   const directPlan = parsePricingPlan(directPlanParam);
+  const directCodeDescsParam = searchParams.get("codeDescs") || "";
 
   const [results, setResults] = useState<ChargeResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<ChargeResult[]>([]);
@@ -127,7 +128,35 @@ export function useResultsSearch() {
         const data = await response.json();
         setResults(data.results);
         setFilteredResults(data.results);
-        setCptCodes(data.cptCodes || []);
+
+        // Reconstruct cptCodes from URL descriptions when API returns empty
+        // (guided search passes codes directly, skipping AI translation)
+        const apiCodes: CPTCode[] = data.cptCodes || [];
+        if (apiCodes.length > 0) {
+          setCptCodes(apiCodes);
+        } else if (directCodeDescsParam) {
+          try {
+            const descs = JSON.parse(directCodeDescsParam) as Record<string, string>;
+            const allCodes = directCodeGroups.length > 0
+              ? directCodeGroups.flatMap((g) => g.codes.map((code) => ({ code, codeType: g.codeType })))
+              : directCodes.map((code) => ({ code, codeType: (directCodeType || "cpt") as BillingCodeType }));
+            setCptCodes(
+              allCodes
+                .filter(({ code }) => descs[code])
+                .map(({ code, codeType }) => ({
+                  code,
+                  description: descs[code],
+                  category: "Procedure",
+                  codeType,
+                }))
+            );
+          } catch {
+            setCptCodes([]);
+          }
+        } else {
+          setCptCodes([]);
+        }
+
         setInterpretation(data.interpretation || directInterp);
         setPricingPlan(data.pricingPlan || directPlan);
       } catch (err) {

@@ -8,9 +8,10 @@ interface ResultsListProps {
   loading?: boolean;
   loadingStage?: string;
   selectedResultId?: string | null;
+  codeDescriptionMap?: Record<string, string>;
 }
 
-export function ResultsList({ results, loading, loadingStage, selectedResultId }: ResultsListProps) {
+export function ResultsList({ results, loading, loadingStage, selectedResultId, codeDescriptionMap }: ResultsListProps) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -118,7 +119,7 @@ export function ResultsList({ results, loading, loadingStage, selectedResultId }
           className="animate-fade-up"
           style={{ animationDelay: `${i * 0.06}s` }}
         >
-          <ResultCard result={result} rank={i + 1} isSelected={result.id === selectedResultId} />
+          <ResultCard result={result} rank={i + 1} isSelected={result.id === selectedResultId} codeDescriptionMap={codeDescriptionMap} />
         </div>
       ))}
     </div>

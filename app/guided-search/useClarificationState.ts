@@ -77,11 +77,17 @@ export function useClarificationState() {
       );
       const codeType = codeGroups[0]?.codeType || "cpt";
 
+      const codeDescs: Record<string, string> = {};
+      for (const c of codes) {
+        if (c.description) codeDescs[c.code] = c.description;
+      }
+
       const extraParams: Record<string, string> = {
         codes: codeValues.join(","),
         codeType,
         codeGroups: JSON.stringify(codeGroups),
         interp,
+        codeDescs: JSON.stringify(codeDescs),
       };
       if (plan) {
         extraParams.plan = JSON.stringify(plan);

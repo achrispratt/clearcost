@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsList } from "@/components/ResultsList";
 import { FilterBar } from "@/components/FilterBar";
@@ -30,6 +30,14 @@ function ResultsContent() {
   } = useResultsSearch();
 
   const { selectedResultId, handleMarkerClick } = useResultSelection();
+
+  const codeDescriptionMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const code of cptCodes) {
+      if (code.code && code.description) map[code.code] = code.description;
+    }
+    return map;
+  }, [cptCodes]);
 
   return (
     <div className="px-4 py-5">
@@ -190,6 +198,7 @@ function ResultsContent() {
               loading={loading}
               loadingStage={loadingStage}
               selectedResultId={selectedResultId}
+              codeDescriptionMap={codeDescriptionMap}
             />
           </div>
 
