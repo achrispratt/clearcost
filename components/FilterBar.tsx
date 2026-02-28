@@ -56,7 +56,7 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
     });
 
     onFilteredResults(filtered);
-  }, [results, sort, maxPrice, selectedPayer, onFilteredResults]);
+  }, [results, sort, maxPrice, onFilteredResults]);
 
   const handleSortChange = (newSort: SortOption) => {
     setSort(newSort);
@@ -145,18 +145,10 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
             setMaxPrice(null);
             setSelectedPayer("");
           }}
-          className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors"
+          className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-alt)] hover:text-[var(--cc-text-secondary)]"
           style={{
             color: "var(--cc-text-tertiary)",
             background: "transparent",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--cc-surface-alt)";
-            e.currentTarget.style.color = "var(--cc-text-secondary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "var(--cc-text-tertiary)";
           }}
         >
           Clear filters

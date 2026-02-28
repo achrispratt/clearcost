@@ -14,6 +14,21 @@ interface MapViewProps {
 
 let optionsSet = false;
 
+function buildInfoWindowContent(result: ChargeResult): string {
+  const address = result.provider.address || result.provider.city || "";
+  const price = result.cashPrice ? `$${result.cashPrice.toLocaleString()}` : "";
+  const distance = result.distanceMiles ? `${result.distanceMiles.toFixed(1)} mi` : "";
+
+  return `
+    <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
+      <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${result.provider.name}</p>
+      ${address ? `<p style="color: #5C5C6F; font-size: 12px; margin: 4px 0 0;">${address}</p>` : ""}
+      ${price ? `<p style="font-size: 20px; font-weight: 700; color: #0F766E; margin: 8px 0 0;">${price}</p>` : ""}
+      ${distance ? `<p style="color: #9B9BA8; font-size: 11px; margin: 4px 0 0;">${distance} away</p>` : ""}
+    </div>
+  `;
+}
+
 const MAP_STYLES = [
   {
     featureType: "poi",
@@ -117,19 +132,8 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
         zIndex: isSelected ? 1000 : i,
       });
 
-      const addressDisplay = result.provider.address || result.provider.city || "";
-      const priceDisplay = result.cashPrice ? `$${result.cashPrice.toLocaleString()}` : "";
-      const distanceDisplay = result.distanceMiles ? `${result.distanceMiles.toFixed(1)} mi` : "";
-
       const infoWindow = new google.maps.InfoWindow({
-        content: `
-          <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
-            <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${result.provider.name}</p>
-            ${addressDisplay ? `<p style="color: #5C5C6F; font-size: 12px; margin: 4px 0 0;">${addressDisplay}</p>` : ""}
-            ${priceDisplay ? `<p style="font-size: 20px; font-weight: 700; color: #0F766E; margin: 8px 0 0;">${priceDisplay}</p>` : ""}
-            ${distanceDisplay ? `<p style="color: #9B9BA8; font-size: 11px; margin: 4px 0 0;">${distanceDisplay} away</p>` : ""}
-          </div>
-        `,
+        content: buildInfoWindowContent(result),
       });
 
       marker.addListener("click", () => {

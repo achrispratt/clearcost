@@ -61,7 +61,7 @@ export function ClarificationStep({
               key={option.label}
               onClick={() => onSelect(option.label)}
               disabled={loading}
-              className="text-left p-4 rounded-xl border transition-all duration-200"
+              className="text-left p-4 rounded-xl border transition-all duration-200 not-disabled:not-[[data-selected]]:hover:border-[var(--cc-border-strong)] not-disabled:not-[[data-selected]]:hover:bg-[var(--cc-surface-hover)]"
               style={{
                 background: isSelected
                   ? "var(--cc-primary-light)"
@@ -72,18 +72,7 @@ export function ClarificationStep({
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.6 : 1,
               }}
-              onMouseEnter={(e) => {
-                if (!isSelected && !loading) {
-                  e.currentTarget.style.borderColor = "var(--cc-border-strong)";
-                  e.currentTarget.style.background = "var(--cc-surface-hover)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.borderColor = "var(--cc-border)";
-                  e.currentTarget.style.background = "var(--cc-surface)";
-                }
-              }}
+              data-selected={isSelected || undefined}
             >
               <div className="flex items-start gap-3">
                 {/* Radio indicator */}
@@ -137,7 +126,7 @@ export function ClarificationStep({
             disabled={loading}
             placeholder="Or tell us more about what you need..."
             rows={2}
-            className="w-full p-3 rounded-xl border text-sm resize-none transition-all duration-200"
+            className="w-full p-3 rounded-xl border text-sm resize-none transition-all duration-200 focus:border-[var(--cc-primary)] focus:shadow-[0_0_0_3px_var(--cc-primary-subtle)]"
             style={{
               background:
                 freeText.trim().length > 0
@@ -149,19 +138,6 @@ export function ClarificationStep({
                   : "var(--cc-border)",
               color: "var(--cc-text)",
               outline: "none",
-            }}
-            onFocus={(e) => {
-              if (freeText.trim().length === 0) {
-                e.currentTarget.style.borderColor = "var(--cc-primary)";
-                e.currentTarget.style.boxShadow =
-                  "0 0 0 3px var(--cc-primary-subtle)";
-              }
-            }}
-            onBlur={(e) => {
-              if (freeText.trim().length === 0) {
-                e.currentTarget.style.borderColor = "var(--cc-border)";
-                e.currentTarget.style.boxShadow = "none";
-              }
             }}
           />
         </div>

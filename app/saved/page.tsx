@@ -224,14 +224,8 @@ export default function SavedPage() {
                     e.stopPropagation();
                     handleDelete(search.id);
                   }}
-                  className="shrink-0 p-2 rounded-lg transition-colors hover:bg-[var(--cc-error-light)]"
+                  className="shrink-0 p-2 rounded-lg transition-colors hover:bg-[var(--cc-error-light)] hover:text-[var(--cc-error)]"
                   style={{ color: "var(--cc-text-tertiary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--cc-error)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--cc-text-tertiary)";
-                  }}
                 >
                   <svg
                     className="w-4 h-4"

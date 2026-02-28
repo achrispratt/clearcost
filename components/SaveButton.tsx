@@ -50,25 +50,15 @@ export function SaveButton({ query, location, cptCodes, lat, lng }: SaveButtonPr
     <button
       onClick={handleSave}
       disabled={saving || saved}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-60"
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-60 ${
+        !saved && !saving
+          ? "hover:border-[var(--cc-primary)] hover:text-[var(--cc-primary)] hover:bg-[var(--cc-primary-light)]"
+          : ""
+      }`}
       style={{
         background: saved ? "var(--cc-success-light)" : "transparent",
         color: saved ? "var(--cc-success)" : "var(--cc-text-secondary)",
         border: saved ? "1px solid rgba(5, 150, 105, 0.2)" : "1px solid var(--cc-border)",
-      }}
-      onMouseEnter={(e) => {
-        if (!saved && !saving) {
-          e.currentTarget.style.borderColor = "var(--cc-primary)";
-          e.currentTarget.style.color = "var(--cc-primary)";
-          e.currentTarget.style.background = "var(--cc-primary-light)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!saved && !saving) {
-          e.currentTarget.style.borderColor = "var(--cc-border)";
-          e.currentTarget.style.color = "var(--cc-text-secondary)";
-          e.currentTarget.style.background = "transparent";
-        }
       }}
     >
       {saving ? (

@@ -124,14 +124,8 @@ export function AuthButton() {
   return (
     <button
       onClick={handleSignIn}
-      className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-white transition-colors"
+      className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-white transition-colors hover:bg-[var(--cc-primary-hover)]"
       style={{ background: "var(--cc-primary)" }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--cc-primary-hover)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "var(--cc-primary)";
-      }}
     >
       Sign In
     </button>
