@@ -4,17 +4,14 @@ import { useState, useEffect } from "react";
 import type { ChargeResult, Payer } from "@/types";
 
 export type SortOption = "price-asc" | "price-desc" | "distance" | "name";
-export type SettingFilter = "all" | "inpatient" | "outpatient";
 
 interface FilterBarProps {
   results: ChargeResult[];
   onFilteredResults: (filtered: ChargeResult[]) => void;
-  onSortChange: (sort: SortOption) => void;
 }
 
-export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBarProps) {
+export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
   const [sort, setSort] = useState<SortOption>("price-asc");
-  const [setting, setSetting] = useState<SettingFilter>("all");
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [payers, setPayers] = useState<Payer[]>([]);
   const [selectedPayer, setSelectedPayer] = useState<string>("");
@@ -36,12 +33,6 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
 
   useEffect(() => {
     let filtered = [...results];
-
-    if (setting !== "all") {
-      filtered = filtered.filter(
-        (r) => r.setting === setting || r.setting === "both" || !r.setting
-      );
-    }
 
     if (maxPrice != null) {
       filtered = filtered.filter(
@@ -65,14 +56,13 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
     });
 
     onFilteredResults(filtered);
-  }, [results, sort, setting, maxPrice, selectedPayer, onFilteredResults]);
+  }, [results, sort, maxPrice, selectedPayer, onFilteredResults]);
 
   const handleSortChange = (newSort: SortOption) => {
     setSort(newSort);
-    onSortChange(newSort);
   };
 
-  const hasFilters = setting !== "all" || maxPrice != null || selectedPayer;
+  const hasFilters = maxPrice != null || selectedPayer;
 
   const selectStyles = {
     background: "var(--cc-surface)",
@@ -110,19 +100,6 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
           <option value="price-desc">Price: High to Low</option>
           <option value="distance">Distance</option>
           <option value="name">Name</option>
-        </select>
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <span style={labelStyles}>Setting</span>
-        <select
-          value={setting}
-          onChange={(e) => setSetting(e.target.value as SettingFilter)}
-          style={selectStyles}
-        >
-          <option value="all">All</option>
-          <option value="outpatient">Outpatient</option>
-          <option value="inpatient">Inpatient</option>
         </select>
       </div>
 
@@ -165,7 +142,6 @@ export function FilterBar({ results, onFilteredResults, onSortChange }: FilterBa
       {hasFilters && (
         <button
           onClick={() => {
-            setSetting("all");
             setMaxPrice(null);
             setSelectedPayer("");
           }}

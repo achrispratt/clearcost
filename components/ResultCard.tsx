@@ -5,6 +5,7 @@ import type { ChargeResult } from "@/types";
 interface ResultCardProps {
   result: ChargeResult;
   rank: number;
+  isSelected?: boolean;
 }
 
 function formatPrice(price: number | undefined): string {
@@ -34,7 +35,7 @@ function formatBillingCode(result: ChargeResult): string {
   return "";
 }
 
-export function ResultCard({ result, rank }: ResultCardProps) {
+export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
   const billingCode = formatBillingCode(result);
   const distance = formatDistance(result.distanceMiles);
   const lastUpdated = formatDate(result.lastUpdated);
@@ -48,10 +49,12 @@ export function ResultCard({ result, rank }: ResultCardProps) {
 
   return (
     <div
-      className="card-hover rounded-xl border overflow-hidden"
+      data-result-id={result.id}
+      className="card-hover rounded-xl border overflow-hidden transition-all duration-300"
       style={{
-        background: "var(--cc-surface)",
-        borderColor: "var(--cc-border)",
+        background: isSelected ? "var(--cc-primary-light)" : "var(--cc-surface)",
+        borderColor: isSelected ? "var(--cc-primary)" : "var(--cc-border)",
+        boxShadow: isSelected ? "0 0 0 2px var(--cc-primary)" : undefined,
       }}
     >
       <div className="flex">

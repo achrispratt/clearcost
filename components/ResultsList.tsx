@@ -7,9 +7,10 @@ interface ResultsListProps {
   results: ChargeResult[];
   loading?: boolean;
   loadingStage?: string;
+  selectedResultId?: string | null;
 }
 
-export function ResultsList({ results, loading, loadingStage }: ResultsListProps) {
+export function ResultsList({ results, loading, loadingStage, selectedResultId }: ResultsListProps) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -117,7 +118,7 @@ export function ResultsList({ results, loading, loadingStage }: ResultsListProps
           className="animate-fade-up"
           style={{ animationDelay: `${i * 0.06}s` }}
         >
-          <ResultCard result={result} rank={i + 1} />
+          <ResultCard result={result} rank={i + 1} isSelected={result.id === selectedResultId} />
         </div>
       ))}
     </div>

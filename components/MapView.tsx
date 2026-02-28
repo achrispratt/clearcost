@@ -8,6 +8,8 @@ interface MapViewProps {
   results: ChargeResult[];
   center?: { lat: number; lng: number };
   onMarkerClick?: (result: ChargeResult) => void;
+  selectedResultId?: string | null;
+  className?: string;
 }
 
 let optionsSet = false;
@@ -44,7 +46,7 @@ const MAP_STYLES = [
   },
 ];
 
-export function MapView({ results, center, onMarkerClick }: MapViewProps) {
+export function MapView({ results, center, onMarkerClick, selectedResultId, className }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,23 +96,25 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
 
       const position = { lat: result.provider.lat, lng: result.provider.lng };
 
+      const isSelected = result.id === selectedResultId;
       const marker = new google.maps.Marker({
         position,
         map,
         label: {
           text: `${i + 1}`,
           color: "white",
-          fontSize: "11px",
+          fontSize: isSelected ? "13px" : "11px",
           fontWeight: "600",
         },
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 14,
-          fillColor: "#0F766E",
+          scale: isSelected ? 18 : 14,
+          fillColor: isSelected ? "#D97706" : "#0F766E",
           fillOpacity: 1,
-          strokeColor: "#115E59",
-          strokeWeight: 2,
+          strokeColor: isSelected ? "#B45309" : "#115E59",
+          strokeWeight: isSelected ? 3 : 2,
         },
+        zIndex: isSelected ? 1000 : i,
       });
 
       const addressDisplay = result.provider.address || result.provider.city || "";
@@ -144,12 +148,12 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
     return () => {
       markers.forEach((m) => m.setMap(null));
     };
-  }, [map, results, onMarkerClick]);
+  }, [map, results, onMarkerClick, selectedResultId]);
 
   if (error) {
     return (
       <div
-        className="rounded-xl flex items-center justify-center h-96"
+        className={`rounded-xl flex items-center justify-center ${className || "h-96"}`}
         style={{
           background: "var(--cc-surface-alt)",
           border: "1px solid var(--cc-border)",
@@ -165,7 +169,7 @@ export function MapView({ results, center, onMarkerClick }: MapViewProps) {
   return (
     <div
       ref={mapRef}
-      className="w-full h-96 rounded-xl overflow-hidden"
+      className={`w-full rounded-xl overflow-hidden ${className || "h-96"}`}
       style={{ border: "1px solid var(--cc-border)" }}
     />
   );
