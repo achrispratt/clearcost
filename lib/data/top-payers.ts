@@ -82,11 +82,16 @@ export const TOP_PAYERS: Record<string, PayerConfig> = {
   },
 };
 
+let cachedAliasMap: Map<string, string> | null = null;
+
 /**
  * Returns a flat list of all known payer name aliases (lowercased)
- * mapped to their canonical display name.
+ * mapped to their canonical display name. Cached after first call
+ * since TOP_PAYERS is static.
  */
 export function buildPayerAliasMap(): Map<string, string> {
+  if (cachedAliasMap) return cachedAliasMap;
+
   const map = new Map<string, string>();
   for (const [canonical, config] of Object.entries(TOP_PAYERS)) {
     map.set(canonical.toLowerCase(), config.displayName);
@@ -94,6 +99,7 @@ export function buildPayerAliasMap(): Map<string, string> {
       map.set(alias.toLowerCase(), config.displayName);
     }
   }
+  cachedAliasMap = map;
   return map;
 }
 
