@@ -123,7 +123,7 @@ export function SearchBar({
           style={{ background: "var(--cc-border)" }}
         />
 
-        <div className={`flex items-center ${compact ? "px-3 sm:w-44" : "px-4 sm:w-52"}`}>
+        <div className={`flex items-center ${compact ? "px-3 sm:w-44" : "px-4 sm:w-44"}`}>
           <svg
             className={`${compact ? "w-3.5 h-3.5 mr-1.5" : "w-4 h-4 mr-2"} shrink-0`}
             style={{ color: "var(--cc-text-tertiary)" }}
