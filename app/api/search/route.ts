@@ -21,13 +21,45 @@ export async function POST(request: NextRequest) {
     // Fast path: direct code lookup (from guided search flow)
     // Skips AI translation entirely — codes are already known
     if (directCodes && directCodes.length > 0) {
-      const results = await lookupCharges({
+      const codeType = directCodeType || "cpt";
+
+      // Try default radius first
+      let results = await lookupCharges({
         codes: directCodes,
-        codeType: directCodeType || "cpt",
+        codeType,
         lat: location.lat,
         lng: location.lng,
         radiusMiles,
       });
+
+      // Auto-expand radius if no results found (some codes have sparse coverage)
+      if (results.length === 0) {
+        const expandedRadius = radiusMiles * 3; // 25mi → 75mi
+        console.log(
+          `Direct code search returned 0 results within ${radiusMiles}mi. Expanding to ${expandedRadius}mi.`
+        );
+        results = await lookupCharges({
+          codes: directCodes,
+          codeType,
+          lat: location.lat,
+          lng: location.lng,
+          radiusMiles: expandedRadius,
+        });
+      }
+
+      // Fall back to description search if still no results
+      if (results.length === 0 && query) {
+        console.log(
+          `Direct code search returned 0 results even at expanded radius. Falling back to description search for "${query}".`
+        );
+        results = await lookupChargesByDescription({
+          searchTerms: query,
+          lat: location.lat,
+          lng: location.lng,
+          radiusMiles: radiusMiles * 3,
+        });
+      }
+
       allResults.push(...results);
 
       return NextResponse.json({
@@ -80,16 +112,34 @@ export async function POST(request: NextRequest) {
       allResults.push(...results);
     }
 
-    // Step 3: If code-based search returns zero results, fall back to description search
+    // Step 3: If code-based search returns zero results, expand radius
+    if (allResults.length === 0) {
+      const expandedRadius = radiusMiles * 3;
+      console.log(
+        `Code-based search returned 0 results for "${query}" within ${radiusMiles}mi. Expanding to ${expandedRadius}mi.`
+      );
+      for (const [codeType, codeList] of codesByType) {
+        const results = await lookupCharges({
+          codes: codeList,
+          codeType,
+          lat: location.lat,
+          lng: location.lng,
+          radiusMiles: expandedRadius,
+        });
+        allResults.push(...results);
+      }
+    }
+
+    // Step 4: If still no results, fall back to description search
     if (allResults.length === 0 && searchTerms) {
       console.log(
-        `Code-based search returned 0 results for "${query}". Falling back to description search: "${searchTerms}"`
+        `Code-based search returned 0 results for "${query}" even at expanded radius. Falling back to description search: "${searchTerms}"`
       );
       allResults = await lookupChargesByDescription({
         searchTerms,
         lat: location.lat,
         lng: location.lng,
-        radiusMiles,
+        radiusMiles: radiusMiles * 3,
       });
     }
 

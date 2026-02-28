@@ -253,6 +253,7 @@ function GuidedSearchContent() {
         onSearch={handleNewSearch}
         loading={loading}
         initialQuery={query}
+        initialLocation={lat && lng ? { lat, lng, display: locationDisplay } : undefined}
         compact
       />
 

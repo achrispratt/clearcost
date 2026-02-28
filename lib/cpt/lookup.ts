@@ -20,6 +20,9 @@ interface FallbackLookupParams {
 /**
  * Primary search: Look up charges by billing code + geographic radius.
  * Calls the search_charges_nearby() RPC.
+ *
+ * For CPT codes, also searches the HCPCS column because many hospitals
+ * store CPT codes under HCPCS (CPT is a subset of HCPCS Level I).
  */
 export async function lookupCharges({
   codes,
@@ -31,20 +34,49 @@ export async function lookupCharges({
   const supabase = await createClient();
   const radiusKm = radiusMiles * 1.60934;
 
-  const { data, error } = await supabase.rpc("search_charges_nearby", {
-    p_code_type: codeType,
+  const rpcParams = {
     p_codes: codes,
     p_lat: lat,
     p_lng: lng,
     p_radius_km: radiusKm,
-  });
+  };
 
-  if (error) {
-    console.error("Charge lookup error:", error);
-    return [];
+  // Search the primary code column
+  const { data: primaryData, error: primaryError } = await supabase.rpc(
+    "search_charges_nearby",
+    { ...rpcParams, p_code_type: codeType }
+  );
+
+  if (primaryError) {
+    console.error("Charge lookup error:", primaryError);
   }
 
-  return mapRows(data || []);
+  const primaryRows = mapRows(primaryData || []);
+
+  // For CPT codes, also search HCPCS column (hospitals often file CPT under HCPCS)
+  if (codeType === "cpt") {
+    const { data: hcpcsData, error: hcpcsError } = await supabase.rpc(
+      "search_charges_nearby",
+      { ...rpcParams, p_code_type: "hcpcs" }
+    );
+
+    if (hcpcsError) {
+      console.error("HCPCS cross-lookup error:", hcpcsError);
+    }
+
+    const hcpcsRows = mapRows(hcpcsData || []);
+
+    // Deduplicate by charge id
+    const seen = new Set(primaryRows.map((r) => r.id));
+    for (const row of hcpcsRows) {
+      if (!seen.has(row.id)) {
+        primaryRows.push(row);
+        seen.add(row.id);
+      }
+    }
+  }
+
+  return primaryRows;
 }
 
 /**

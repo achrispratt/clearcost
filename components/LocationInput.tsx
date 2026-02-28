@@ -10,14 +10,16 @@ interface LocationInputProps {
   }) => void;
   onGeocodingChange?: (geocoding: boolean) => void;
   compact?: boolean;
+  initialValue?: string;
 }
 
 export function LocationInput({
   onLocationSelect,
   onGeocodingChange,
   compact,
+  initialValue = "",
 }: LocationInputProps) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);

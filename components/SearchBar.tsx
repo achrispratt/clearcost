@@ -10,6 +10,7 @@ interface SearchBarProps {
   ) => void;
   loading?: boolean;
   initialQuery?: string;
+  initialLocation?: { lat: number; lng: number; display: string };
   compact?: boolean;
 }
 
@@ -24,6 +25,7 @@ export function SearchBar({
   onSearch,
   loading,
   initialQuery = "",
+  initialLocation,
   compact,
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
@@ -31,7 +33,7 @@ export function SearchBar({
     lat: number;
     lng: number;
     display: string;
-  } | null>(null);
+  } | null>(initialLocation || null);
   const [geocoding, setGeocoding] = useState(false);
 
   const [placeholder, setPlaceholder] = useState(placeholders[0]);
@@ -135,6 +137,7 @@ export function SearchBar({
             <LocationInput
               onLocationSelect={setLocation}
               onGeocodingChange={handleGeocodingChange}
+              initialValue={initialLocation?.display}
               compact
             />
           </div>
@@ -215,6 +218,7 @@ export function SearchBar({
           <LocationInput
             onLocationSelect={setLocation}
             onGeocodingChange={handleGeocodingChange}
+            initialValue={initialLocation?.display}
           />
         </div>
 
