@@ -28,7 +28,7 @@ export default function Home() {
         {/* Dot grid background */}
         <div className="absolute inset-0 dot-grid opacity-40 pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
+        <div className="relative z-10 flex flex-col items-center text-center w-full max-w-3xl mx-auto">
           {/* Label */}
           <span
             className="text-xs font-semibold tracking-widest uppercase mb-6 animate-fade-up"

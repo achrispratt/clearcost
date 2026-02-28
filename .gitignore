@@ -42,6 +42,7 @@ next-env.d.ts
 
 # playwright mcp
 .playwright-mcp/
+.playwright-cli/
 
 # local data pipeline (Trilliant Oria Parquet/DuckDB — too large for git)
 lib/data/parquet/
