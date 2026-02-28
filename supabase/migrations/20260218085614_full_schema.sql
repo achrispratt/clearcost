@@ -92,6 +92,7 @@ create index if not exists idx_charges_hcpcs on charges (hcpcs);
 create index if not exists idx_charges_ms_drg on charges (ms_drg);
 create index if not exists idx_charges_provider on charges (provider_id);
 create index if not exists idx_charges_cpt_provider on charges (cpt, provider_id);
+create index if not exists idx_charges_hcpcs_provider on charges (hcpcs, provider_id);
 create index if not exists idx_charges_description on charges using gin (to_tsvector('english', coalesce(description, '')));
 
 -- ============================================================================
@@ -224,7 +225,7 @@ as $$
       p_radius_km * 1000
     )
     and (
-      (p_code_type = 'cpt' and c.cpt = any(p_codes))
+      (p_code_type = 'cpt' and (c.cpt = any(p_codes) or c.hcpcs = any(p_codes)))
       or (p_code_type = 'hcpcs' and c.hcpcs = any(p_codes))
       or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
     )

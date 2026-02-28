@@ -21,8 +21,8 @@ interface FallbackLookupParams {
  * Primary search: Look up charges by billing code + geographic radius.
  * Calls the search_charges_nearby() RPC.
  *
- * For CPT codes, also searches the HCPCS column because many hospitals
- * store CPT codes under HCPCS (CPT is a subset of HCPCS Level I).
+ * The RPC handles cross-column search: when codeType is 'cpt', Postgres
+ * checks both the cpt AND hcpcs columns (hospitals store CPT codes in either).
  */
 export async function lookupCharges({
   codes,
@@ -32,51 +32,21 @@ export async function lookupCharges({
   radiusMiles = 25,
 }: LookupParams): Promise<ChargeResult[]> {
   const supabase = await createClient();
-  const radiusKm = radiusMiles * 1.60934;
 
-  const rpcParams = {
+  const { data, error } = await supabase.rpc("search_charges_nearby", {
+    p_code_type: codeType,
     p_codes: codes,
     p_lat: lat,
     p_lng: lng,
-    p_radius_km: radiusKm,
-  };
+    p_radius_km: radiusMiles * 1.60934,
+  });
 
-  // Search the primary code column
-  const { data: primaryData, error: primaryError } = await supabase.rpc(
-    "search_charges_nearby",
-    { ...rpcParams, p_code_type: codeType }
-  );
-
-  if (primaryError) {
-    console.error("Charge lookup error:", primaryError);
+  if (error) {
+    console.error("Charge lookup error:", error);
+    return [];
   }
 
-  const primaryRows = mapRows(primaryData || []);
-
-  // For CPT codes, also search HCPCS column (hospitals often file CPT under HCPCS)
-  if (codeType === "cpt") {
-    const { data: hcpcsData, error: hcpcsError } = await supabase.rpc(
-      "search_charges_nearby",
-      { ...rpcParams, p_code_type: "hcpcs" }
-    );
-
-    if (hcpcsError) {
-      console.error("HCPCS cross-lookup error:", hcpcsError);
-    }
-
-    const hcpcsRows = mapRows(hcpcsData || []);
-
-    // Deduplicate by charge id
-    const seen = new Set(primaryRows.map((r) => r.id));
-    for (const row of hcpcsRows) {
-      if (!seen.has(row.id)) {
-        primaryRows.push(row);
-        seen.add(row.id);
-      }
-    }
-  }
-
-  return primaryRows;
+  return mapRows(data || []);
 }
 
 /**
@@ -185,24 +155,5 @@ function mapRows(rows: RpcRow[]): ChargeResult[] {
       distanceKm,
       distanceMiles,
     };
-  });
-}
-
-/**
- * Legacy alias for backward compatibility.
- * @deprecated Use lookupCharges instead
- */
-export async function lookupPrices(params: {
-  cptCodes: string[];
-  lat: number;
-  lng: number;
-  radiusMiles?: number;
-}): Promise<ChargeResult[]> {
-  return lookupCharges({
-    codes: params.cptCodes,
-    codeType: "cpt",
-    lat: params.lat,
-    lng: params.lng,
-    radiusMiles: params.radiusMiles,
   });
 }

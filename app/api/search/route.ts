@@ -100,17 +100,19 @@ export async function POST(request: NextRequest) {
       codesByType.set(type, existing);
     }
 
-    // Query each code type
-    for (const [codeType, codeList] of codesByType) {
-      const results = await lookupCharges({
-        codes: codeList,
-        codeType,
-        lat: location.lat,
-        lng: location.lng,
-        radiusMiles,
-      });
-      allResults.push(...results);
-    }
+    // Query each code type in parallel
+    const lookupResults = await Promise.all(
+      Array.from(codesByType.entries()).map(([codeType, codeList]) =>
+        lookupCharges({
+          codes: codeList,
+          codeType,
+          lat: location.lat,
+          lng: location.lng,
+          radiusMiles,
+        })
+      )
+    );
+    allResults = lookupResults.flat();
 
     // Step 3: If code-based search returns zero results, expand radius
     if (allResults.length === 0) {
@@ -118,16 +120,18 @@ export async function POST(request: NextRequest) {
       console.log(
         `Code-based search returned 0 results for "${query}" within ${radiusMiles}mi. Expanding to ${expandedRadius}mi.`
       );
-      for (const [codeType, codeList] of codesByType) {
-        const results = await lookupCharges({
-          codes: codeList,
-          codeType,
-          lat: location.lat,
-          lng: location.lng,
-          radiusMiles: expandedRadius,
-        });
-        allResults.push(...results);
-      }
+      const expandedResults = await Promise.all(
+        Array.from(codesByType.entries()).map(([codeType, codeList]) =>
+          lookupCharges({
+            codes: codeList,
+            codeType,
+            lat: location.lat,
+            lng: location.lng,
+            radiusMiles: expandedRadius,
+          })
+        )
+      );
+      allResults = expandedResults.flat();
     }
 
     // Step 4: If still no results, fall back to description search

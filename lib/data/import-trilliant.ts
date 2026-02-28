@@ -61,6 +61,7 @@ const CHARGE_INDEXES = [
   { name: "idx_charges_ms_drg", sql: "CREATE INDEX idx_charges_ms_drg ON charges (ms_drg)" },
   { name: "idx_charges_provider", sql: "CREATE INDEX idx_charges_provider ON charges (provider_id)" },
   { name: "idx_charges_cpt_provider", sql: "CREATE INDEX idx_charges_cpt_provider ON charges (cpt, provider_id)" },
+  { name: "idx_charges_hcpcs_provider", sql: "CREATE INDEX idx_charges_hcpcs_provider ON charges (hcpcs, provider_id)" },
   { name: "idx_charges_description", sql: "CREATE INDEX idx_charges_description ON charges USING gin (to_tsvector('english', coalesce(description, '')))" },
 ];
 
