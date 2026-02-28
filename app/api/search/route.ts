@@ -4,10 +4,40 @@ import { lookupChargesWithFallback } from "@/lib/cpt/lookup";
 import { handleApiError } from "@/lib/api-helpers";
 import type { BillingCodeType } from "@/types";
 
+function normalizeCodeType(value: unknown): BillingCodeType {
+  if (value === "hcpcs" || value === "ms_drg") return value;
+  return "cpt";
+}
+
+function normalizeCodeGroups(value: unknown): { codeType: BillingCodeType; codes: string[] }[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((group): group is { codeType?: unknown; codes?: unknown } =>
+      !!group && typeof group === "object"
+    )
+    .map((group) => ({
+      codeType: normalizeCodeType(group.codeType),
+      codes: Array.isArray(group.codes)
+        ? group.codes.filter(
+            (code): code is string =>
+              typeof code === "string" && code.trim().length > 0
+          )
+        : [],
+    }))
+    .filter((group) => group.codes.length > 0);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, location, codes: directCodes, codeType: directCodeType } = body;
+    const {
+      query,
+      location,
+      codes: directCodes,
+      codeType: directCodeType,
+      codeGroups: directCodeGroupsRaw,
+    } = body;
 
     if (!location) {
       return NextResponse.json(
@@ -18,12 +48,31 @@ export async function POST(request: NextRequest) {
 
     const radiusMiles = location.radiusMiles || 25;
     const { lat, lng } = location;
+    const directCodeGroups = normalizeCodeGroups(directCodeGroupsRaw);
 
     // Fast path: direct code lookup (from guided search flow)
     // Skips AI translation entirely — codes are already known
+    if (directCodeGroups.length > 0) {
+      const results = await lookupChargesWithFallback({
+        codeGroups: directCodeGroups,
+        lat,
+        lng,
+        radiusMiles,
+        descriptionFallback: query,
+      });
+
+      return NextResponse.json({
+        query: query || "",
+        interpretation: "",
+        cptCodes: [],
+        results,
+        totalResults: results.length,
+      });
+    }
+
     if (directCodes && directCodes.length > 0) {
       const results = await lookupChargesWithFallback({
-        codeGroups: [{ codeType: directCodeType || "cpt", codes: directCodes }],
+        codeGroups: [{ codeType: normalizeCodeType(directCodeType), codes: directCodes }],
         lat,
         lng,
         radiusMiles,

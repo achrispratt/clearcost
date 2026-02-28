@@ -6,8 +6,14 @@ import type {
   ClarificationTurn,
   ClarificationQuestion,
   CPTCode,
+  BillingCodeType,
   TranslationResponse,
 } from "@/types";
+
+type DirectCodeGroup = {
+  codeType: BillingCodeType;
+  codes: string[];
+};
 
 export function useClarificationState() {
   const searchParams = useSearchParams();
@@ -56,11 +62,24 @@ export function useClarificationState() {
   const goToResults = useCallback(
     (codes: CPTCode[], interp: string) => {
       const codeValues = codes.map((c) => c.code);
-      const codeType = codes[0]?.codeType || "cpt";
+
+      const codesByType = new Map<BillingCodeType, string[]>();
+      for (const code of codes) {
+        const type = code.codeType || "cpt";
+        const existing = codesByType.get(type) || [];
+        existing.push(code.code);
+        codesByType.set(type, existing);
+      }
+      const codeGroups: DirectCodeGroup[] = Array.from(codesByType.entries()).map(
+        ([codeType, groupedCodes]) => ({ codeType, codes: groupedCodes })
+      );
+      const codeType = codeGroups[0]?.codeType || "cpt";
+
       navigateToResults(
         buildResultsParams({
           codes: codeValues.join(","),
           codeType,
+          codeGroups: JSON.stringify(codeGroups),
           interp,
         })
       );

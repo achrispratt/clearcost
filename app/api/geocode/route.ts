@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+// @ts-expect-error zipcodes has no bundled TypeScript declarations.
+import zipcodes from "zipcodes";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -43,76 +45,57 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** Basic ZIP/city fallback for NYC metro area when no Google Maps API key is configured. */
+function extractUsZip(value: string): string | null {
+  const match = value.match(/\b(\d{5})(?:-\d{4})?\b/);
+  return match ? match[1] : null;
+}
+
+function parseCityState(value: string): { city: string; state: string } | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parts = trimmed.split(",").map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+
+  const city = parts.slice(0, -1).join(", ");
+  const state = parts[parts.length - 1];
+  if (!city || !state) return null;
+
+  return { city, state };
+}
+
+/** National ZIP/city fallback when no Google Maps API key is configured. */
 function handleFallbackGeocode(address: string) {
-  const nycZips: Record<string, { lat: number; lng: number; name: string }> = {
-    "10001": { lat: 40.7484, lng: -73.9967, name: "New York, NY 10001" },
-    "10002": { lat: 40.7157, lng: -73.9863, name: "New York, NY 10002" },
-    "10003": { lat: 40.7317, lng: -73.9893, name: "New York, NY 10003" },
-    "10010": { lat: 40.739, lng: -73.9826, name: "New York, NY 10010" },
-    "10016": { lat: 40.7459, lng: -73.9781, name: "New York, NY 10016" },
-    "10019": { lat: 40.7654, lng: -73.9854, name: "New York, NY 10019" },
-    "10021": { lat: 40.7693, lng: -73.9588, name: "New York, NY 10021" },
-    "10028": { lat: 40.7763, lng: -73.9534, name: "New York, NY 10028" },
-    "10032": { lat: 40.8384, lng: -73.9427, name: "New York, NY 10032" },
-    "10037": { lat: 40.8138, lng: -73.937, name: "New York, NY 10037" },
-    "11201": { lat: 40.6934, lng: -73.9896, name: "Brooklyn, NY 11201" },
-    "11215": { lat: 40.6711, lng: -73.9863, name: "Brooklyn, NY 11215" },
-    "10301": { lat: 40.6433, lng: -74.077, name: "Staten Island, NY 10301" },
-    "10451": { lat: 40.8204, lng: -73.9234, name: "Bronx, NY 10451" },
-    "11101": { lat: 40.7503, lng: -73.9407, name: "Long Island City, NY 11101" },
-  };
-
-  const zip = address.trim().replace(/\D/g, "").slice(0, 5);
-  if (nycZips[zip]) {
-    return NextResponse.json({
-      lat: nycZips[zip].lat,
-      lng: nycZips[zip].lng,
-      formatted: nycZips[zip].name,
-    });
+  const zip = extractUsZip(address);
+  if (zip) {
+    const match = zipcodes.lookup(zip);
+    if (match?.latitude != null && match?.longitude != null) {
+      return NextResponse.json({
+        lat: match.latitude,
+        lng: match.longitude,
+        formatted: `${match.city}, ${match.state} ${match.zip}`,
+      });
+    }
   }
 
-  const lower = address.toLowerCase();
-  if (
-    lower.includes("new york") ||
-    lower.includes("nyc") ||
-    lower.includes("manhattan")
-  ) {
-    return NextResponse.json({
-      lat: 40.7128,
-      lng: -74.006,
-      formatted: "New York, NY",
-    });
-  }
+  const cityState = parseCityState(address);
+  if (cityState) {
+    const matches = zipcodes.lookupByName(cityState.city, cityState.state);
+    const primary = Array.isArray(matches) ? matches[0] : null;
 
-  if (lower.includes("brooklyn")) {
-    return NextResponse.json({
-      lat: 40.6782,
-      lng: -73.9442,
-      formatted: "Brooklyn, NY",
-    });
-  }
-
-  if (lower.includes("bronx")) {
-    return NextResponse.json({
-      lat: 40.8448,
-      lng: -73.8648,
-      formatted: "Bronx, NY",
-    });
-  }
-
-  if (lower.includes("queens")) {
-    return NextResponse.json({
-      lat: 40.7282,
-      lng: -73.7949,
-      formatted: "Queens, NY",
-    });
+    if (primary?.latitude != null && primary?.longitude != null) {
+      const zipDisplay = primary.zip ? ` ${primary.zip}` : "";
+      return NextResponse.json({
+        lat: primary.latitude,
+        lng: primary.longitude,
+        formatted: `${primary.city}, ${primary.state}${zipDisplay}`,
+      });
+    }
   }
 
   return NextResponse.json(
     {
-      error:
-        "Location not found. Try a NYC ZIP code or borough name for the MVP.",
+      error: "Location not found. Without Google Maps API, enter a US ZIP code or City, ST.",
     },
     { status: 404 }
   );

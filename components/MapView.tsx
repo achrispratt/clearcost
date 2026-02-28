@@ -65,25 +65,29 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const centerLat = center?.lat;
+  const centerLng = center?.lng;
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      setError("Google Maps API key not configured");
-      return;
-    }
+    if (!apiKey || map || !mapRef.current) return;
 
     if (!optionsSet) {
       setOptions({ key: apiKey, v: "weekly" });
       optionsSet = true;
     }
 
+    let cancelled = false;
+
     importLibrary("maps")
       .then(({ Map }) => {
-        if (!mapRef.current) return;
+        if (!mapRef.current || cancelled) return;
 
         const mapInstance = new Map(mapRef.current, {
-          center: center || { lat: 40.7128, lng: -74.006 },
+          center:
+            centerLat != null && centerLng != null
+              ? { lat: centerLat, lng: centerLng }
+              : { lat: 40.7128, lng: -74.006 },
           zoom: 11,
           styles: MAP_STYLES,
           disableDefaultUI: false,
@@ -96,9 +100,19 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
         setMap(mapInstance);
       })
       .catch(() => {
+        if (cancelled) return;
         setError("Failed to load Google Maps");
       });
-  }, [center]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey, centerLat, centerLng, map]);
+
+  useEffect(() => {
+    if (!map || centerLat == null || centerLng == null) return;
+    map.setCenter({ lat: centerLat, lng: centerLng });
+  }, [map, centerLat, centerLng]);
 
   useEffect(() => {
     if (!map || results.length === 0) return;
@@ -153,6 +167,22 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
       markers.forEach((m) => m.setMap(null));
     };
   }, [map, results, onMarkerClick, selectedResultId]);
+
+  if (!apiKey) {
+    return (
+      <div
+        className={`rounded-xl flex items-center justify-center ${className || "h-96"}`}
+        style={{
+          background: "var(--cc-surface-alt)",
+          border: "1px solid var(--cc-border)",
+        }}
+      >
+        <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
+          Google Maps API key not configured
+        </p>
+      </div>
+    );
+  }
 
   if (error) {
     return (

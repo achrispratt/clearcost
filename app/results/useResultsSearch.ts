@@ -2,7 +2,40 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import type { ChargeResult, CPTCode } from "@/types";
+import type { ChargeResult, CPTCode, BillingCodeType } from "@/types";
+
+type DirectCodeGroup = {
+  codeType: BillingCodeType;
+  codes: string[];
+};
+
+function parseCodeGroups(raw: string): DirectCodeGroup[] {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((group): group is { codeType: unknown; codes: unknown } =>
+        !!group && typeof group === "object"
+      )
+      .map((group) => {
+        const rawCodeType = group.codeType;
+        const codeType: BillingCodeType =
+          rawCodeType === "hcpcs" || rawCodeType === "ms_drg"
+            ? rawCodeType
+            : "cpt";
+        const codes = Array.isArray(group.codes)
+          ? group.codes.filter((code): code is string => typeof code === "string" && code.trim().length > 0)
+          : [];
+        return { codeType, codes };
+      })
+      .filter((group) => group.codes.length > 0);
+  } catch {
+    return [];
+  }
+}
 
 export function useResultsSearch() {
   const searchParams = useSearchParams();
@@ -10,6 +43,8 @@ export function useResultsSearch() {
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
   const locationDisplay = searchParams.get("loc") || "";
+  const directCodeGroupsParam = searchParams.get("codeGroups") || "";
+  const directCodeGroups = parseCodeGroups(directCodeGroupsParam);
   const directCodes = searchParams.get("codes")?.split(",").filter(Boolean) || [];
   const directCodeType = searchParams.get("codeType") || "";
   const directInterp = searchParams.get("interp") || "";
@@ -24,13 +59,14 @@ export function useResultsSearch() {
   const [view, setView] = useState<"list" | "map">("list");
 
   useEffect(() => {
-    if ((!query && directCodes.length === 0) || !lat || !lng) return;
+    if ((!query && directCodeGroups.length === 0 && directCodes.length === 0) || !lat || !lng) return;
 
     const search = async () => {
       setLoading(true);
       setError(null);
 
-      const hasDirectCodes = directCodes.length > 0;
+      const hasDirectCodes =
+        directCodeGroups.length > 0 || directCodes.length > 0;
       setLoadingStage(hasDirectCodes ? "Finding prices near you..." : "Translating your query...");
 
       try {
@@ -39,7 +75,9 @@ export function useResultsSearch() {
           location: { lat, lng },
         };
 
-        if (hasDirectCodes) {
+        if (directCodeGroups.length > 0) {
+          requestBody.codeGroups = directCodeGroups;
+        } else if (hasDirectCodes) {
           requestBody.codes = directCodes;
           requestBody.codeType = directCodeType || "cpt";
         }
@@ -74,7 +112,7 @@ export function useResultsSearch() {
 
     search();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, lat, lng, directCodes.join(","), directCodeType, directInterp]);
+  }, [query, lat, lng, directCodeGroupsParam, directCodes.join(","), directCodeType, directInterp]);
 
   const handleNewSearch = (
     newQuery: string,
