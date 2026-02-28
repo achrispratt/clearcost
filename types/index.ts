@@ -151,13 +151,3 @@ export interface SavedSearch {
   created_at: string;
 }
 
-// ============================================================================
-// Legacy type aliases for backward compatibility during migration
-// Remove these once all components are updated to use new types.
-// ============================================================================
-
-/** @deprecated Use ChargeResult instead */
-export type PriceResult = ChargeResult;
-
-/** @deprecated Use PayerRate instead */
-export type NegotiatedRate = PayerRate;
