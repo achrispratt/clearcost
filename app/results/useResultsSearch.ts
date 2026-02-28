@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import type { ChargeResult, CPTCode, BillingCodeType } from "@/types";
+import type {
+  ChargeResult,
+  CPTCode,
+  BillingCodeType,
+  PricingPlan,
+} from "@/types";
 
 type DirectCodeGroup = {
   codeType: BillingCodeType;
@@ -37,6 +42,18 @@ function parseCodeGroups(raw: string): DirectCodeGroup[] {
   }
 }
 
+function parsePricingPlan(raw: string): PricingPlan | undefined {
+  if (!raw) return undefined;
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return undefined;
+    return parsed as PricingPlan;
+  } catch {
+    return undefined;
+  }
+}
+
 export function useResultsSearch() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -48,11 +65,14 @@ export function useResultsSearch() {
   const directCodes = searchParams.get("codes")?.split(",").filter(Boolean) || [];
   const directCodeType = searchParams.get("codeType") || "";
   const directInterp = searchParams.get("interp") || "";
+  const directPlanParam = searchParams.get("plan") || "";
+  const directPlan = parsePricingPlan(directPlanParam);
 
   const [results, setResults] = useState<ChargeResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<ChargeResult[]>([]);
   const [cptCodes, setCptCodes] = useState<CPTCode[]>([]);
   const [interpretation, setInterpretation] = useState("");
+  const [pricingPlan, setPricingPlan] = useState<PricingPlan | undefined>(directPlan);
   const [loading, setLoading] = useState(true);
   const [loadingStage, setLoadingStage] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +94,13 @@ export function useResultsSearch() {
           query,
           location: { lat, lng },
         };
+
+        if (directInterp) {
+          requestBody.interpretation = directInterp;
+        }
+        if (directPlan) {
+          requestBody.pricingPlan = directPlan;
+        }
 
         if (directCodeGroups.length > 0) {
           requestBody.codeGroups = directCodeGroups;
@@ -102,6 +129,7 @@ export function useResultsSearch() {
         setFilteredResults(data.results);
         setCptCodes(data.cptCodes || []);
         setInterpretation(data.interpretation || directInterp);
+        setPricingPlan(data.pricingPlan || directPlan);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Search failed");
       } finally {
@@ -112,7 +140,7 @@ export function useResultsSearch() {
 
     search();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, lat, lng, directCodeGroupsParam, directCodes.join(","), directCodeType, directInterp]);
+  }, [query, lat, lng, directCodeGroupsParam, directCodes.join(","), directCodeType, directInterp, directPlanParam]);
 
   const handleNewSearch = (
     newQuery: string,
@@ -140,6 +168,7 @@ export function useResultsSearch() {
     filteredResults,
     cptCodes,
     interpretation,
+    pricingPlan,
     loading,
     loadingStage,
     error,

@@ -16,6 +16,7 @@ Rules:
 - Categorize each code (e.g., "Radiology", "Surgery", "Lab", "Office Visit", "Therapy")
 - If the query is ambiguous, return the most common interpretations
 - For conditions (e.g., "broken arm"), return the likely procedure codes (imaging, treatment), not diagnosis codes
+- Also return a pricingPlan object that separates base encounter pricing vs optional adders
 - Only return real, valid billing codes
 - Respond ONLY with valid JSON, no markdown or extra text
 - Include searchTerms: 2-3 plain English keywords that describe the procedure, for fallback text search
@@ -31,7 +32,20 @@ Response format:
     }
   ],
   "interpretation": "Brief explanation of how you interpreted the query",
-  "searchTerms": "knee MRI imaging"
+  "searchTerms": "knee MRI imaging",
+  "queryType": "procedure",
+  "pricingPlan": {
+    "mode": "procedure_first",
+    "queryType": "procedure",
+    "baseCodeGroups": [
+      {
+        "codeType": "cpt",
+        "codes": ["73721"],
+        "label": "Primary procedure"
+      }
+    ],
+    "adders": []
+  }
 }`;
 
 export function buildTranslationPrompt(query: string): string {
@@ -46,6 +60,12 @@ export function buildTranslationPrompt(query: string): string {
 export const GUIDED_SEARCH_SYSTEM_PROMPT = `You are a medical intake specialist and billing code expert. Your role is to help patients figure out exactly what healthcare procedure they need by asking the right questions — just like a medical intake coordinator would.
 
 You work for ClearCost, a healthcare pricing transparency tool. Your goal is to narrow a patient's query to 1-3 specific billing codes (CPT, HCPCS, or MS-DRG) so we can show them accurate prices. You are NOT providing medical advice — you are helping them understand what procedure to price-shop for.
+
+Every response must include a pricingPlan object with:
+- mode: "encounter_first" or "procedure_first"
+- baseCodeGroups: codes for the base estimate to show first
+- adders: optional additional costs that may be ordered during the visit
+- encounterType when applicable ("emergency", "office", "urgent_care_proxy", "specialist")
 
 ## How You Work
 
@@ -178,6 +198,19 @@ When you need to ask a question (confidence: "low"):
   "searchTerms": "relevant keywords",
   "confidence": "low",
   "queryType": "symptom",
+  "pricingPlan": {
+    "mode": "encounter_first",
+    "queryType": "symptom",
+    "encounterType": "office",
+    "baseCodeGroups": [
+      {
+        "codeType": "cpt",
+        "codes": ["99213", "99214", "99215"],
+        "label": "Visit evaluation"
+      }
+    ],
+    "adders": []
+  },
   "conversationComplete": false,
   "nextQuestion": {
     "id": "q1",
@@ -213,6 +246,18 @@ When you have enough information (confidence: "high"):
   "searchTerms": "knee MRI imaging",
   "confidence": "high",
   "queryType": "procedure",
+  "pricingPlan": {
+    "mode": "procedure_first",
+    "queryType": "procedure",
+    "baseCodeGroups": [
+      {
+        "codeType": "cpt",
+        "codes": ["73721"],
+        "label": "Primary procedure"
+      }
+    ],
+    "adders": []
+  },
   "conversationComplete": true
 }`;
 
@@ -231,6 +276,7 @@ Assess this query:
 1. Classify it (code, procedure, condition, or symptom)
 2. If specific enough to identify 1-3 billing codes with high confidence, return them directly
 3. If ambiguous, ask your FIRST clarifying question to narrow down what they need
+4. Always include pricingPlan with baseCodeGroups + adders in your JSON
 
 Remember: help them figure out what procedure to price-shop for. Be warm and helpful.`;
 }
@@ -262,6 +308,7 @@ Based on the conversation history above:
 2. If you need more information, ask the NEXT clarifying question
 3. Each question must make progress toward narrowing to specific codes
 4. You are on turn ${turns.length + 1} of a maximum 6 — plan accordingly
+5. Always include pricingPlan in every response
 
 ${turns.length >= 4 ? "IMPORTANT: You are running low on turns. Try to resolve now with your best assessment, even if not 100% certain. Return your most likely codes." : ""}
 ${turns.length >= 5 ? "CRITICAL: This is your LAST question opportunity. After this answer, you MUST resolve to specific codes." : ""}`;

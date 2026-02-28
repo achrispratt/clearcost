@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import type { ChargeResult, Payer } from "@/types";
 
-export type SortOption = "price-asc" | "price-desc" | "distance" | "name";
+export type SortOption = "price-asc" | "price-desc" | "estimated-total" | "distance" | "name";
 
 interface FilterBarProps {
   results: ChargeResult[];
@@ -46,6 +46,8 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
           return (a.cashPrice ?? Infinity) - (b.cashPrice ?? Infinity);
         case "price-desc":
           return (b.cashPrice ?? 0) - (a.cashPrice ?? 0);
+        case "estimated-total":
+          return (a.estimatedTotalMedian ?? a.cashPrice ?? Infinity) - (b.estimatedTotalMedian ?? b.cashPrice ?? Infinity);
         case "distance":
           return (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity);
         case "name":
@@ -96,8 +98,9 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
           onChange={(e) => handleSortChange(e.target.value as SortOption)}
           style={selectStyles}
         >
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
+          <option value="price-asc">Base: Low to High</option>
+          <option value="price-desc">Base: High to Low</option>
+          <option value="estimated-total">Estimated total</option>
           <option value="distance">Distance</option>
           <option value="name">Name</option>
         </select>

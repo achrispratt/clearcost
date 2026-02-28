@@ -9,10 +9,23 @@ interface ResultCardProps {
   isSelected?: boolean;
 }
 
+function formatAdderPriceRange(result: NonNullable<ChargeResult["optionalAdders"]>[number]): string {
+  if (result.minPrice != null && result.maxPrice != null && result.minPrice !== result.maxPrice) {
+    return `${formatPrice(result.minPrice)} - ${formatPrice(result.maxPrice)}`;
+  }
+
+  if (result.estimatePrice != null) {
+    return formatPrice(result.estimatePrice);
+  }
+
+  return "N/A";
+}
+
 export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
   const billingCode = formatBillingCode(result);
   const distance = formatDistance(result.distanceMiles);
   const lastUpdated = formatDate(result.lastUpdated);
+  const priceLabel = result.baseLabel || (result.pricingMode === "encounter_first" ? "Base estimate" : "Cash price");
   const address = [
     result.provider.address,
     result.provider.city,
@@ -130,8 +143,16 @@ export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
                     className="text-xs mt-0.5"
                     style={{ color: "var(--cc-text-tertiary)" }}
                   >
-                    Cash price
+                    {priceLabel}
                   </p>
+                  {result.baseSource === "local_fallback" && (
+                    <p
+                      className="text-[11px] mt-1"
+                      style={{ color: "var(--cc-text-tertiary)" }}
+                    >
+                      Local estimate fallback
+                    </p>
+                  )}
                 </>
               ) : (
                 <p
@@ -148,6 +169,11 @@ export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
                   style={{ color: "var(--cc-text-tertiary)" }}
                 >
                   {formatPrice(result.minPrice)} &ndash; {formatPrice(result.maxPrice)}
+                </p>
+              )}
+              {result.estimatedTotalMedian != null && (
+                <p className="text-xs mt-1.5" style={{ color: "var(--cc-text-secondary)" }}>
+                  Est. total: {formatPrice(result.estimatedTotalMedian)}
                 </p>
               )}
             </div>
@@ -217,6 +243,45 @@ export function ResultCard({ result, rank, isSelected }: ResultCardProps) {
               )}
             </div>
           </div>
+
+          {result.optionalAdders && result.optionalAdders.length > 0 && (
+            <div
+              className="mt-3 p-3 rounded-lg border"
+              style={{
+                background: "var(--cc-surface-alt)",
+                borderColor: "var(--cc-border)",
+              }}
+            >
+              <p className="text-xs font-semibold" style={{ color: "var(--cc-text-secondary)" }}>
+                Possible additional costs (only if ordered during visit)
+              </p>
+              <div className="mt-2 space-y-1.5">
+                {result.optionalAdders.map((adder) => (
+                  <div key={`${adder.id || adder.type}-${adder.label}`} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-medium" style={{ color: "var(--cc-text)" }}>
+                        {adder.label}
+                      </span>
+                      <span className="text-[11px]" style={{ color: "var(--cc-text-tertiary)" }}>
+                        {adder.source === "facility" ? "this facility" : "local estimate"}
+                      </span>
+                    </div>
+                    <span className="text-xs font-semibold shrink-0" style={{ color: "var(--cc-primary)" }}>
+                      {formatAdderPriceRange(adder)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] mt-2" style={{ color: "var(--cc-text-tertiary)" }}>
+                Adders are separate from the base visit estimate.
+              </p>
+              {result.proxyLabel && (
+                <p className="text-[11px] mt-1" style={{ color: "var(--cc-text-tertiary)" }}>
+                  {result.proxyLabel}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Data source row */}
           <div

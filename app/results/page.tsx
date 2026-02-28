@@ -19,6 +19,7 @@ function ResultsContent() {
     filteredResults,
     cptCodes,
     interpretation,
+    pricingPlan,
     loading,
     loadingStage,
     error,
@@ -72,6 +73,11 @@ function ResultsContent() {
                   <span className="font-semibold">Interpreted as:</span>{" "}
                   {interpretation}
                 </p>
+                {pricingPlan?.mode === "encounter_first" && (
+                  <p className="text-xs mt-1.5" style={{ color: "var(--cc-primary)" }}>
+                    Showing a visit-first estimate; any imaging or lab work is listed below as possible additional costs.
+                  </p>
+                )}
                 {cptCodes.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {cptCodes.map((code) => (

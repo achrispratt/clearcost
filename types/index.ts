@@ -5,9 +5,50 @@
 
 // -- Billing code types supported by the system --
 export type BillingCodeType = 'cpt' | 'hcpcs' | 'ms_drg';
+export type QueryType = 'procedure' | 'symptom' | 'condition' | 'code';
+export type ConfidenceLevel = 'high' | 'low';
 
 // -- Care setting --
 export type ChargeSetting = 'inpatient' | 'outpatient' | 'both';
+export type AdderEstimateSource = 'facility' | 'local_fallback';
+export type AdderEstimateConfidence = 'high' | 'low';
+export type OptionalAdderType = 'xray' | 'mri' | 'ct' | 'ultrasound' | 'lab' | 'other';
+export type PricingMode = 'encounter_first' | 'procedure_first';
+export type EncounterType = 'emergency' | 'office' | 'urgent_care_proxy' | 'specialist';
+export type FallbackSource = 'facility' | 'local_fallback';
+
+export interface PricingCodeGroup {
+  codeType: BillingCodeType;
+  codes: string[];
+  label?: string;
+}
+
+export interface PlannedAdder {
+  id: string;
+  label: string;
+  codeGroups: PricingCodeGroup[];
+  required: boolean;
+}
+
+export interface PricingPlan {
+  mode: PricingMode;
+  queryType: QueryType;
+  encounterType?: EncounterType;
+  baseCodeGroups: PricingCodeGroup[];
+  adders: PlannedAdder[];
+  proxyLabel?: string;
+}
+
+export interface OptionalAdderEstimate {
+  type: OptionalAdderType;
+  label: string;
+  id?: string;
+  estimatePrice?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  source: AdderEstimateSource;
+  confidence: AdderEstimateConfidence;
+}
 
 // -- CPT Code (used by AI translation layer) --
 export interface CPTCode {
@@ -62,6 +103,14 @@ export interface ChargeResult {
   lastUpdated?: string;
   distanceKm?: number;
   distanceMiles?: number;
+  optionalAdders?: OptionalAdderEstimate[];
+  pricingMode?: PricingMode;
+  baseLabel?: string;
+  baseSource?: FallbackSource;
+  proxyLabel?: string;
+  estimatedTotalMedian?: number;
+  estimatedTotalMin?: number;
+  estimatedTotalMax?: number;
 }
 
 // -- Payer Rate (insurance-specific negotiated rate for a charge) --
@@ -99,6 +148,7 @@ export interface SearchResult {
   query: string;
   location: string;
   interpretation?: string;
+  pricingPlan?: PricingPlan;
   totalResults: number;
 }
 
@@ -126,15 +176,13 @@ export interface ClarificationTurn {
   freeText?: string;          // What user typed if "other"
 }
 
-export type QueryType = 'procedure' | 'symptom' | 'condition' | 'code';
-export type ConfidenceLevel = 'high' | 'low';
-
 export interface TranslationResponse {
   codes: CPTCode[];
   interpretation: string;
   searchTerms?: string;
   confidence: ConfidenceLevel;
   queryType?: QueryType;
+  pricingPlan?: PricingPlan;
   nextQuestion?: ClarificationQuestion;
   conversationComplete?: boolean;
 }
@@ -150,4 +198,3 @@ export interface SavedSearch {
   lng?: number;
   created_at: string;
 }
-

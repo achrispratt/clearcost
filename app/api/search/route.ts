@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateQueryToCPT } from "@/lib/cpt/translate";
-import { lookupChargesWithFallback } from "@/lib/cpt/lookup";
+import { lookupWithPricingPlan } from "@/lib/cpt/lookup";
+import { buildPricingPlan, normalizePricingPlanInput } from "@/lib/cpt/pricing-plan";
 import { handleApiError } from "@/lib/api-helpers";
-import type { BillingCodeType } from "@/types";
+import type { BillingCodeType, CPTCode } from "@/types";
 
 function normalizeCodeType(value: unknown): BillingCodeType {
   if (value === "hcpcs" || value === "ms_drg") return value;
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       query,
+      interpretation: providedInterpretation,
+      pricingPlan: providedPricingPlanRaw,
       location,
       codes: directCodes,
       codeType: directCodeType,
@@ -49,39 +52,77 @@ export async function POST(request: NextRequest) {
     const radiusMiles = location.radiusMiles || 25;
     const { lat, lng } = location;
     const directCodeGroups = normalizeCodeGroups(directCodeGroupsRaw);
+    const normalizedDirectCodes = Array.isArray(directCodes)
+      ? directCodes.filter(
+          (code): code is string =>
+            typeof code === "string" && code.trim().length > 0
+        )
+      : [];
+    const providedPricingPlan = normalizePricingPlanInput(providedPricingPlanRaw);
 
     // Fast path: direct code lookup (from guided search flow)
     // Skips AI translation entirely — codes are already known
     if (directCodeGroups.length > 0) {
-      const results = await lookupChargesWithFallback({
-        codeGroups: directCodeGroups,
+      const directPlanCodes: CPTCode[] = directCodeGroups.flatMap((group) =>
+        group.codes.map((code) => ({
+          code,
+          codeType: group.codeType,
+          description: "",
+          category: "Procedure",
+        }))
+      );
+      const pricingPlan = buildPricingPlan({
+        query: query || "",
+        interpretation: providedInterpretation,
+        codes: directPlanCodes,
+        modelPricingPlan: providedPricingPlan,
+      });
+
+      const results = await lookupWithPricingPlan({
+        pricingPlan,
         lat,
         lng,
         radiusMiles,
-        descriptionFallback: query,
+        descriptionFallback: query || providedInterpretation,
       });
 
       return NextResponse.json({
         query: query || "",
-        interpretation: "",
+        interpretation: providedInterpretation || "",
+        pricingPlan,
         cptCodes: [],
         results,
         totalResults: results.length,
       });
     }
 
-    if (directCodes && directCodes.length > 0) {
-      const results = await lookupChargesWithFallback({
-        codeGroups: [{ codeType: normalizeCodeType(directCodeType), codes: directCodes }],
+    if (normalizedDirectCodes.length > 0) {
+      const codeType = normalizeCodeType(directCodeType);
+      const directPlanCodes: CPTCode[] = normalizedDirectCodes.map((code) => ({
+        code,
+        codeType,
+        description: "",
+        category: "Procedure",
+      }));
+      const pricingPlan = buildPricingPlan({
+        query: query || "",
+        interpretation: providedInterpretation,
+        codes: directPlanCodes,
+        modelPricingPlan: providedPricingPlan,
+      });
+
+      const results = await lookupWithPricingPlan({
+        pricingPlan,
         lat,
         lng,
         radiusMiles,
-        descriptionFallback: query,
+        descriptionFallback: query || providedInterpretation,
       });
 
       return NextResponse.json({
         query: query || "",
-        interpretation: "",
+        interpretation: providedInterpretation || "",
+        pricingPlan,
         cptCodes: [],
         results,
         totalResults: results.length,
@@ -97,31 +138,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Translate plain English to billing codes via Claude
-    const { codes, interpretation, searchTerms } =
+    const {
+      codes,
+      interpretation,
+      searchTerms,
+      queryType,
+      pricingPlan: translatedPricingPlan,
+    } =
       await translateQueryToCPT(query);
 
-    if (codes.length === 0) {
+    const pricingPlan = buildPricingPlan({
+      query,
+      interpretation,
+      queryType: providedPricingPlan?.queryType || queryType,
+      codes,
+      modelPricingPlan: providedPricingPlan || translatedPricingPlan,
+    });
+
+    const hasSearchablePlan =
+      pricingPlan.baseCodeGroups.length > 0 ||
+      pricingPlan.adders.some((adder) => adder.codeGroups.length > 0);
+    if (!hasSearchablePlan) {
       return NextResponse.json(
         { error: "Could not identify relevant procedures for your query" },
         { status: 404 }
       );
     }
 
-    // Step 2: Group codes by type and look up with cascading fallback
-    const codesByType = new Map<BillingCodeType, string[]>();
-    for (const code of codes) {
-      const type = code.codeType || "cpt";
-      const existing = codesByType.get(type) || [];
-      existing.push(code.code);
-      codesByType.set(type, existing);
-    }
-
-    const codeGroups = Array.from(codesByType.entries()).map(
-      ([codeType, codeList]) => ({ codeType, codes: codeList })
-    );
-
-    const results = await lookupChargesWithFallback({
-      codeGroups,
+    const results = await lookupWithPricingPlan({
+      pricingPlan,
       lat,
       lng,
       radiusMiles,
@@ -131,6 +176,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       query,
       interpretation,
+      pricingPlan,
       cptCodes: codes,
       results,
       totalResults: results.length,

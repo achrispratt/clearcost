@@ -6,10 +6,13 @@ import {
   buildGuidedSearchPrompt,
   buildClarificationPrompt,
 } from "./prompts";
+import { normalizePricingPlanInput } from "./pricing-plan";
 import type {
   CPTCode,
   BillingCodeType,
   ClarificationTurn,
+  PricingPlan,
+  QueryType,
   TranslationResponse,
 } from "@/types";
 
@@ -17,6 +20,8 @@ interface TranslationResult {
   codes: CPTCode[];
   interpretation: string;
   searchTerms?: string;
+  queryType?: QueryType;
+  pricingPlan?: PricingPlan;
 }
 
 /**
@@ -80,6 +85,8 @@ export async function translateQueryToCPT(
     codes: extractCodes(parsed),
     interpretation: (parsed.interpretation as string) || "",
     searchTerms: (parsed.searchTerms as string) || query,
+    queryType: parsed.queryType as QueryType,
+    pricingPlan: normalizePricingPlanInput(parsed.pricingPlan),
   };
 }
 
@@ -149,6 +156,7 @@ function buildTranslationResponse(
     searchTerms: (parsed.searchTerms as string) || undefined,
     confidence: (parsed.confidence as "high" | "low") || "low",
     queryType: parsed.queryType as TranslationResponse["queryType"],
+    pricingPlan: normalizePricingPlanInput(parsed.pricingPlan),
     nextQuestion: parsed.nextQuestion as TranslationResponse["nextQuestion"],
     conversationComplete: (parsed.conversationComplete as boolean) || false,
   };

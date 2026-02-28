@@ -7,6 +7,7 @@ import type {
   ClarificationQuestion,
   CPTCode,
   BillingCodeType,
+  PricingPlan,
   TranslationResponse,
 } from "@/types";
 
@@ -28,6 +29,7 @@ export function useClarificationState() {
     useState<ClarificationQuestion | null>(null);
   const [allCodes, setAllCodes] = useState<CPTCode[]>([]);
   const [interpretation, setInterpretation] = useState("");
+  const [pricingPlan, setPricingPlan] = useState<PricingPlan | undefined>(undefined);
   const [phase, setPhase] = useState<"loading" | "clarifying" | "resolved">(
     "loading"
   );
@@ -60,7 +62,7 @@ export function useClarificationState() {
   );
 
   const goToResults = useCallback(
-    (codes: CPTCode[], interp: string) => {
+    (codes: CPTCode[], interp: string, plan?: PricingPlan) => {
       const codeValues = codes.map((c) => c.code);
 
       const codesByType = new Map<BillingCodeType, string[]>();
@@ -75,14 +77,17 @@ export function useClarificationState() {
       );
       const codeType = codeGroups[0]?.codeType || "cpt";
 
-      navigateToResults(
-        buildResultsParams({
-          codes: codeValues.join(","),
-          codeType,
-          codeGroups: JSON.stringify(codeGroups),
-          interp,
-        })
-      );
+      const extraParams: Record<string, string> = {
+        codes: codeValues.join(","),
+        codeType,
+        codeGroups: JSON.stringify(codeGroups),
+        interp,
+      };
+      if (plan) {
+        extraParams.plan = JSON.stringify(plan);
+      }
+
+      navigateToResults(buildResultsParams(extraParams));
     },
     [navigateToResults, buildResultsParams]
   );
@@ -90,6 +95,9 @@ export function useClarificationState() {
   const handleResponse = useCallback(
     (data: TranslationResponse) => {
       setInterpretation(data.interpretation || "");
+      if (data.pricingPlan) {
+        setPricingPlan(data.pricingPlan);
+      }
 
       if (data.codes && data.codes.length > 0) {
         setAllCodes(data.codes);
@@ -97,9 +105,13 @@ export function useClarificationState() {
 
       if (data.confidence === "high" || data.conversationComplete) {
         if (data.codes && data.codes.length > 0) {
-          goToResults(data.codes, data.interpretation || "");
+          goToResults(data.codes, data.interpretation || "", data.pricingPlan);
         } else {
-          navigateToResults(buildResultsParams());
+          const extra: Record<string, string> = {};
+          if (data.pricingPlan) {
+            extra.plan = JSON.stringify(data.pricingPlan);
+          }
+          navigateToResults(buildResultsParams(extra));
         }
         return;
       }
@@ -204,9 +216,13 @@ export function useClarificationState() {
 
   const handleSkip = () => {
     if (allCodes.length > 0) {
-      goToResults(allCodes, interpretation);
+      goToResults(allCodes, interpretation, pricingPlan);
     } else {
-      navigateToResults(buildResultsParams());
+      const extra: Record<string, string> = {};
+      if (pricingPlan) {
+        extra.plan = JSON.stringify(pricingPlan);
+      }
+      navigateToResults(buildResultsParams(extra));
     }
   };
 
