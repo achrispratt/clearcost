@@ -32,23 +32,25 @@ function parseJsonResponse(text: string): Record<string, unknown> {
   return JSON.parse(cleaned);
 }
 
+type RawCode = { code: string; codeType?: string; description: string; category: string };
+
 /**
  * Maps raw code objects from Claude's response to our CPTCode type.
  */
-function mapCodes(
-  rawCodes: Array<{
-    code: string;
-    codeType?: string;
-    description: string;
-    category: string;
-  }>
-): CPTCode[] {
+function mapCodes(rawCodes: RawCode[]): CPTCode[] {
   return rawCodes.map((code) => ({
     code: code.code,
     description: code.description,
     category: code.category,
     codeType: (code.codeType || "cpt") as BillingCodeType,
   }));
+}
+
+/**
+ * Extracts and maps billing codes from Claude's parsed JSON response.
+ */
+function extractCodes(parsed: Record<string, unknown>): CPTCode[] {
+  return mapCodes((parsed.codes as RawCode[]) || []);
 }
 
 /**
@@ -73,17 +75,9 @@ export async function translateQueryToCPT(
   }
 
   const parsed = parseJsonResponse(content.text);
-  const codes = mapCodes(
-    (parsed.codes as Array<{
-      code: string;
-      codeType?: string;
-      description: string;
-      category: string;
-    }>) || []
-  );
 
   return {
-    codes,
+    codes: extractCodes(parsed),
     interpretation: (parsed.interpretation as string) || "",
     searchTerms: (parsed.searchTerms as string) || query,
   };
@@ -149,17 +143,8 @@ export async function clarifyQuery(
 function buildTranslationResponse(
   parsed: Record<string, unknown>
 ): TranslationResponse {
-  const codes = mapCodes(
-    (parsed.codes as Array<{
-      code: string;
-      codeType?: string;
-      description: string;
-      category: string;
-    }>) || []
-  );
-
   return {
-    codes,
+    codes: extractCodes(parsed),
     interpretation: (parsed.interpretation as string) || "",
     searchTerms: (parsed.searchTerms as string) || undefined,
     confidence: (parsed.confidence as "high" | "low") || "low",
