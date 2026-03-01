@@ -666,13 +666,17 @@ async function flushOneBatch(
   numCols: number
 ): Promise<number> {
   // Build the SQL and values array
+  // Strip null bytes (0x00) from text fields — Postgres UTF8 rejects them
+  const sanitize = (v: unknown) =>
+    typeof v === "string" ? v.replace(/\x00/g, "") : v;
+
   const values: unknown[] = [];
   const rowPlaceholders: string[] = [];
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     const placeholders: string[] = [];
     for (let c = 0; c < numCols; c++) {
-      values.push(row[CHARGE_COLUMNS[c]] ?? null);
+      values.push(sanitize(row[CHARGE_COLUMNS[c]]) ?? null);
       placeholders.push(`$${r * numCols + c + 1}`);
     }
     rowPlaceholders.push(`(${placeholders.join(",")})`);
