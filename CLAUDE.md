@@ -265,13 +265,28 @@ See `.env.local.example` for required keys:
 
 ## Git Workflow & Development Practices
 
-This is a solo-developer project. Workflow should be simple and low-friction.
+This is a solo-developer project. Workflow should be simple and low-friction, but tracked via GitHub Issues and PRs.
 
-**Branching:**
-- **Commit directly to `main`** for most work: bug fixes, features, docs, refactors.
-- **Use feature branches only when** the work is experimental/risky and you might want to throw it away, OR when explicitly asked to create a PR for review.
-- Don't create branches just for documentation or planning artifacts — that adds unnecessary process.
-- If a branch is created, keep it short-lived (merge within 1-2 sessions). Stale branches create confusion about what's current.
+**Issue-Driven Workflow:**
+All work is tracked via GitHub Issues on the [ClearCost MVP project board](https://github.com/users/achrispratt/projects/2). The standard flow:
+1. Pick an issue (user says "work on #7" or similar)
+2. Read the issue with `gh issue view <number>`
+3. Create a feature branch: `git checkout -b <type>/<short-description>` (e.g., `data/import-nj-charges`, `fix/payer-filter-removal`, `feat/loading-skeletons`)
+4. Do the work — commit frequently with clear messages
+5. Push and open a PR with `gh pr create`, linking the issue (use "Closes #N" in the PR body)
+6. User reviews and merges — issue auto-closes on merge
+
+**Branch Naming:**
+- `data/` — data pipeline, import, quality work
+- `feat/` — new features, UI additions
+- `fix/` — bug fixes
+- `infra/` — security, deployment, tooling
+- `refactor/` — code cleanup, no behavior change
+
+**Branching Rules:**
+- **Always use feature branches + PRs** for issue-tracked work. This keeps `main` clean and creates an audit trail.
+- **Commit directly to `main` only for** trivial fixes (typos, comment updates, CLAUDE.md changes) that don't warrant a PR.
+- Keep branches short-lived (merge within 1-2 sessions). Stale branches create confusion.
 
 **Commits:**
 - Commit frequently with clear messages. Small, focused commits are easier to review and revert.
