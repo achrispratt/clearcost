@@ -17,6 +17,8 @@ interface LookupParams {
   lat: number;
   lng: number;
   radiusMiles?: number;
+  limit?: number;
+  providerLimit?: number;
 }
 
 interface FallbackLookupParams {
@@ -25,6 +27,7 @@ interface FallbackLookupParams {
   lng: number;
   radiusMiles?: number;
   limit?: number;
+  providerLimit?: number;
 }
 
 interface PriceSummary {
@@ -44,6 +47,56 @@ interface LookupWithPlanParams {
   lng: number;
   radiusMiles?: number;
   descriptionFallback?: string;
+  diagnostics?: LookupDiagnostics;
+}
+
+interface LookupStageCounterSnapshot {
+  attempts: number;
+  retries: number;
+  timeouts: number;
+  failures: number;
+  chunkFallbacks: number;
+}
+
+export interface LookupStageSummary {
+  stage: string;
+  initialResults: number;
+  expandedResults: number;
+  descriptionResults: number;
+  usedExpandedRadius: boolean;
+  usedDescriptionFallback: boolean;
+  exhausted: boolean;
+  attempts: number;
+  retries: number;
+  timeouts: number;
+  failures: number;
+  chunkFallbacks: number;
+}
+
+export interface LookupDiagnostics {
+  totalRpcAttempts: number;
+  totalRetries: number;
+  totalTimeouts: number;
+  totalFailures: number;
+  totalChunkFallbacks: number;
+  fallbackExhausted: boolean;
+  stageSummaries: LookupStageSummary[];
+}
+
+interface RpcExecutionResult<RowType> {
+  rows: RowType[];
+  attempts: number;
+  retries: number;
+  timeouts: number;
+  failures: number;
+  timedOut: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface RpcExecutionContext {
+  diagnostics?: LookupDiagnostics;
+  stage?: string;
 }
 
 const ENCOUNTER_LABELS: Record<
@@ -58,6 +111,25 @@ const ENCOUNTER_LABELS: Record<
 
 const MAX_PROVIDER_ZIP_DRIFT_MILES = 75;
 const DISTANCE_FILTER_TOLERANCE_MILES = 0.5;
+const RPC_TIMEOUT_CODE = "57014";
+const RPC_MAX_RETRIES = 2;
+const RPC_RETRY_DELAYS_MS = [120, 320];
+const CODE_CHUNK_FALLBACK_SIZE = 4;
+const CODE_LOOKUP_LIMIT = 600;
+const DESCRIPTION_LOOKUP_LIMIT = 120;
+const PROVIDER_LIMIT = 300;
+
+export function createLookupDiagnostics(): LookupDiagnostics {
+  return {
+    totalRpcAttempts: 0,
+    totalRetries: 0,
+    totalTimeouts: 0,
+    totalFailures: 0,
+    totalChunkFallbacks: 0,
+    fallbackExhausted: false,
+    stageSummaries: [],
+  };
+}
 
 function toRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
@@ -237,6 +309,40 @@ function normalizeAndRankResults({
   });
 }
 
+async function delay(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTimeoutCode(code: string | undefined): boolean {
+  return code === RPC_TIMEOUT_CODE;
+}
+
+function diagnosticsSnapshot(
+  diagnostics: LookupDiagnostics | undefined
+): LookupStageCounterSnapshot {
+  return {
+    attempts: diagnostics?.totalRpcAttempts || 0,
+    retries: diagnostics?.totalRetries || 0,
+    timeouts: diagnostics?.totalTimeouts || 0,
+    failures: diagnostics?.totalFailures || 0,
+    chunkFallbacks: diagnostics?.totalChunkFallbacks || 0,
+  };
+}
+
+function diagnosticsDelta(
+  diagnostics: LookupDiagnostics | undefined,
+  baseline: LookupStageCounterSnapshot
+): LookupStageCounterSnapshot {
+  const current = diagnosticsSnapshot(diagnostics);
+  return {
+    attempts: current.attempts - baseline.attempts,
+    retries: current.retries - baseline.retries,
+    timeouts: current.timeouts - baseline.timeouts,
+    failures: current.failures - baseline.failures,
+    chunkFallbacks: current.chunkFallbacks - baseline.chunkFallbacks,
+  };
+}
+
 function dedupeResultsById(results: ChargeResult[]): ChargeResult[] {
   const byId = new Map<string, ChargeResult>();
   for (const result of results) {
@@ -328,17 +434,24 @@ async function queryCodeGroupsAtRadius({
   lat,
   lng,
   radiusMiles,
+  diagnostics,
+  stage,
 }: {
   codeGroups: { codeType: BillingCodeType; codes: string[] }[];
   lat: number;
   lng: number;
   radiusMiles: number;
+  diagnostics?: LookupDiagnostics;
+  stage: string;
 }): Promise<ChargeResult[]> {
   if (codeGroups.length === 0) return [];
 
   const responses = await Promise.all(
     codeGroups.map(({ codeType, codes }) =>
-      lookupCharges({ codes, codeType, lat, lng, radiusMiles })
+      lookupCharges(
+        { codes, codeType, lat, lng, radiusMiles },
+        { diagnostics, stage }
+      )
     )
   );
 
@@ -351,39 +464,97 @@ async function queryCodeGroupsWithFallback({
   lng,
   radiusMiles = 25,
   descriptionFallback,
+  diagnostics,
+  stage,
 }: {
   codeGroups: { codeType: BillingCodeType; codes: string[] }[];
   lat: number;
   lng: number;
   radiusMiles?: number;
   descriptionFallback?: string;
+  diagnostics?: LookupDiagnostics;
+  stage: string;
 }): Promise<ChargeResult[]> {
+  const baseline = diagnosticsSnapshot(diagnostics);
+  const summary: LookupStageSummary = {
+    stage,
+    initialResults: 0,
+    expandedResults: 0,
+    descriptionResults: 0,
+    usedExpandedRadius: false,
+    usedDescriptionFallback: false,
+    exhausted: false,
+    attempts: 0,
+    retries: 0,
+    timeouts: 0,
+    failures: 0,
+    chunkFallbacks: 0,
+  };
+
+  const finalizeSummary = () => {
+    if (!diagnostics) return;
+    const delta = diagnosticsDelta(diagnostics, baseline);
+    summary.attempts = delta.attempts;
+    summary.retries = delta.retries;
+    summary.timeouts = delta.timeouts;
+    summary.failures = delta.failures;
+    summary.chunkFallbacks = delta.chunkFallbacks;
+    diagnostics.stageSummaries.push(summary);
+  };
+
   const initial = await queryCodeGroupsAtRadius({
     codeGroups,
     lat,
     lng,
     radiusMiles,
+    diagnostics,
+    stage: `${stage}:initial`,
   });
-  if (initial.length > 0) return initial;
+  summary.initialResults = initial.length;
+  if (initial.length > 0) {
+    finalizeSummary();
+    return initial;
+  }
 
   const expandedRadius = radiusMiles * 3;
+  summary.usedExpandedRadius = true;
   const expanded = await queryCodeGroupsAtRadius({
     codeGroups,
     lat,
     lng,
     radiusMiles: expandedRadius,
+    diagnostics,
+    stage: `${stage}:expanded`,
   });
-  if (expanded.length > 0) return expanded;
+  summary.expandedResults = expanded.length;
+  if (expanded.length > 0) {
+    finalizeSummary();
+    return expanded;
+  }
 
-  if (descriptionFallback) {
-    return lookupChargesByDescription({
+  if (descriptionFallback && descriptionFallback.trim().length > 0) {
+    summary.usedDescriptionFallback = true;
+    const fallbackRows = await lookupChargesByDescription(
+      {
       searchTerms: descriptionFallback,
       lat,
       lng,
       radiusMiles: expandedRadius,
-    });
+      },
+      { diagnostics, stage: `${stage}:description` }
+    );
+    summary.descriptionResults = fallbackRows.length;
+    if (fallbackRows.length > 0) {
+      finalizeSummary();
+      return fallbackRows;
+    }
   }
 
+  summary.exhausted = true;
+  if (diagnostics && stage === "base") {
+    diagnostics.fallbackExhausted = true;
+  }
+  finalizeSummary();
   return [];
 }
 
@@ -588,6 +759,7 @@ export async function lookupWithPricingPlan({
   lng,
   radiusMiles = 25,
   descriptionFallback,
+  diagnostics,
 }: LookupWithPlanParams): Promise<ChargeResult[]> {
   const baseResults = await queryCodeGroupsWithFallback({
     codeGroups: pricingPlan.baseCodeGroups,
@@ -595,6 +767,8 @@ export async function lookupWithPricingPlan({
     lng,
     radiusMiles,
     descriptionFallback,
+    diagnostics,
+    stage: "base",
   });
 
   const adderResults = await Promise.all(
@@ -605,6 +779,8 @@ export async function lookupWithPricingPlan({
         lat,
         lng,
         radiusMiles,
+        diagnostics,
+        stage: `adder:${adder.id}`,
       }),
     }))
   );
@@ -637,29 +813,175 @@ export async function lookupWithPricingPlan({
  * The RPC handles cross-column search: when codeType is 'cpt', Postgres
  * checks both the cpt AND hcpcs columns (hospitals store CPT codes in either).
  */
+function splitIntoCodeChunks(codes: string[], chunkSize: number): string[][] {
+  const chunks: string[][] = [];
+  for (let i = 0; i < codes.length; i += chunkSize) {
+    chunks.push(codes.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+async function executeRpcWithRetry<RowType>({
+  supabase,
+  rpcName,
+  rpcParams,
+  diagnostics,
+}: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  rpcName: "search_charges_nearby" | "search_charges_by_description";
+  rpcParams: Record<string, unknown>;
+  diagnostics?: LookupDiagnostics;
+}): Promise<RpcExecutionResult<RowType>> {
+  const result: RpcExecutionResult<RowType> = {
+    rows: [],
+    attempts: 0,
+    retries: 0,
+    timeouts: 0,
+    failures: 0,
+    timedOut: false,
+  };
+
+  for (let attempt = 1; attempt <= RPC_MAX_RETRIES + 1; attempt += 1) {
+    result.attempts += 1;
+    if (diagnostics) {
+      diagnostics.totalRpcAttempts += 1;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc(rpcName, rpcParams);
+      if (!error) {
+        result.rows = (data as RowType[]) || [];
+        return result;
+      }
+
+      result.failures += 1;
+      result.errorCode = typeof error.code === "string" ? error.code : undefined;
+      result.errorMessage = error.message;
+      if (diagnostics) {
+        diagnostics.totalFailures += 1;
+      }
+    } catch (error) {
+      result.failures += 1;
+      result.errorCode = "rpc_exception";
+      result.errorMessage = error instanceof Error ? error.message : String(error);
+      if (diagnostics) {
+        diagnostics.totalFailures += 1;
+      }
+    }
+
+    const timedOut = isTimeoutCode(result.errorCode);
+    result.timedOut = timedOut;
+    if (timedOut) {
+      result.timeouts += 1;
+      if (diagnostics) {
+        diagnostics.totalTimeouts += 1;
+      }
+    }
+
+    const shouldRetry = timedOut && attempt <= RPC_MAX_RETRIES;
+    if (!shouldRetry) {
+      return result;
+    }
+
+    result.retries += 1;
+    if (diagnostics) {
+      diagnostics.totalRetries += 1;
+    }
+    const retryDelay = RPC_RETRY_DELAYS_MS[Math.min(attempt - 1, RPC_RETRY_DELAYS_MS.length - 1)];
+    await delay(retryDelay);
+  }
+
+  return result;
+}
+
 export async function lookupCharges({
   codes,
   codeType = "cpt",
   lat,
   lng,
   radiusMiles = 25,
-}: LookupParams): Promise<ChargeResult[]> {
+  limit = CODE_LOOKUP_LIMIT,
+  providerLimit = PROVIDER_LIMIT,
+}: LookupParams, context: RpcExecutionContext = {}): Promise<ChargeResult[]> {
+  if (codes.length === 0) return [];
   const supabase = await createClient();
+  const normalizedCodes = Array.from(
+    new Set(
+      codes
+        .map((code) => code.trim().toUpperCase())
+        .filter((code) => code.length > 0)
+    )
+  );
 
-  const { data, error } = await supabase.rpc("search_charges_nearby", {
+  const rpcParams = {
     p_code_type: codeType,
-    p_codes: codes,
+    p_codes: normalizedCodes,
     p_lat: lat,
     p_lng: lng,
     p_radius_km: milesToKm(radiusMiles),
+    p_limit: limit,
+    p_provider_limit: providerLimit,
+  };
+
+  const initial = await executeRpcWithRetry<RpcRow>({
+    supabase,
+    rpcName: "search_charges_nearby",
+    rpcParams,
+    diagnostics: context.diagnostics,
   });
 
-  if (error) {
-    console.error("Charge lookup error:", error);
+  if (!initial.errorCode) {
+    return mapRows(initial.rows);
+  }
+
+  const canChunkFallback =
+    initial.timedOut && normalizedCodes.length > CODE_CHUNK_FALLBACK_SIZE;
+  if (!canChunkFallback) {
+    console.error("Charge lookup error:", {
+      stage: context.stage,
+      codeType,
+      codeCount: normalizedCodes.length,
+      errorCode: initial.errorCode,
+      errorMessage: initial.errorMessage,
+    });
     return [];
   }
 
-  return mapRows(data || []);
+  if (context.diagnostics) {
+    context.diagnostics.totalChunkFallbacks += 1;
+  }
+
+  const allChunkRows: RpcRow[] = [];
+  const codeChunks = splitIntoCodeChunks(normalizedCodes, CODE_CHUNK_FALLBACK_SIZE);
+  for (const [chunkIndex, chunk] of codeChunks.entries()) {
+    const chunkResult = await executeRpcWithRetry<RpcRow>({
+      supabase,
+      rpcName: "search_charges_nearby",
+      rpcParams: {
+        ...rpcParams,
+        p_codes: chunk,
+      },
+      diagnostics: context.diagnostics,
+    });
+
+    if (chunkResult.errorCode) {
+      console.error("Charge lookup chunk error:", {
+        stage: context.stage,
+        chunkIndex: chunkIndex + 1,
+        chunkTotal: codeChunks.length,
+        codeType,
+        codeCount: chunk.length,
+        errorCode: chunkResult.errorCode,
+        errorMessage: chunkResult.errorMessage,
+      });
+      continue;
+    }
+
+    allChunkRows.push(...chunkResult.rows);
+  }
+
+  const chunkedResults = dedupeResultsById(mapRows(allChunkRows));
+  return chunkedResults;
 }
 
 /**
@@ -672,25 +994,38 @@ export async function lookupChargesByDescription({
   lat,
   lng,
   radiusMiles = 25,
-  limit = 50,
-}: FallbackLookupParams): Promise<ChargeResult[]> {
+  limit = DESCRIPTION_LOOKUP_LIMIT,
+  providerLimit = PROVIDER_LIMIT,
+}: FallbackLookupParams, context: RpcExecutionContext = {}): Promise<ChargeResult[]> {
+  if (!searchTerms.trim()) return [];
   const supabase = await createClient();
   const radiusKm = milesToKm(radiusMiles);
 
-  const { data, error } = await supabase.rpc("search_charges_by_description", {
+  const result = await executeRpcWithRetry<RpcRow>({
+    supabase,
+    rpcName: "search_charges_by_description",
+    rpcParams: {
     p_search_terms: searchTerms,
     p_lat: lat,
     p_lng: lng,
     p_radius_km: radiusKm,
     p_limit: limit,
+      p_provider_limit: providerLimit,
+    },
+    diagnostics: context.diagnostics,
   });
 
-  if (error) {
-    console.error("Description lookup error:", error);
+  if (result.errorCode) {
+    console.error("Description lookup error:", {
+      stage: context.stage,
+      searchTerms,
+      errorCode: result.errorCode,
+      errorMessage: result.errorMessage,
+    });
     return [];
   }
 
-  return mapRows(data || []);
+  return mapRows(result.rows);
 }
 
 /**
@@ -702,13 +1037,16 @@ export async function lookupChargesWithFallback({
   lng,
   radiusMiles = 25,
   descriptionFallback,
+  diagnostics,
+  stage = "legacy",
 }: {
   codeGroups: { codeType: BillingCodeType; codes: string[] }[];
   lat: number;
   lng: number;
   radiusMiles?: number;
   descriptionFallback?: string;
-  adderContext?: string;
+  diagnostics?: LookupDiagnostics;
+  stage?: string;
 }): Promise<ChargeResult[]> {
   return queryCodeGroupsWithFallback({
     codeGroups,
@@ -716,6 +1054,8 @@ export async function lookupChargesWithFallback({
     lng,
     radiusMiles,
     descriptionFallback,
+    diagnostics,
+    stage,
   });
 }
 

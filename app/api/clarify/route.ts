@@ -22,8 +22,9 @@ export async function POST(request: NextRequest) {
       query: string;
       turns?: ClarificationTurn[];
     };
+    const queryText = typeof query === "string" ? query : "";
 
-    if (!query) {
+    if (!queryText) {
       return NextResponse.json(
         { error: "Query is required" },
         { status: 400 }
@@ -32,16 +33,19 @@ export async function POST(request: NextRequest) {
 
     try {
       // Initial assessment (no turns) or follow-up (with turns)
+      // NOTE: No translation cache here — the guided search conversation IS
+      // the product. "knee pain" means different things for different users;
+      // skipping clarification would defeat the diagnostic purpose.
       const result =
         turns.length === 0
-          ? await assessQuery(query)
-          : await clarifyQuery(query, turns);
+          ? await assessQuery(queryText)
+          : await clarifyQuery(queryText, turns);
 
       return NextResponse.json(result);
     } catch (parseError) {
       // If guided search fails (malformed response, etc.), fall back to single-shot
       console.error("Guided search error, falling back to single-shot:", parseError);
-      const fallback = await translateQueryToCPT(query);
+      const fallback = await translateQueryToCPT(queryText);
       return NextResponse.json({
         ...fallback,
         confidence: "high" as const,

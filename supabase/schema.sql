@@ -85,6 +85,9 @@ create index if not exists idx_charges_ms_drg on charges (ms_drg);
 create index if not exists idx_charges_provider on charges (provider_id);
 create index if not exists idx_charges_cpt_provider on charges (cpt, provider_id);
 create index if not exists idx_charges_hcpcs_provider on charges (hcpcs, provider_id);
+create index if not exists idx_charges_provider_cpt on charges (provider_id, cpt);
+create index if not exists idx_charges_provider_hcpcs on charges (provider_id, hcpcs);
+create index if not exists idx_charges_provider_ms_drg on charges (provider_id, ms_drg);
 create index if not exists idx_charges_description on charges using gin (to_tsvector('english', coalesce(description, '')));
 
 -- ============================================================================
@@ -132,6 +135,20 @@ create table if not exists saved_searches (
 create index if not exists idx_saved_searches_user on saved_searches (user_id);
 
 -- ============================================================================
+-- TRANSLATION CACHE (query -> deterministic translation payload)
+-- ============================================================================
+create table if not exists translation_cache (
+  query_hash text primary key,
+  normalized_query text not null,
+  payload jsonb not null,
+  hit_count integer not null default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_translation_cache_updated_at on translation_cache (updated_at desc);
+
+-- ============================================================================
 -- RPC: search_charges_nearby()
 -- Main search function. Finds charges near a geographic point by billing code.
 -- Supports CPT, HCPCS, and MS-DRG code types.
@@ -142,7 +159,9 @@ create or replace function search_charges_nearby(
   p_codes text[],               -- Array of billing codes to search for
   p_lat double precision,
   p_lng double precision,
-  p_radius_km double precision default 40
+  p_radius_km double precision default 40,
+  p_limit integer default 600,
+  p_provider_limit integer default 300
 )
 returns table (
   id uuid,
@@ -178,19 +197,44 @@ returns table (
 language sql
 stable
 as $$
+  with search_center as (
+    select st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography as center
+  ),
+  nearby_providers as (
+    select
+      pr.id,
+      pr.name,
+      pr.address,
+      pr.city,
+      pr.state,
+      pr.zip,
+      pr.lat,
+      pr.lng,
+      pr.phone,
+      pr.website,
+      pr.provider_type,
+      st_distance(pr.location, sc.center) / 1000 as distance_km
+    from providers pr
+    cross join search_center sc
+    where
+      pr.location is not null
+      and st_dwithin(pr.location, sc.center, p_radius_km * 1000)
+    order by distance_km asc
+    limit greatest(coalesce(p_provider_limit, 300), 1)
+  )
   select
     c.id,
-    pr.id as provider_id,
-    pr.name as provider_name,
-    pr.address as provider_address,
-    pr.city as provider_city,
-    pr.state as provider_state,
-    pr.zip as provider_zip,
-    pr.lat as provider_lat,
-    pr.lng as provider_lng,
-    pr.phone as provider_phone,
-    pr.website as provider_website,
-    pr.provider_type,
+    np.id as provider_id,
+    np.name as provider_name,
+    np.address as provider_address,
+    np.city as provider_city,
+    np.state as provider_state,
+    np.zip as provider_zip,
+    np.lat as provider_lat,
+    np.lng as provider_lng,
+    np.phone as provider_phone,
+    np.website as provider_website,
+    np.provider_type,
     c.description,
     c.setting,
     c.billing_class,
@@ -207,25 +251,17 @@ as $$
     c.payer_count,
     c.source,
     c.last_updated,
-    st_distance(
-      pr.location,
-      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-    ) / 1000 as distance_km
-  from charges c
-  join providers pr on c.provider_id = pr.id
+    np.distance_km
+  from nearby_providers np
+  join charges c on c.provider_id = np.id
   where
-    pr.location is not null
-    and st_dwithin(
-      pr.location,
-      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-      p_radius_km * 1000
-    )
-    and (
+    (
       (p_code_type = 'cpt' and (c.cpt = any(p_codes) or c.hcpcs = any(p_codes)))
       or (p_code_type = 'hcpcs' and c.hcpcs = any(p_codes))
       or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
     )
-  order by c.cash_price asc nulls last;
+  order by np.distance_km asc, c.cash_price asc nulls last
+  limit greatest(coalesce(p_limit, 600), 1);
 $$;
 
 -- ============================================================================
@@ -238,7 +274,8 @@ create or replace function search_charges_by_description(
   p_lat double precision,
   p_lng double precision,
   p_radius_km double precision default 40,
-  p_limit integer default 50
+  p_limit integer default 120,
+  p_provider_limit integer default 300
 )
 returns table (
   id uuid,
@@ -275,19 +312,47 @@ returns table (
 language sql
 stable
 as $$
+  with search_center as (
+    select st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography as center
+  ),
+  query_terms as (
+    select plainto_tsquery('english', p_search_terms) as ts_query
+  ),
+  nearby_providers as (
+    select
+      pr.id,
+      pr.name,
+      pr.address,
+      pr.city,
+      pr.state,
+      pr.zip,
+      pr.lat,
+      pr.lng,
+      pr.phone,
+      pr.website,
+      pr.provider_type,
+      st_distance(pr.location, sc.center) / 1000 as distance_km
+    from providers pr
+    cross join search_center sc
+    where
+      pr.location is not null
+      and st_dwithin(pr.location, sc.center, p_radius_km * 1000)
+    order by distance_km asc
+    limit greatest(coalesce(p_provider_limit, 300), 1)
+  )
   select
     c.id,
-    pr.id as provider_id,
-    pr.name as provider_name,
-    pr.address as provider_address,
-    pr.city as provider_city,
-    pr.state as provider_state,
-    pr.zip as provider_zip,
-    pr.lat as provider_lat,
-    pr.lng as provider_lng,
-    pr.phone as provider_phone,
-    pr.website as provider_website,
-    pr.provider_type,
+    np.id as provider_id,
+    np.name as provider_name,
+    np.address as provider_address,
+    np.city as provider_city,
+    np.state as provider_state,
+    np.zip as provider_zip,
+    np.lat as provider_lat,
+    np.lng as provider_lng,
+    np.phone as provider_phone,
+    np.website as provider_website,
+    np.provider_type,
     c.description,
     c.setting,
     c.billing_class,
@@ -304,26 +369,18 @@ as $$
     c.payer_count,
     c.source,
     c.last_updated,
-    st_distance(
-      pr.location,
-      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-    ) / 1000 as distance_km,
+    np.distance_km,
     ts_rank(
       to_tsvector('english', coalesce(c.description, '')),
-      plainto_tsquery('english', p_search_terms)
+      qt.ts_query
     ) as search_rank
-  from charges c
-  join providers pr on c.provider_id = pr.id
+  from nearby_providers np
+  join charges c on c.provider_id = np.id
+  cross join query_terms qt
   where
-    pr.location is not null
-    and st_dwithin(
-      pr.location,
-      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-      p_radius_km * 1000
-    )
-    and to_tsvector('english', coalesce(c.description, '')) @@ plainto_tsquery('english', p_search_terms)
-  order by search_rank desc, c.cash_price asc nulls last
-  limit p_limit;
+    to_tsvector('english', coalesce(c.description, '')) @@ qt.ts_query
+  order by search_rank desc, np.distance_km asc, c.cash_price asc nulls last
+  limit greatest(coalesce(p_limit, 120), 1);
 $$;
 
 -- ============================================================================
@@ -350,8 +407,12 @@ alter table providers enable row level security;
 alter table charges enable row level security;
 alter table payer_rates enable row level security;
 alter table payers enable row level security;
+alter table translation_cache enable row level security;
 
 create policy "Anyone can view providers" on providers for select using (true);
 create policy "Anyone can view charges" on charges for select using (true);
 create policy "Anyone can view payer rates" on payer_rates for select using (true);
 create policy "Anyone can view payers" on payers for select using (true);
+create policy "Anyone can view translation cache" on translation_cache for select using (true);
+create policy "Anyone can insert translation cache" on translation_cache for insert with check (true);
+create policy "Anyone can update translation cache" on translation_cache for update using (true) with check (true);

@@ -1,9 +1,21 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { translateQueryToCPT } from "@/lib/cpt/translate";
-import { lookupWithPricingPlan } from "@/lib/cpt/lookup";
+import {
+  createLookupDiagnostics,
+  lookupWithPricingPlan,
+  type LookupDiagnostics,
+} from "@/lib/cpt/lookup";
 import { buildPricingPlan, normalizePricingPlanInput } from "@/lib/cpt/pricing-plan";
+import {
+  getCachedTranslation,
+  getTranslationCacheKey,
+  setCachedTranslation,
+} from "@/lib/cpt/cache";
 import { handleApiError } from "@/lib/api-helpers";
-import type { BillingCodeType, CPTCode } from "@/types";
+import type { BillingCodeType, CPTCode, PricingPlan } from "@/types";
+
+type CacheStatus = "hit" | "miss" | "skip";
 
 function normalizeCodeType(value: unknown): BillingCodeType {
   if (value === "hcpcs" || value === "ms_drg") return value;
@@ -29,7 +41,104 @@ function normalizeCodeGroups(value: unknown): { codeType: BillingCodeType; codes
     .filter((group) => group.codes.length > 0);
 }
 
+function countCodesInPlan(pricingPlan: PricingPlan): {
+  baseGroupCount: number;
+  baseCodeCount: number;
+  adderCount: number;
+  adderGroupCount: number;
+  adderCodeCount: number;
+} {
+  return {
+    baseGroupCount: pricingPlan.baseCodeGroups.length,
+    baseCodeCount: pricingPlan.baseCodeGroups.reduce(
+      (sum, group) => sum + group.codes.length,
+      0
+    ),
+    adderCount: pricingPlan.adders.length,
+    adderGroupCount: pricingPlan.adders.reduce(
+      (sum, adder) => sum + adder.codeGroups.length,
+      0
+    ),
+    adderCodeCount: pricingPlan.adders.reduce(
+      (sum, adder) =>
+        sum +
+        adder.codeGroups.reduce((innerSum, group) => innerSum + group.codes.length, 0),
+      0
+    ),
+  };
+}
+
+function maybeLogSearchDiagnostics({
+  traceId,
+  queryHash,
+  cacheStatus,
+  pricingPlan,
+  lookupDiagnostics,
+  totalResults,
+  elapsedMs,
+}: {
+  traceId: string;
+  queryHash?: string;
+  cacheStatus: CacheStatus;
+  pricingPlan?: PricingPlan;
+  lookupDiagnostics: LookupDiagnostics;
+  totalResults: number;
+  elapsedMs: number;
+}): void {
+  const hasTimeouts = lookupDiagnostics.totalTimeouts > 0;
+  const fallbackExhausted =
+    lookupDiagnostics.fallbackExhausted ||
+    lookupDiagnostics.stageSummaries.some(
+      (stage) => stage.stage === "base" && stage.exhausted
+    );
+
+  if (!hasTimeouts && totalResults > 0 && !fallbackExhausted) return;
+
+  const planCounts = pricingPlan ? countCodesInPlan(pricingPlan) : undefined;
+  console.warn("search_diagnostics", {
+    traceId,
+    queryHash,
+    cacheStatus,
+    elapsedMs,
+    totalResults,
+    pricingMode: pricingPlan?.mode,
+    queryType: pricingPlan?.queryType,
+    ...planCounts,
+    totalRpcAttempts: lookupDiagnostics.totalRpcAttempts,
+    totalRetries: lookupDiagnostics.totalRetries,
+    totalTimeouts: lookupDiagnostics.totalTimeouts,
+    totalFailures: lookupDiagnostics.totalFailures,
+    totalChunkFallbacks: lookupDiagnostics.totalChunkFallbacks,
+    fallbackExhausted,
+    stageSummaries: lookupDiagnostics.stageSummaries.map((stage) => ({
+      stage: stage.stage,
+      attempts: stage.attempts,
+      retries: stage.retries,
+      timeouts: stage.timeouts,
+      failures: stage.failures,
+      chunkFallbacks: stage.chunkFallbacks,
+      initialResults: stage.initialResults,
+      expandedResults: stage.expandedResults,
+      descriptionResults: stage.descriptionResults,
+      usedExpandedRadius: stage.usedExpandedRadius,
+      usedDescriptionFallback: stage.usedDescriptionFallback,
+      exhausted: stage.exhausted,
+    })),
+  });
+}
+
 export async function POST(request: NextRequest) {
+  const traceId = randomUUID();
+  const startedAt = Date.now();
+
+  const respond = (payload: unknown, status = 200) => {
+    const response = NextResponse.json(payload, { status });
+    if (process.env.NODE_ENV !== "production") {
+      response.headers.set("x-clearcost-trace-id", traceId);
+    }
+    return response;
+  };
+
   try {
     const body = await request.json();
     const {
@@ -41,12 +150,10 @@ export async function POST(request: NextRequest) {
       codeType: directCodeType,
       codeGroups: directCodeGroupsRaw,
     } = body;
+    const queryText = typeof query === "string" ? query : "";
 
     if (!location) {
-      return NextResponse.json(
-        { error: "Location is required" },
-        { status: 400 }
-      );
+      return respond({ error: "Location is required" }, 400);
     }
 
     const radiusMiles = location.radiusMiles || 25;
@@ -60,8 +167,7 @@ export async function POST(request: NextRequest) {
       : [];
     const providedPricingPlan = normalizePricingPlanInput(providedPricingPlanRaw);
 
-    // Fast path: direct code lookup (from guided search flow)
-    // Skips AI translation entirely — codes are already known
+    // Fast path: direct grouped codes, skips AI translation.
     if (directCodeGroups.length > 0) {
       const directPlanCodes: CPTCode[] = directCodeGroups.flatMap((group) =>
         group.codes.map((code) => ({
@@ -72,22 +178,34 @@ export async function POST(request: NextRequest) {
         }))
       );
       const pricingPlan = buildPricingPlan({
-        query: query || "",
+        query: queryText,
         interpretation: providedInterpretation,
         codes: directPlanCodes,
         modelPricingPlan: providedPricingPlan,
       });
+      const lookupDiagnostics = createLookupDiagnostics();
 
       const results = await lookupWithPricingPlan({
         pricingPlan,
         lat,
         lng,
         radiusMiles,
-        descriptionFallback: query || providedInterpretation,
+        descriptionFallback: queryText || providedInterpretation,
+        diagnostics: lookupDiagnostics,
       });
 
-      return NextResponse.json({
-        query: query || "",
+      maybeLogSearchDiagnostics({
+        traceId,
+        queryHash: queryText ? getTranslationCacheKey(queryText).queryHash : undefined,
+        cacheStatus: "skip",
+        pricingPlan,
+        lookupDiagnostics,
+        totalResults: results.length,
+        elapsedMs: Date.now() - startedAt,
+      });
+
+      return respond({
+        query: queryText,
         interpretation: providedInterpretation || "",
         pricingPlan,
         cptCodes: [],
@@ -96,6 +214,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Fast path: direct codes, skips AI translation.
     if (normalizedDirectCodes.length > 0) {
       const codeType = normalizeCodeType(directCodeType);
       const directPlanCodes: CPTCode[] = normalizedDirectCodes.map((code) => ({
@@ -105,22 +224,34 @@ export async function POST(request: NextRequest) {
         category: "Procedure",
       }));
       const pricingPlan = buildPricingPlan({
-        query: query || "",
+        query: queryText,
         interpretation: providedInterpretation,
         codes: directPlanCodes,
         modelPricingPlan: providedPricingPlan,
       });
+      const lookupDiagnostics = createLookupDiagnostics();
 
       const results = await lookupWithPricingPlan({
         pricingPlan,
         lat,
         lng,
         radiusMiles,
-        descriptionFallback: query || providedInterpretation,
+        descriptionFallback: queryText || providedInterpretation,
+        diagnostics: lookupDiagnostics,
       });
 
-      return NextResponse.json({
-        query: query || "",
+      maybeLogSearchDiagnostics({
+        traceId,
+        queryHash: queryText ? getTranslationCacheKey(queryText).queryHash : undefined,
+        cacheStatus: "skip",
+        pricingPlan,
+        lookupDiagnostics,
+        totalResults: results.length,
+        elapsedMs: Date.now() - startedAt,
+      });
+
+      return respond({
+        query: queryText,
         interpretation: providedInterpretation || "",
         pricingPlan,
         cptCodes: [],
@@ -129,59 +260,78 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Standard path: AI translation → code lookup → fallback
-    if (!query) {
-      return NextResponse.json(
-        { error: "Query or codes are required" },
-        { status: 400 }
-      );
+    // Standard path: AI translation -> code lookup -> fallback search.
+    if (!queryText) {
+      return respond({ error: "Query or codes are required" }, 400);
     }
 
-    // Step 1: Translate plain English to billing codes via Claude
-    const {
-      codes,
-      interpretation,
-      searchTerms,
-      queryType,
-      pricingPlan: translatedPricingPlan,
-    } =
-      await translateQueryToCPT(query);
+    const cacheLookup = await getCachedTranslation(queryText);
+    const cacheStatus: CacheStatus = cacheLookup.hit ? "hit" : "miss";
+    const translated = cacheLookup.hit && cacheLookup.payload
+      ? cacheLookup.payload
+      : await translateQueryToCPT(queryText);
 
     const pricingPlan = buildPricingPlan({
-      query,
-      interpretation,
-      queryType: providedPricingPlan?.queryType || queryType,
-      codes,
-      modelPricingPlan: providedPricingPlan || translatedPricingPlan,
+      query: queryText,
+      interpretation: translated.interpretation,
+      queryType: providedPricingPlan?.queryType || translated.queryType,
+      codes: translated.codes,
+      modelPricingPlan: providedPricingPlan || translated.pricingPlan,
     });
 
     const hasSearchablePlan =
       pricingPlan.baseCodeGroups.length > 0 ||
       pricingPlan.adders.some((adder) => adder.codeGroups.length > 0);
     if (!hasSearchablePlan) {
-      return NextResponse.json(
+      return respond(
         { error: "Could not identify relevant procedures for your query" },
-        { status: 404 }
+        404
       );
     }
 
+    const lookupDiagnostics = createLookupDiagnostics();
     const results = await lookupWithPricingPlan({
       pricingPlan,
       lat,
       lng,
       radiusMiles,
-      descriptionFallback: searchTerms,
+      descriptionFallback: translated.searchTerms,
+      diagnostics: lookupDiagnostics,
     });
 
-    return NextResponse.json({
-      query,
-      interpretation,
+    if (!cacheLookup.hit && results.length > 0) {
+      await setCachedTranslation(queryText, {
+        codes: translated.codes,
+        interpretation: translated.interpretation,
+        searchTerms: translated.searchTerms,
+        queryType: translated.queryType,
+        pricingPlan: translated.pricingPlan,
+      });
+    }
+
+    maybeLogSearchDiagnostics({
+      traceId,
+      queryHash: cacheLookup.queryHash,
+      cacheStatus,
       pricingPlan,
-      cptCodes: codes,
+      lookupDiagnostics,
+      totalResults: results.length,
+      elapsedMs: Date.now() - startedAt,
+    });
+
+    return respond({
+      query: queryText,
+      interpretation: translated.interpretation,
+      pricingPlan,
+      cptCodes: translated.codes,
       results,
       totalResults: results.length,
     });
   } catch (error) {
-    return handleApiError(error, "POST /api/search");
+    const response = handleApiError(error, "POST /api/search");
+    if (process.env.NODE_ENV !== "production") {
+      response.headers.set("x-clearcost-trace-id", traceId);
+    }
+    return response;
   }
 }
