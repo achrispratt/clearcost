@@ -173,7 +173,7 @@ The MVP pipeline works end-to-end. This sprint closes the gap between "working" 
 
 | # | Item | Impact | Effort | Priority |
 |---|------|--------|--------|----------|
-| 1 | Query Translation Cache | High (latency + cost) | Medium | P0 |
+| 1 | Query Translation Cache | High (latency + cost) | Medium | P0 — Done (stability hardening commit) |
 | 5 | Loading Skeleton States | High (perceived perf) | Low | P0 |
 | 3 | Billing Class Callouts | High (trust + transparency) | Low | P0 |
 | 2 | Distance Radius Filter | Medium (UX completeness) | Medium | P1 |
@@ -197,6 +197,7 @@ These are valuable but not for this sprint:
 - **Analytics (PostHog)** — Should happen post-launch when there's real traffic
 - **Map marker clustering** — Edge case for rural searches
 - **All-in cost estimation** — Requires research into professional fee benchmarks
+- **Translation cache eviction/TTL** — `translation_cache` table grows forever with no cleanup. Needs a TTL-based eviction strategy (e.g., delete entries older than 90 days, or cap table size). Low urgency with current traffic but will matter as query volume grows.
 - **Rate limiting** — Not needed until traffic grows
 - **Accessibility audit** — Important but separate effort
 - **Programmatic SEO pages** — Phase 6+

@@ -46,8 +46,10 @@ next-env.d.ts
 
 # local data pipeline (Trilliant Oria Parquet/DuckDB — too large for git)
 lib/data/parquet/
+lib/data/mrf_lake/
 lib/data/*.duckdb
 lib/data/*.zip
+lib/data/*.log
 
 # IDE
 .vscode/

@@ -384,6 +384,102 @@ as $$
 $$;
 
 -- ============================================================================
+-- RPC: Audit functions (used by scripts/db-audit.ts)
+-- Server-side aggregation for data quality audits.
+-- ============================================================================
+
+create or replace function audit_provider_charge_counts()
+returns table (provider_id uuid, charge_count bigint)
+language sql stable
+as $$
+  select c.provider_id, count(*) as charge_count
+  from charges c
+  group by c.provider_id;
+$$;
+
+create or replace function audit_zero_price_by_state()
+returns table (state text, zero_price_count bigint)
+language sql stable
+as $$
+  select
+    coalesce(upper(trim(p.state)), 'UNKNOWN') as state,
+    count(*) as zero_price_count
+  from charges c
+  join providers p on p.id = c.provider_id
+  where c.cash_price is null
+    and c.min_price is null
+    and c.max_price is null
+    and c.avg_negotiated_rate is null
+  group by coalesce(upper(trim(p.state)), 'UNKNOWN');
+$$;
+
+create or replace function audit_orphan_charges()
+returns bigint
+language sql stable
+as $$
+  select count(*)
+  from charges c
+  where not exists (
+    select 1 from providers p where p.id = c.provider_id
+  );
+$$;
+
+create or replace function audit_code_coverage(p_codes text[])
+returns table (code text, match_count bigint)
+language sql stable
+as $$
+  with code_hits as (
+    select cpt as matched_code, count(*) as cnt
+    from charges where cpt = any(p_codes) group by cpt
+    union all
+    select hcpcs as matched_code, count(*) as cnt
+    from charges where hcpcs = any(p_codes) group by hcpcs
+  )
+  select u.code, coalesce(sum(ch.cnt), 0) as match_count
+  from unnest(p_codes) as u(code)
+  left join code_hits ch on ch.matched_code = u.code
+  group by u.code;
+$$;
+
+create or replace function audit_duplicate_charges(p_provider_ids uuid[])
+returns table (
+  provider_id uuid, provider_name text,
+  code_value text, cash_price numeric, occurrences bigint
+)
+language sql stable
+as $$
+  with duplicates as (
+    select
+      c.provider_id,
+      coalesce(nullif(trim(c.cpt), ''), nullif(trim(c.hcpcs), '')) as code_value,
+      c.cash_price,
+      count(*) as occurrences
+    from charges c
+    where c.provider_id = any(p_provider_ids)
+      and (coalesce(nullif(trim(c.cpt), ''), nullif(trim(c.hcpcs), '')) is not null)
+    group by
+      c.provider_id,
+      coalesce(nullif(trim(c.cpt), ''), nullif(trim(c.hcpcs), '')),
+      c.cash_price
+    having count(*) > 1
+  )
+  select
+    d.provider_id,
+    p.name as provider_name,
+    d.code_value,
+    d.cash_price,
+    d.occurrences
+  from duplicates d
+  join providers p on p.id = d.provider_id
+  order by d.occurrences desc;
+$$;
+
+create index if not exists idx_charges_all_prices_null
+on charges (provider_id)
+where cash_price is null and min_price is null
+  and max_price is null and avg_negotiated_rate is null;
+
+-- ============================================================================
 -- ROW LEVEL SECURITY
 -- ============================================================================
 
