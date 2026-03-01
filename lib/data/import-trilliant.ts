@@ -791,7 +791,7 @@ async function main() {
   console.log("  DuckDB memory_limit=2GB, threads=2");
 
   // Load the curated code list (1,010 codes from CMS 70 + CMS 200 + top 500 + FAIR Health)
-  const codesPath = resolve(dbDir, "final-codes.json");
+  const codesPath = resolve(__dirname, "final-codes.json");
   const importCodes: string[] = JSON.parse(readFileSync(codesPath, "utf8"));
   console.log(`  Loaded ${importCodes.length} codes from final-codes.json`);
 
