@@ -23,15 +23,17 @@ import { Database } from "duckdb-async";
 import { Pool as PgPool } from "pg";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const DB_PATH = resolve(__dirname, "mrf_lake/mrf_lake.duckdb");
 const CODES_PATH = resolve(__dirname, "final-codes.json");
-// Resolve output path before chdir changes CWD
-const OUTPUT_PATH = resolve(__dirname, "../../docs/data-snapshot.md");
+// Resolve output paths before chdir changes CWD
+const SNAPSHOTS_DIR = resolve(__dirname, "../../docs/snapshots");
+const LATEST_PATH   = resolve(__dirname, "../../docs/data-snapshot.md");
+// SNAPSHOT_PATH is computed inside main() after `now` is defined
 
 // ---------------------------------------------------------------------------
 // Types — DuckDB returns BigInt for COUNT(*); Postgres returns string
@@ -41,6 +43,7 @@ interface HospitalStatusRow { status: string | null; cnt: bigint; }
 interface TotalChargesRow   { total: bigint; }
 interface StateStatusRow    { hospital_state: string | null; status: string | null; cnt: bigint; }
 interface StateChargeRow    { hospital_state: string | null; cnt: bigint; }
+interface SettingRow        { setting: string | null; cnt: bigint; }
 interface ExcludedHospRow   {
   hospital_id: bigint;
   hospital_name: string | null;
@@ -124,12 +127,12 @@ async function main() {
   // DuckDB queries
   // ---------------------------------------------------------------------------
 
-  console.log("\n[1/5] Hospital status breakdown...");
+  console.log("\n[1/7] Hospital status breakdown...");
   const statusRows = (await db.all(
     `SELECT status, COUNT(*) AS cnt FROM hospitals GROUP BY status ORDER BY cnt DESC`
   )) as unknown as HospitalStatusRow[];
 
-  console.log("[2/5] Total raw charge count from hospitals metadata...");
+  console.log("[2/7] Total raw charge count from hospitals metadata...");
   let totalRawCharges = 0;
   try {
     const totalRows = (await db.all(
@@ -142,7 +145,7 @@ async function main() {
     totalRawCharges = 274_000_000;
   }
 
-  console.log("[3/5] Per-state hospital counts (all statuses)...");
+  console.log("[3/7] Per-state hospital counts (all statuses)...");
   const stateStatusRows = (await db.all(
     `SELECT hospital_state, status, COUNT(*) AS cnt
      FROM hospitals
@@ -150,7 +153,7 @@ async function main() {
      ORDER BY hospital_state, status`
   )) as unknown as StateStatusRow[];
 
-  console.log("[4/5] Per-state FILTERED charge counts (1,010 codes + outpatient + completed hospitals only)...");
+  console.log("[4/7] Per-state FILTERED charge counts (1,010 codes + outpatient + completed hospitals only)...");
   console.log("  ⚠  Scanning ~81GB Parquet — this may take 3-5 minutes...");
   const codeList = codes.map((c) => `'${c}'`).join(",");
   const stateChargeRows = (await db.all(
@@ -165,7 +168,23 @@ async function main() {
   )) as unknown as StateChargeRow[];
   console.log(`  Got charge counts for ${stateChargeRows.length} states`);
 
-  console.log("[5/5] Non-completed hospitals detail...");
+  console.log("[5/7] Total standard_charges row count (fast — Parquet metadata)...");
+  const totalStdChargesRows = (await db.all(
+    `SELECT COUNT(*) AS total FROM standard_charges`
+  )) as unknown as TotalChargesRow[];
+  const totalStdCharges = Number(totalStdChargesRows[0]?.total ?? 0);
+  console.log(`  Total standard_charges rows: ${totalStdCharges.toLocaleString()}`);
+
+  console.log("[6/7] standard_charges breakdown by setting (normalized)...");
+  const settingRows = (await db.all(
+    `SELECT TRIM(LOWER(COALESCE(setting, 'NULL'))) AS setting, COUNT(*) AS cnt
+     FROM standard_charges
+     GROUP BY TRIM(LOWER(COALESCE(setting, 'NULL')))
+     ORDER BY cnt DESC`
+  )) as unknown as SettingRow[];
+  console.log(`  Settings found: ${settingRows.map((r) => `${r.setting ?? "NULL"}=${Number(r.cnt).toLocaleString()}`).join(", ")}`);
+
+  console.log("[7/7] Non-completed hospitals detail...");
   const excludedRows = (await db.all(
     `SELECT hospital_id, hospital_name, hospital_state, hospital_city,
             hospital_address, status
@@ -256,12 +275,52 @@ async function main() {
 
   const gap = totalDuckDbFilteredCharges - totalSupabaseCharges;
 
+  // Setting breakdown — normalized (TRIM + LOWER applied in query)
+  // (moved here so outpatientOtherCodes / inpatientCount are available for Executive Summary)
+  const inpatientRow     = settingRows.find((r) => r.setting === "inpatient");
+  const outpatientRow    = settingRows.find((r) => r.setting === "outpatient");
+  const bothRow          = settingRows.find((r) => r.setting === "both");
+  const nullSettingRow   = settingRows.find((r) => r.setting === "null");
+  const otherSettingRows = settingRows.filter(
+    (r) => !["inpatient", "outpatient", "both", "null"].includes(r.setting ?? "")
+  );
+
+  const inpatientCount    = Number(inpatientRow?.cnt ?? 0);
+  const outpatientCount   = Number(outpatientRow?.cnt ?? 0);
+  const bothCount         = Number(bothRow?.cnt ?? 0);
+  const nullSettingCount  = Number(nullSettingRow?.cnt ?? 0);
+  const otherSettingCount = otherSettingRows.reduce((s, r) => s + Number(r.cnt), 0);
+  const notInpatientTotal = outpatientCount + bothCount + nullSettingCount + otherSettingCount;
+  const outpatientOtherCodes = notInpatientTotal - totalDuckDbFilteredCharges;
+
+  // Executive Summary pre-computations
+  const supabasePct = totalDuckDbFilteredCharges > 0
+    ? ((totalSupabaseCharges / totalDuckDbFilteredCharges) * 100).toFixed(1)
+    : "?";
+  const geocodedPct = totalSupabaseProviders > 0
+    ? ((totalSupabaseGeocoded / totalSupabaseProviders) * 100).toFixed(1)
+    : "?";
+  const missingStates: Array<{ state: string; duckCharges: number }> = [];
+  for (const st of allStates) {
+    const duck = duckStateMap.get(st);
+    const duckCharges = duckChargeMap.get(st) ?? 0;
+    const supaCharges = chargesByState.get(st) ?? 0;
+    const duckCompleted = duck?.completed ?? 0;
+    if (duckCompleted > 0 && supaCharges === 0 && duckCharges > 0) {
+      missingStates.push({ state: st, duckCharges });
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Build Markdown
   // ---------------------------------------------------------------------------
 
   console.log("\nGenerating markdown...");
   const now = new Date().toISOString();
+  // e.g. "2026-03-01_19-52-31"
+  const fileStamp = now.replace("T", "_").replace(/[:.]/g, "-").slice(0, 19);
+  const SNAPSHOT_PATH = resolve(SNAPSHOTS_DIR, `${fileStamp}.md`);
+  mkdirSync(SNAPSHOTS_DIR, { recursive: true });
   const lines: string[] = [];
 
   // Header
@@ -271,9 +330,48 @@ async function main() {
   lines.push(``);
   lines.push(`To regenerate after an import:`);
   lines.push(`\`\`\`bash`);
-  lines.push(`cd /Users/chrispratt/clearcost`);
   lines.push(`npx tsx --env-file=.env.local lib/data/generate-snapshot.ts`);
   lines.push(`\`\`\``);
+  lines.push(`Each run creates a new file in \`docs/snapshots/YYYY-MM-DD_HH-MM-SS.md\` and updates \`docs/data-snapshot.md\` (latest).`);
+  lines.push(``);
+
+  // ---------------------------------------------------
+  // Executive Summary
+  // ---------------------------------------------------
+  lines.push(`## Executive Summary`);
+  lines.push(``);
+  lines.push(`| Metric | Value | Status |`);
+  lines.push(`|--------|------:|-------|`);
+  lines.push(`| Supabase charges (live) | ${fmtNum(totalSupabaseCharges)} | ${gap === 0 ? "✅ complete" : `⚠ ${supabasePct}% of target`} |`);
+  lines.push(`| DuckDB target (filtered) | ${fmtNum(totalDuckDbFilteredCharges)} | — |`);
+  lines.push(`| Gap | ${fmtNum(gap)} | ${gap === 0 ? "✅ none" : missingStates.map((m) => m.state).join(" + ") + " missing"} |`);
+  lines.push(`| Supabase providers | ${fmtNum(totalSupabaseProviders)} | ✅ all completed hospitals |`);
+  lines.push(`| Geocoded providers | ${fmtNum(totalSupabaseGeocoded)} (${geocodedPct}%) | ${totalSupabaseNullLoc > 0 ? `⚠ ${fmtNum(totalSupabaseNullLoc)} invisible to search` : "✅"} |`);
+  lines.push(`| Excluded hospitals (DuckDB) | ${fmtNum(excludedCount)} | ℹ Trilliant data quality |`);
+  lines.push(``);
+  if (missingStates.length > 0 || totalSupabaseNullLoc > 0) {
+    lines.push(`### Open Action Items`);
+    lines.push(``);
+    lines.push(`| Priority | Issue | Rows Affected |`);
+    lines.push(`|----------|-------|--------------|`);
+    for (const ms of missingStates) {
+      lines.push(`| 🔴 | ${ms.state} charges missing — reimport needed | ${fmtNum(ms.duckCharges)} |`);
+    }
+    if (totalSupabaseNullLoc > 0) {
+      lines.push(`| 🟡 | ${fmtNum(totalSupabaseNullLoc)} providers null lat/lng — geocode backfill needed | — |`);
+    }
+    lines.push(``);
+  }
+  lines.push(`### Data We're Sitting On`);
+  lines.push(``);
+  lines.push(`| Phase | Available Rows | Status |`);
+  lines.push(`|-------|---------------:|--------|`);
+  lines.push(`| 1-5: Current (1,010 codes, outpatient) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`);
+  lines.push(`| 6: All outpatient codes | +${fmtNum(outpatientOtherCodes)} | 📋 Planned |`);
+  lines.push(`| 7: Inpatient pricing | +${fmtNum(inpatientCount)} | 📋 Planned |`);
+  lines.push(`| 8: Payer-specific rates | +${fmtNum(totalRawCharges)} | 🔮 Future infra |`);
+  lines.push(``);
+  lines.push(`_→ Full details in Sections 1–7 below_`);
   lines.push(``);
 
   // ---------------------------------------------------
@@ -438,15 +536,115 @@ async function main() {
   lines.push(``);
   lines.push(`_Null-location count will not change with NJ/PA reimport — those providers are already in Supabase._`);
   lines.push(`_Fixing null-location requires a separate geocoding task (see Section 5)._`);
+  lines.push(``);
+
+  // ---------------------------------------------------
+  // 7. Full Data Inventory — Expansion Roadmap
+  // ---------------------------------------------------
+  lines.push(`## 7. Full Data Inventory — What We're Sitting On`);
+  lines.push(``);
+  lines.push(`This section shows the complete Trilliant Oria dataset and how much of it ClearCost currently uses.`);
+  lines.push(`It is intended to inform product roadmap and investor conversations.`);
+  lines.push(``);
+
+  const pctUsed             = totalStdCharges > 0 ? ((totalDuckDbFilteredCharges / totalStdCharges) * 100).toFixed(1) : "?";
+  const pctOutpatientOther  = totalStdCharges > 0 ? ((outpatientOtherCodes / totalStdCharges) * 100).toFixed(1) : "?";
+  const pctInpatient        = totalStdCharges > 0 ? ((inpatientCount / totalStdCharges) * 100).toFixed(1) : "?";
+
+  lines.push(`### standard_charges Setting Breakdown (Normalized)`);
+  lines.push(``);
+  lines.push(`_Setting values normalized via \`TRIM(LOWER(setting))\` — Trilliant data contains 30+ case/spacing variants._`);
+  lines.push(``);
+  lines.push(`| Setting (normalized) | Row Count | % of Total | Import behavior |`);
+  lines.push(`|----------------------|----------:|-----------:|-----------------|`);
+  for (const row of settingRows) {
+    const pct = totalStdCharges > 0 ? ((Number(row.cnt) / totalStdCharges) * 100).toFixed(1) : "?";
+    let behavior = "";
+    if (row.setting === "inpatient") behavior = "❌ Excluded by import filter";
+    else if (row.setting === "outpatient") behavior = "✅ Included";
+    else if (row.setting === "both") behavior = "✅ Included (can be done outpatient)";
+    else if (row.setting === "null") behavior = "✅ Included (NULL treated as outpatient)";
+    else behavior = "⚠ Included (unrecognized value)";
+    lines.push(`| \`${row.setting}\` | ${fmtNum(row.cnt)} | ${pct}% | ${behavior} |`);
+  }
+  lines.push(`| **Total** | **${fmtNum(totalStdCharges)}** | 100% | |`);
+  lines.push(``);
+  lines.push(`> **Note on "both"**: These rows represent procedures that hospitals offer under both inpatient AND outpatient`);
+  lines.push(`> billing contexts. The import includes them since they can be performed outpatient (correct behavior).`);
+  lines.push(``);
+
+  lines.push(`### Data Layer Summary`);
+  lines.push(``);
+  lines.push(`\`\`\``);
+  lines.push(`Trilliant Oria — Full Dataset`);
+  lines.push(`┌──────────────────────────────────────────────────────────────────┐`);
+  lines.push(`│  standard_charges table: ${totalStdCharges.toLocaleString().padStart(14)} rows total                 │`);
+  lines.push(`│                                                                  │`);
+  lines.push(`│  ┌─────────────────────────────────────────────────────────┐    │`);
+  lines.push(`│  │  Phase 1-5 (LIVE)                                       │    │`);
+  lines.push(`│  │  Outpatient + 1,010 curated codes + completed hospitals  │    │`);
+  lines.push(`│  │  ${totalDuckDbFilteredCharges.toLocaleString().padStart(14)} rows   (${pctUsed.padStart(5)}% of total)            │    │`);
+  lines.push(`│  └─────────────────────────────────────────────────────────┘    │`);
+  lines.push(`│                                                                  │`);
+  lines.push(`│  Phase 6 — More outpatient codes                                │`);
+  lines.push(`│  ${outpatientOtherCodes.toLocaleString().padStart(14)} rows   (${pctOutpatientOther.padStart(5)}% of total)                    │`);
+  lines.push(`│  All outpatient codes NOT in our 1,010 curated set              │`);
+  lines.push(`│                                                                  │`);
+  lines.push(`│  Phase 7 — Inpatient pricing (MS-DRG codes)                     │`);
+  lines.push(`│  ${inpatientCount.toLocaleString().padStart(14)} rows   (${pctInpatient.padStart(5)}% of total)                    │`);
+  lines.push(`│  Hospital admission-level pricing (not shoppable)               │`);
+  lines.push(`└──────────────────────────────────────────────────────────────────┘`);
+  lines.push(``);
+  lines.push(`┌──────────────────────────────────────────────────────────────────┐`);
+  lines.push(`│  payer_detail table: ${totalRawCharges.toLocaleString().padStart(16)} rows                       │`);
+  lines.push(`│  (individual negotiated rates per insurer per code per hospital) │`);
+  lines.push(`│                                                                  │`);
+  lines.push(`│  Phase 8 — Insurance transparency                               │`);
+  lines.push(`│  "What does Aetna pay at NYU Langone for a knee MRI?"            │`);
+  lines.push(`│  Currently: 0 rows imported (using avg/min/max summaries only)   │`);
+  lines.push(`└──────────────────────────────────────────────────────────────────┘`);
+  lines.push(`\`\`\``);
+  lines.push(``);
+
+  lines.push(`### Supabase Hosting Cost Reality Check`);
+  lines.push(``);
+  lines.push(`| Layer | Rows | Est. Storage | Feasibility |`);
+  lines.push(`|-------|-----:|-------------|-------------|`);
+  lines.push(`| Phase 1-5 (current) | ${fmtNum(totalDuckDbFilteredCharges)} | ~2-3 GB | ✅ Supabase Pro |`);
+  lines.push(`| + Phase 6 (all outpatient) | ${fmtNum(outpatientOtherCodes + totalDuckDbFilteredCharges)} | ~40-50 GB | ⚠ Supabase scales, cost climbs |`);
+  lines.push(`| + Phase 7 (+ inpatient) | ${fmtNum(totalStdCharges)} | ~60-70 GB | ⚠ Same order of magnitude |`);
+  lines.push(`| + Phase 8 (+ payer detail) | ${fmtNum(totalRawCharges)} | ~1-2 TB | 🔴 Needs dedicated infra or data warehouse |`);
+  lines.push(``);
+  lines.push(`_Estimates assume ~200 bytes/row average across all columns._`);
+  lines.push(`_Phase 8 (payer detail) is a fundamentally different infrastructure problem — likely needs MotherDuck, BigQuery, or a dedicated analytics DB rather than Supabase._`);
+  lines.push(``);
+  lines.push(`### ⚠ Data Quality Finding: Import Filter Gap`);
+  lines.push(``);
+  lines.push(`The import filter in \`import-trilliant.ts\` uses \`LOWER(setting) != 'inpatient'\` to exclude`);
+  lines.push(`inpatient rows. However, **LOWER() does not trim whitespace**. Trilliant's data contains`);
+  lines.push(`setting values like \`"inpatient "\` (trailing space) and \`" inpatient "\` (leading + trailing)`);
+  lines.push(`that are NOT caught by this filter.`);
+  lines.push(``);
+  lines.push(`\`\`\``);
+  lines.push(`LOWER('inpatient ')  = 'inpatient '  ← NOT equal to 'inpatient' → incorrectly imported`);
+  lines.push(`LOWER(' inpatient ') = ' inpatient ' ← NOT equal to 'inpatient' → incorrectly imported`);
+  lines.push(`LOWER('INPATIENT')   = 'inpatient'   ← equal to 'inpatient'    → correctly excluded`);
+  lines.push(`\`\`\``);
+  lines.push(``);
+  lines.push(`**Fix**: Change the filter to \`TRIM(LOWER(setting)) != 'inpatient'\` in import-trilliant.ts.`);
+  lines.push(`**Impact**: The current Supabase dataset may include a small number of inpatient charges.`);
+  lines.push(`This is tracked in a future cleanup task.`);
 
   // ---------------------------------------------------------------------------
   // Write output
   // ---------------------------------------------------------------------------
 
   const output = lines.join("\n");
-  writeFileSync(OUTPUT_PATH, output, "utf8");
+  writeFileSync(SNAPSHOT_PATH, output, "utf8");  // timestamped archive
+  writeFileSync(LATEST_PATH, output, "utf8");    // always-current convenience path
 
-  console.log(`\nWrote ${(output.length / 1024).toFixed(1)} KB to ${OUTPUT_PATH}`);
+  console.log(`\nWrote archive:  ${SNAPSHOT_PATH}`);
+  console.log(`Wrote latest:   ${LATEST_PATH}`);
   console.log("\n=== Summary ===");
   console.log(`  DuckDB hospitals:       ${totalHospitals.toLocaleString()} (${completedHospitals.toLocaleString()} completed, ${excludedCount.toLocaleString()} excluded)`);
   console.log(`  DuckDB filtered charges: ${totalDuckDbFilteredCharges.toLocaleString()}`);
