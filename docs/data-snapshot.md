@@ -1,6 +1,6 @@
 # ClearCost Data Snapshot
 
-_Generated: 2026-03-01T19:05:20.026Z_
+_Generated: 2026-03-01T19:52:31.517Z_
 
 To regenerate after an import:
 ```bash
@@ -1164,3 +1164,89 @@ After the NJ/PA reimport, re-run this script and verify the following:
 
 _Null-location count will not change with NJ/PA reimport — those providers are already in Supabase._
 _Fixing null-location requires a separate geocoding task (see Section 5)._
+
+## 7. Full Data Inventory — What We're Sitting On
+
+This section shows the complete Trilliant Oria dataset and how much of it ClearCost currently uses.
+It is intended to inform product roadmap and investor conversations.
+
+### standard_charges Setting Breakdown (Normalized)
+
+_Setting values normalized via `TRIM(LOWER(setting))` — Trilliant data contains 30+ case/spacing variants._
+
+| Setting (normalized) | Row Count | % of Total | Import behavior |
+|----------------------|----------:|-----------:|-----------------|
+| `outpatient` | 159,162,368 | 58.0% | ✅ Included |
+| `both` | 64,310,112 | 23.4% | ✅ Included (can be done outpatient) |
+| `inpatient` | 50,822,521 | 18.5% | ❌ Excluded by import filter |
+| `0` | 3,538 | 0.0% | ⚠ Included (unrecognized value) |
+| `null` | 996 | 0.0% | ✅ Included (NULL treated as outpatient) |
+| `hospital` | 265 | 0.0% | ⚠ Included (unrecognized value) |
+| `clinic` | 19 | 0.0% | ⚠ Included (unrecognized value) |
+| `specialty` | 8 | 0.0% | ⚠ Included (unrecognized value) |
+| `inpatient / outpatient` | 1 | 0.0% | ⚠ Included (unrecognized value) |
+| **Total** | **274,299,828** | 100% | |
+
+> **Note on "both"**: These rows represent procedures that hospitals offer under both inpatient AND outpatient
+> billing contexts. The import includes them since they can be performed outpatient (correct behavior).
+
+### Data Layer Summary
+
+```
+Trilliant Oria — Full Dataset
+┌──────────────────────────────────────────────────────────────────┐
+│  standard_charges table:    274,299,828 rows total                 │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  Phase 1-5 (LIVE)                                       │    │
+│  │  Outpatient + 1,010 curated codes + completed hospitals  │    │
+│  │      13,115,274 rows   (  4.8% of total)            │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  Phase 6 — More outpatient codes                                │
+│     210,362,033 rows   ( 76.7% of total)                    │
+│  All outpatient codes NOT in our 1,010 curated set              │
+│                                                                  │
+│  Phase 7 — Inpatient pricing (MS-DRG codes)                     │
+│      50,822,521 rows   ( 18.5% of total)                    │
+│  Hospital admission-level pricing (not shoppable)               │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│  payer_detail table:    6,381,051,296 rows                       │
+│  (individual negotiated rates per insurer per code per hospital) │
+│                                                                  │
+│  Phase 8 — Insurance transparency                               │
+│  "What does Aetna pay at NYU Langone for a knee MRI?"            │
+│  Currently: 0 rows imported (using avg/min/max summaries only)   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Supabase Hosting Cost Reality Check
+
+| Layer | Rows | Est. Storage | Feasibility |
+|-------|-----:|-------------|-------------|
+| Phase 1-5 (current) | 13,115,274 | ~2-3 GB | ✅ Supabase Pro |
+| + Phase 6 (all outpatient) | 223,477,307 | ~40-50 GB | ⚠ Supabase scales, cost climbs |
+| + Phase 7 (+ inpatient) | 274,299,828 | ~60-70 GB | ⚠ Same order of magnitude |
+| + Phase 8 (+ payer detail) | 6,381,051,296 | ~1-2 TB | 🔴 Needs dedicated infra or data warehouse |
+
+_Estimates assume ~200 bytes/row average across all columns._
+_Phase 8 (payer detail) is a fundamentally different infrastructure problem — likely needs MotherDuck, BigQuery, or a dedicated analytics DB rather than Supabase._
+
+### ⚠ Data Quality Finding: Import Filter Gap
+
+The import filter in `import-trilliant.ts` uses `LOWER(setting) != 'inpatient'` to exclude
+inpatient rows. However, **LOWER() does not trim whitespace**. Trilliant's data contains
+setting values like `"inpatient "` (trailing space) and `" inpatient "` (leading + trailing)
+that are NOT caught by this filter.
+
+```
+LOWER('inpatient ')  = 'inpatient '  ← NOT equal to 'inpatient' → incorrectly imported
+LOWER(' inpatient ') = ' inpatient ' ← NOT equal to 'inpatient' → incorrectly imported
+LOWER('INPATIENT')   = 'inpatient'   ← equal to 'inpatient'    → correctly excluded
+```
+
+**Fix**: Change the filter to `TRIM(LOWER(setting)) != 'inpatient'` in import-trilliant.ts.
+**Impact**: The current Supabase dataset may include a small number of inpatient charges.
+This is tracked in a future cleanup task.
