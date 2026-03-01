@@ -23,15 +23,17 @@ import { Database } from "duckdb-async";
 import { Pool as PgPool } from "pg";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const DB_PATH = resolve(__dirname, "mrf_lake/mrf_lake.duckdb");
 const CODES_PATH = resolve(__dirname, "final-codes.json");
-// Resolve output path before chdir changes CWD
-const OUTPUT_PATH = resolve(__dirname, "../../docs/data-snapshot.md");
+// Resolve output paths before chdir changes CWD
+const SNAPSHOTS_DIR = resolve(__dirname, "../../docs/snapshots");
+const LATEST_PATH   = resolve(__dirname, "../../docs/data-snapshot.md");
+// SNAPSHOT_PATH is computed inside main() after `now` is defined
 
 // ---------------------------------------------------------------------------
 // Types — DuckDB returns BigInt for COUNT(*); Postgres returns string
@@ -273,12 +275,52 @@ async function main() {
 
   const gap = totalDuckDbFilteredCharges - totalSupabaseCharges;
 
+  // Setting breakdown — normalized (TRIM + LOWER applied in query)
+  // (moved here so outpatientOtherCodes / inpatientCount are available for Executive Summary)
+  const inpatientRow     = settingRows.find((r) => r.setting === "inpatient");
+  const outpatientRow    = settingRows.find((r) => r.setting === "outpatient");
+  const bothRow          = settingRows.find((r) => r.setting === "both");
+  const nullSettingRow   = settingRows.find((r) => r.setting === "null");
+  const otherSettingRows = settingRows.filter(
+    (r) => !["inpatient", "outpatient", "both", "null"].includes(r.setting ?? "")
+  );
+
+  const inpatientCount    = Number(inpatientRow?.cnt ?? 0);
+  const outpatientCount   = Number(outpatientRow?.cnt ?? 0);
+  const bothCount         = Number(bothRow?.cnt ?? 0);
+  const nullSettingCount  = Number(nullSettingRow?.cnt ?? 0);
+  const otherSettingCount = otherSettingRows.reduce((s, r) => s + Number(r.cnt), 0);
+  const notInpatientTotal = outpatientCount + bothCount + nullSettingCount + otherSettingCount;
+  const outpatientOtherCodes = notInpatientTotal - totalDuckDbFilteredCharges;
+
+  // Executive Summary pre-computations
+  const supabasePct = totalDuckDbFilteredCharges > 0
+    ? ((totalSupabaseCharges / totalDuckDbFilteredCharges) * 100).toFixed(1)
+    : "?";
+  const geocodedPct = totalSupabaseProviders > 0
+    ? ((totalSupabaseGeocoded / totalSupabaseProviders) * 100).toFixed(1)
+    : "?";
+  const missingStates: Array<{ state: string; duckCharges: number }> = [];
+  for (const st of allStates) {
+    const duck = duckStateMap.get(st);
+    const duckCharges = duckChargeMap.get(st) ?? 0;
+    const supaCharges = chargesByState.get(st) ?? 0;
+    const duckCompleted = duck?.completed ?? 0;
+    if (duckCompleted > 0 && supaCharges === 0 && duckCharges > 0) {
+      missingStates.push({ state: st, duckCharges });
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Build Markdown
   // ---------------------------------------------------------------------------
 
   console.log("\nGenerating markdown...");
   const now = new Date().toISOString();
+  // e.g. "2026-03-01_19-52-31"
+  const fileStamp = now.replace("T", "_").replace(/[:.]/g, "-").slice(0, 19);
+  const SNAPSHOT_PATH = resolve(SNAPSHOTS_DIR, `${fileStamp}.md`);
+  mkdirSync(SNAPSHOTS_DIR, { recursive: true });
   const lines: string[] = [];
 
   // Header
@@ -288,9 +330,48 @@ async function main() {
   lines.push(``);
   lines.push(`To regenerate after an import:`);
   lines.push(`\`\`\`bash`);
-  lines.push(`cd /Users/chrispratt/clearcost`);
   lines.push(`npx tsx --env-file=.env.local lib/data/generate-snapshot.ts`);
   lines.push(`\`\`\``);
+  lines.push(`Each run creates a new file in \`docs/snapshots/YYYY-MM-DD_HH-MM-SS.md\` and updates \`docs/data-snapshot.md\` (latest).`);
+  lines.push(``);
+
+  // ---------------------------------------------------
+  // Executive Summary
+  // ---------------------------------------------------
+  lines.push(`## Executive Summary`);
+  lines.push(``);
+  lines.push(`| Metric | Value | Status |`);
+  lines.push(`|--------|------:|-------|`);
+  lines.push(`| Supabase charges (live) | ${fmtNum(totalSupabaseCharges)} | ${gap === 0 ? "✅ complete" : `⚠ ${supabasePct}% of target`} |`);
+  lines.push(`| DuckDB target (filtered) | ${fmtNum(totalDuckDbFilteredCharges)} | — |`);
+  lines.push(`| Gap | ${fmtNum(gap)} | ${gap === 0 ? "✅ none" : missingStates.map((m) => m.state).join(" + ") + " missing"} |`);
+  lines.push(`| Supabase providers | ${fmtNum(totalSupabaseProviders)} | ✅ all completed hospitals |`);
+  lines.push(`| Geocoded providers | ${fmtNum(totalSupabaseGeocoded)} (${geocodedPct}%) | ${totalSupabaseNullLoc > 0 ? `⚠ ${fmtNum(totalSupabaseNullLoc)} invisible to search` : "✅"} |`);
+  lines.push(`| Excluded hospitals (DuckDB) | ${fmtNum(excludedCount)} | ℹ Trilliant data quality |`);
+  lines.push(``);
+  if (missingStates.length > 0 || totalSupabaseNullLoc > 0) {
+    lines.push(`### Open Action Items`);
+    lines.push(``);
+    lines.push(`| Priority | Issue | Rows Affected |`);
+    lines.push(`|----------|-------|--------------|`);
+    for (const ms of missingStates) {
+      lines.push(`| 🔴 | ${ms.state} charges missing — reimport needed | ${fmtNum(ms.duckCharges)} |`);
+    }
+    if (totalSupabaseNullLoc > 0) {
+      lines.push(`| 🟡 | ${fmtNum(totalSupabaseNullLoc)} providers null lat/lng — geocode backfill needed | — |`);
+    }
+    lines.push(``);
+  }
+  lines.push(`### Data We're Sitting On`);
+  lines.push(``);
+  lines.push(`| Phase | Available Rows | Status |`);
+  lines.push(`|-------|---------------:|--------|`);
+  lines.push(`| 1-5: Current (1,010 codes, outpatient) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`);
+  lines.push(`| 6: All outpatient codes | +${fmtNum(outpatientOtherCodes)} | 📋 Planned |`);
+  lines.push(`| 7: Inpatient pricing | +${fmtNum(inpatientCount)} | 📋 Planned |`);
+  lines.push(`| 8: Payer-specific rates | +${fmtNum(totalRawCharges)} | 🔮 Future infra |`);
+  lines.push(``);
+  lines.push(`_→ Full details in Sections 1–7 below_`);
   lines.push(``);
 
   // ---------------------------------------------------
@@ -466,26 +547,6 @@ async function main() {
   lines.push(`It is intended to inform product roadmap and investor conversations.`);
   lines.push(``);
 
-  // Setting breakdown — normalized (TRIM + LOWER applied in query)
-  const inpatientRow    = settingRows.find((r) => r.setting === "inpatient");
-  const outpatientRow   = settingRows.find((r) => r.setting === "outpatient");
-  const bothRow         = settingRows.find((r) => r.setting === "both");
-  const nullSettingRow  = settingRows.find((r) => r.setting === "null");
-  const otherSettingRows = settingRows.filter(
-    (r) => !["inpatient", "outpatient", "both", "null"].includes(r.setting ?? "")
-  );
-
-  const inpatientCount    = Number(inpatientRow?.cnt ?? 0);
-  const outpatientCount   = Number(outpatientRow?.cnt ?? 0);
-  const bothCount         = Number(bothRow?.cnt ?? 0);
-  const nullSettingCount  = Number(nullSettingRow?.cnt ?? 0);
-  const otherSettingCount = otherSettingRows.reduce((s, r) => s + Number(r.cnt), 0);
-
-  // "Not inpatient" = everything the import includes (outpatient + both + null + other)
-  const notInpatientTotal = outpatientCount + bothCount + nullSettingCount + otherSettingCount;
-  // Of those, rows we actually imported (our 1,010 codes)
-  const outpatientOtherCodes = notInpatientTotal - totalDuckDbFilteredCharges;
-
   const pctUsed             = totalStdCharges > 0 ? ((totalDuckDbFilteredCharges / totalStdCharges) * 100).toFixed(1) : "?";
   const pctOutpatientOther  = totalStdCharges > 0 ? ((outpatientOtherCodes / totalStdCharges) * 100).toFixed(1) : "?";
   const pctInpatient        = totalStdCharges > 0 ? ((inpatientCount / totalStdCharges) * 100).toFixed(1) : "?";
@@ -579,9 +640,11 @@ async function main() {
   // ---------------------------------------------------------------------------
 
   const output = lines.join("\n");
-  writeFileSync(OUTPUT_PATH, output, "utf8");
+  writeFileSync(SNAPSHOT_PATH, output, "utf8");  // timestamped archive
+  writeFileSync(LATEST_PATH, output, "utf8");    // always-current convenience path
 
-  console.log(`\nWrote ${(output.length / 1024).toFixed(1)} KB to ${OUTPUT_PATH}`);
+  console.log(`\nWrote archive:  ${SNAPSHOT_PATH}`);
+  console.log(`Wrote latest:   ${LATEST_PATH}`);
   console.log("\n=== Summary ===");
   console.log(`  DuckDB hospitals:       ${totalHospitals.toLocaleString()} (${completedHospitals.toLocaleString()} completed, ${excludedCount.toLocaleString()} excluded)`);
   console.log(`  DuckDB filtered charges: ${totalDuckDbFilteredCharges.toLocaleString()}`);
