@@ -147,7 +147,7 @@ supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, 
 - `SearchResult` — Full API response: `{ cptCodes, results, interpretation, totalResults }`
 - `SavedSearch` — User bookmark with RLS
 - `BillingCodeType` = `'cpt' | 'hcpcs' | 'ms_drg'`
-- **Deprecated aliases**: `PriceResult` → `ChargeResult`, `NegotiatedRate` → `PayerRate`
+- Legacy aliases (`PriceResult`, `NegotiatedRate`) have been removed
 
 ## Database (Supabase Postgres + PostGIS)
 
@@ -230,18 +230,17 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Current Status
 
-**Phases 1-5.5 complete. Data import complete. Deployed to Vercel. Guided Search complete with UX polish. Results page improvements next.**
+**Phases 1-5.6 complete. Data import complete for all 52 states/DC/PR. Deployed to Vercel.**
 
 - **Live URL:** https://clearcost-orcin.vercel.app
 - Search pipeline working end-to-end (Claude AI translation → Supabase geo query → results)
-
-- 5,419 providers imported (5,034 geocoded via zipcodes package, 385 missing zip)
+- Data import complete. See `docs/data-snapshot.md` for current numbers.
 - 1,010 curated codes in `lib/data/final-codes.json`
-- **12,574,168 charges** imported across all 52 states (50 states + DC + PR)
 - 7 indexes built (pkey + 6 custom: cpt, hcpcs, ms_drg, provider, cpt+provider, description GIN)
-- ANALYZE run on charges table
 - **Anthropic API key**: Required for live search (billing code translation).
 - **Google Maps API key**: Required for map UI and geocoding.
+
+**Work tracking:** GitHub Issues are the source of truth (issue # = priority). Current focus: data quality (#6-#12), then frontend polish (#13-#19), then pre-launch (#20-#23).
 
 ## Environment Variables
 
@@ -302,8 +301,9 @@ All work is tracked via GitHub Issues on the [ClearCost MVP project board](https
 - Claude Code has **no memory across sessions** — anything not in repo files is lost. Keep CLAUDE.md current.
 
 **Sprint planning:**
-- Current sprint plan: `docs/sprint-plan.md`
-- Priorities shift frequently in a solo project. The sprint plan is a guide, not a contract. Update it when priorities change rather than treating it as immutable.
+- GitHub Issues are the source of truth for work tracking. Issue # = priority order.
+- Sprint plan (`docs/sprint-plan.md`) is archived — all details rationalized into issues.
+- Priorities shift frequently in a solo project. Reorder issues when priorities change.
 
 ## Design Direction
 
@@ -331,17 +331,19 @@ Show where in the pipeline the change lives and what it affects downstream. Refe
 
 | Phase | What | Status |
 |-------|------|--------|
-| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete (12.5M rows imported) |
-| **Phase 5.5** | Guided Search — AI diagnostic clarification flow + UX polish (debounced geocoding, paired nav buttons, clickable breadcrumbs with response cache) | **Complete** |
-| **Phase 5.5b** | MVP Polish sprint — caching, UX gaps, mobile (see `docs/sprint-plan.md`) | **Planned** |
-| **Phase 5.6** | Results page improvements — map+list split view, remove setting filter, distance accuracy, insurance filter | Next Up |
+| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete |
+| **Phase 5.5** | Guided Search — AI diagnostic clarification flow + UX polish | Complete |
+| **Phase 5.6** | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete |
+| **Data Quality** | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12) | In Progress |
+| **Frontend Polish** | Skeletons, billing callouts, distance filter, mobile UX (#13-#19) | Planned |
+| **Pre-Launch** | Security headers, rate limiting, verification checklist (#20-#23) | Planned |
 | **Phase 6** | Independent MRF crawler (replace Trilliant dependency) | Deferred |
 | **Phase 7** | Plan-level insurance pricing from hospital MRFs | Future |
 | **Phase 8** | Payer Transparency in Coverage data — all provider types | Future |
 | **Phase 9** | Non-hospital cash prices (crowdsourced/partnerships/state data) | Future |
 
-**Future UX enhancements** (post-Phase 5.5):
-- Smart typeahead/suggestions in search bar
+**Future UX enhancements** (tracked as backlog issues #32-#37):
+- Smart typeahead/suggestions in search bar (#32)
 - Conversational follow-up for deeply ambiguous queries
 - Results grouped by procedure type when query isn't fully resolved
 - Educational content: "How to work with your doctor to understand what you need"
