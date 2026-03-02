@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ClearCost — a consumer-facing tool that translates plain English healthcare queries ("I need a knee MRI") into billing codes and returns real, localized hospital pricing comparisons. Think **Kayak for healthcare pricing**.
 
-**Scope:** National (5,400+ hospitals), 1,010 curated procedure codes, cash prices + aggregated payer stats.
+**Scope:** National (5,400+ hospitals), 1,002 curated procedure codes, cash prices + aggregated payer stats.
 
 ## Tech Stack
 
@@ -177,7 +177,7 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - 6,039 hospitals total (5,419 with complete data)
 - 274 million standard_charges rows, 6 billion payer-specific detail rows
 - Local storage: 81GB Parquet files + 11MB DuckDB index in `lib/data/`
-- Import filters to 1,010 curated codes, outpatient only, national scope → ~13.1M rows
+- Import filters to 1,002 curated codes, outpatient only, national scope → ~13.1M rows
 
 ### Import Technical Notes
 
@@ -194,10 +194,10 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 ### MVP Data Scope
 
 The MVP imports ~4.8% of the full Oria dataset:
-- **274M total rows → ~13.1M imported** (1,010 codes × outpatient only)
+- **274M total rows → ~13.1M imported** (1,002 codes × outpatient only)
 - **6B payer detail rows → 0 imported** (using pre-aggregated avg/min/max instead)
-- **120K+ distinct billing codes → 1,010 curated** (0.4% of unique codes)
-- The 1,010 codes cover the most common shoppable procedures but the Parquet files contain 95%+ more data available for future phases
+- **120K+ distinct billing codes → 1,002 curated** (0.4% of unique codes)
+- The 1,002 codes cover the most common shoppable procedures but the Parquet files contain 95%+ more data available for future phases
 - Inpatient exclusion drops ~18.5% of all source rows (50.8M of 274M)
 - Expansion path: more codes, inpatient, payer details → Phases 6-8 in roadmap
 - Full breakdown with precise numbers: see `docs/prd.md` Section 4.2.1
@@ -238,7 +238,7 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 - **Live URL:** https://clearcost-orcin.vercel.app
 - Search pipeline working end-to-end (Claude AI translation → Supabase geo query → results)
 - Data import complete. See `docs/data-snapshot.md` for current numbers.
-- 1,010 curated codes in `lib/data/final-codes.json`
+- 1,002 curated codes in `lib/data/final-codes.json`
 - 7 indexes built (pkey + 6 custom: cpt, hcpcs, ms_drg, provider, cpt+provider, description GIN)
 - **Anthropic API key**: Required for live search (billing code translation).
 - **Google Maps API key**: Required for map UI and geocoding.
@@ -256,6 +256,11 @@ See `.env.local.example` for required keys:
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase admin access |
 | `ANTHROPIC_API_KEY` | Claude API for billing code translation |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view) |
+
+## Data Architecture Principles
+
+**Prefer bringing the calculation to the data, not the data to the calculation.**
+When possible and optimal, push reference data and logic into SQL (temp tables, CTEs, JOINs) rather than pulling large result sets to Node.js for local processing. This minimizes network transfer, respects Supabase Pro CPU/IO limits, and leverages Postgres's query optimizer. Not a hard rule — sometimes client-side processing is simpler or necessary (e.g., when logic depends on npm packages with no SQL equivalent). Use judgment.
 
 ## Code Style & Guidelines
 
@@ -334,7 +339,7 @@ Show where in the pipeline the change lives and what it affects downstream. Refe
 
 | Phase | What | Status |
 |-------|------|--------|
-| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,010 codes | Complete |
+| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,002 codes | Complete |
 | **Phase 5.5** | Guided Search — AI diagnostic clarification flow + UX polish | Complete |
 | **Phase 5.6** | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete |
 | **Data Quality** | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12) | In Progress |

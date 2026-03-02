@@ -153,7 +153,7 @@ async function main() {
      ORDER BY hospital_state, status`
   )) as unknown as StateStatusRow[];
 
-  console.log("[4/7] Per-state FILTERED charge counts (1,010 codes + outpatient + completed hospitals only)...");
+  console.log(`[4/7] Per-state FILTERED charge counts (${codes.length.toLocaleString()} codes + outpatient + completed hospitals only)...`);
   console.log("  ⚠  Scanning ~81GB Parquet — this may take 3-5 minutes...");
   const codeList = codes.map((c) => `'${c}'`).join(",");
   const stateChargeRows = (await db.all(
@@ -161,7 +161,7 @@ async function main() {
      FROM standard_charges sc
      JOIN hospitals h ON sc.hospital_id = h.hospital_id
      WHERE (sc.cpt IN (${codeList}) OR sc.hcpcs IN (${codeList}))
-       AND (sc.setting IS NULL OR LOWER(sc.setting) != 'inpatient')
+       AND (sc.setting IS NULL OR TRIM(LOWER(sc.setting)) != 'inpatient')
        AND h.status = 'completed'
      GROUP BY h.hospital_state
      ORDER BY h.hospital_state`
@@ -366,7 +366,7 @@ async function main() {
   lines.push(``);
   lines.push(`| Phase | Available Rows | Status |`);
   lines.push(`|-------|---------------:|--------|`);
-  lines.push(`| 1-5: Current (1,010 codes, outpatient) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`);
+  lines.push(`| 1-5: Current (${codes.length.toLocaleString()} codes, outpatient) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`);
   lines.push(`| 6: All outpatient codes | +${fmtNum(outpatientOtherCodes)} | 📋 Planned |`);
   lines.push(`| 7: Inpatient pricing | +${fmtNum(inpatientCount)} | 📋 Planned |`);
   lines.push(`| 8: Payer-specific rates | +${fmtNum(totalRawCharges)} | 🔮 Future infra |`);
@@ -388,7 +388,7 @@ async function main() {
   lines.push(`  ├─ Raw charges (sum of total_charges_count across all hospitals):`);
   lines.push(`  │         ${totalRawCharges.toLocaleString().padStart(18)}  (~274M, not all are for our codes)`);
   lines.push(`  │`);
-  lines.push(`  └─ Filtered charges (1,010 codes, outpatient only, completed hospitals):`);
+  lines.push(`  └─ Filtered charges (${codes.length.toLocaleString()} codes, outpatient only, completed hospitals):`);
   lines.push(`             ${totalDuckDbFilteredCharges.toLocaleString().padStart(14)}`);
   lines.push(``);
   lines.push(`Supabase (current state)`);
@@ -420,7 +420,7 @@ async function main() {
   // ---------------------------------------------------
   lines.push(`## 3. Per-State Data Table`);
   lines.push(``);
-  lines.push(`_DuckDB: completed hospitals + filtered charge count (1,010 codes, outpatient, completed hospitals only)_`);
+  lines.push(`_DuckDB: completed hospitals + filtered charge count (${codes.length.toLocaleString()} codes, outpatient, completed hospitals only)_`);
   lines.push(`_Supabase: providers imported + geocoding status + charges imported_`);
   lines.push(`_**MISSING** = DuckDB has completed hospitals with charges, but Supabase has 0 charges (needs import)_`);
   lines.push(``);
@@ -582,13 +582,13 @@ async function main() {
   lines.push(`│                                                                  │`);
   lines.push(`│  ┌─────────────────────────────────────────────────────────┐    │`);
   lines.push(`│  │  Phase 1-5 (LIVE)                                       │    │`);
-  lines.push(`│  │  Outpatient + 1,010 curated codes + completed hospitals  │    │`);
+  lines.push(`│  │  Outpatient + ${codes.length.toLocaleString()} curated codes + completed hospitals  │    │`);
   lines.push(`│  │  ${totalDuckDbFilteredCharges.toLocaleString().padStart(14)} rows   (${pctUsed.padStart(5)}% of total)            │    │`);
   lines.push(`│  └─────────────────────────────────────────────────────────┘    │`);
   lines.push(`│                                                                  │`);
   lines.push(`│  Phase 6 — More outpatient codes                                │`);
   lines.push(`│  ${outpatientOtherCodes.toLocaleString().padStart(14)} rows   (${pctOutpatientOther.padStart(5)}% of total)                    │`);
-  lines.push(`│  All outpatient codes NOT in our 1,010 curated set              │`);
+  lines.push(`│  All outpatient codes NOT in our ${codes.length.toLocaleString()} curated set              │`);
   lines.push(`│                                                                  │`);
   lines.push(`│  Phase 7 — Inpatient pricing (MS-DRG codes)                     │`);
   lines.push(`│  ${inpatientCount.toLocaleString().padStart(14)} rows   (${pctInpatient.padStart(5)}% of total)                    │`);
