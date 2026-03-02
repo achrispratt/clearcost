@@ -370,7 +370,7 @@ async function main() {
   md.push(`## Methodology`);
   md.push(``);
   md.push(`Queried the Trilliant Oria DuckDB warehouse (~81GB Parquet) for the setting distribution`);
-  md.push(`of all 1,010 curated codes in \`final-codes.json\`. Each code was classified as:`);
+  md.push(`of all ${codes.length.toLocaleString()} curated codes in \`final-codes.json\`. Each code was classified as:`);
   md.push(``);
   md.push(`| Classification | Rule | Action |`);
   md.push(`|---------------|------|--------|`);
