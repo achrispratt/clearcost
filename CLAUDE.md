@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ClearCost — a consumer-facing tool that translates plain English healthcare queries ("I need a knee MRI") into billing codes and returns real, localized hospital pricing comparisons. Think **Kayak for healthcare pricing**.
 
-**Scope:** National (5,200+ hospitals), 1,010 curated procedure codes, cash prices + aggregated payer stats.
+**Scope:** National (5,400+ hospitals), 1,010 curated procedure codes, cash prices + aggregated payer stats.
 
 ## Tech Stack
 
@@ -181,12 +181,15 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 
 ### Import Technical Notes
 
-- DuckDB needs `SET memory_limit = '4GB'` and `SET threads = 2` to avoid RAM exhaustion
+- DuckDB needs `SET memory_limit = '2GB'` and `SET threads = 2` to avoid RAM exhaustion (note: `generate-snapshot.ts` uses `4GB` — it runs alone, not during imports)
 - Many hospitals code under `hcpcs` column instead of `cpt` — always check BOTH
 - DuckDB returns BigInt — wrap in `Number()` before passing to Supabase/JSON
-- Oria DuckDB views use relative paths to `parquet/` — must CWD to `lib/data/` when querying
+- Oria DuckDB views use relative paths to `parquet/` — must CWD to `lib/data/mrf_lake/` when querying
 - State-by-state processing keeps DuckDB memory manageable
 - Import script uses `db.stream()` (not `db.all()`) — never loads full state into JS heap
+- **Auto-resume trap**: `--limit N` test runs mark a state as "completed" in auto-resume. DELETE test rows before full import or the state gets skipped.
+- **`final-codes.json` format**: Flat `string[]`, not `{code: string}[]`. Scripts consume values directly.
+- **DuckDB ↔ Supabase column mismatch**: DuckDB uses `hospital_state` on both tables; Supabase uses `state` on `providers`.
 
 ### MVP Data Scope
 
