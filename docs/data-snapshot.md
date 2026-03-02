@@ -36,7 +36,7 @@ Each run creates a new file in `docs/snapshots/YYYY-MM-DD_HH-MM-SS.md` and updat
 | 7: Inpatient pricing | +50,822,521 | 📋 Planned |
 | 8: Payer-specific rates | +6,381,051,296 | 🔮 Future infra |
 
-_→ Full details in Sections 1–7 below_
+_→ Full details in Sections 1–8 below_
 
 ## 1. Data Funnel
 
@@ -53,7 +53,7 @@ DuckDB (Trilliant Oria)
                  13,115,274
 
 Supabase (current state)
-  ├─ Providers:    5,419  (5,034 geocoded, 385 null lat/lng — see Section 5)
+  ├─ Providers:    5,419  (5,034 geocoded, 385 null lat/lng — see Section 6)
   └─ Charges:   12,574,162
 
   Gap: 541,112 charges not yet in Supabase
@@ -768,7 +768,57 @@ data is queried. These are a Trilliant data quality limitation, not a ClearCost 
 | 271 | creekside behavioral health | unknown | — | `parse_error` |
 | 545 | john heinz institute of rehabilitation | unknown | — | `parse_error` |
 
-## 5. Null-Location Providers (invisible to search)
+## 5. Non-Compliant MRF Hospitals (have data, missing billing codes)
+
+Some hospitals submit MRF data that technically passes Trilliant's parser (`status=completed`)
+but is **non-compliant with CMS price transparency requirements** — they publish pricing rows
+without standard CPT or HCPCS billing codes. These hospitals are imported as providers but
+end up with 0 charges because our import filters on `cpt IN (codes) OR hcpcs IN (codes)`.
+
+**This is not a ClearCost bug. These hospitals are violating the CMS price transparency rule.**
+
+### PA case study (57 providers with 0 charges)
+
+Investigated during PA import (issue #5). All 57 fall into three categories:
+
+| Category | Count | What they submitted instead | Examples |
+|----------|------:|----------------------------|----------|
+| **Description-only (no CPT, no HCPCS)** | ~30 | Free-text descriptions with null code columns | Butler Memorial (37K rows, 0 CPT), Advanced Surgical (12K rows), Penn Highlands Mon Valley (57K rows) |
+| **Revenue codes in HCPCS field** | ~13 | UB-04 revenue codes like "270" (supplies), "274" (prosthetics) stuffed into the HCPCS column — not valid billing codes | Encompass Health rehab hospitals (22K+ rows each), Wills Eye Hospital |
+| **Inpatient-only facilities** | 7 | Valid codes but all `setting='inpatient'` — filtered by our outpatient-only import | PAM Health, Haven Behavioral, St. Mary Rehab, Lancaster Rehab |
+
+### Why this matters
+
+These are real hospitals providing real outpatient services that consumers could shop for.
+Butler Memorial alone has 37,423 pricing rows — but because they used descriptions instead
+of CPT codes, none of that data is queryable by billing code.
+
+### Scale estimate
+
+This investigation was PA-specific. The same pattern almost certainly exists in other states.
+A national audit would likely reveal hundreds of additional providers with the same issue.
+
+### Future work: MRF compliance enforcement
+
+**Priority: Medium (post-launch)**
+
+Two potential approaches:
+
+1. **Description-to-code mapping**: Use Claude to map free-text descriptions back to CPT/HCPCS codes.
+   Many descriptions are clearly recognizable procedures (e.g. "Laparoscopy fundoplasty" = CPT 43280).
+   This would recover data from hospitals that publish descriptions without codes.
+
+2. **Revenue-code-to-HCPCS crosswalk**: Revenue codes like "270" have known HCPCS equivalents.
+   A mapping table could recover data from hospitals that used revenue codes incorrectly.
+
+3. **CMS compliance reporting**: ClearCost could publish a public "Hospital Transparency Scorecard"
+   showing which hospitals are fully compliant vs. partially compliant vs. non-compliant.
+   This aligns with our mission and creates pressure for better data quality.
+
+These hospitals have the data — they're just publishing it in a non-standard format that
+makes it invisible to code-based searches. Recovering this data is a tractable problem.
+
+## 6. Null-Location Providers (invisible to search)
 
 **385 providers** exist in Supabase but have `lat = NULL` and `lng = NULL`.
 These are **invisible to all distance-based searches** because PostGIS `ST_DWithin()` requires a non-null
@@ -1179,7 +1229,7 @@ This is a separate task — not part of the NJ/PA reimport.
 | Summersville Regional Medical Center | WV | Summersville | 400 Fairview Heights Rd, Summersville, WV 26551 | 2046 |
 | Niobrara Community Hospital | WY | — | N/A | 2798 |
 
-## 6. Post-Import Verification Targets
+## 7. Post-Import Verification Targets
 
 After the NJ/PA reimport, re-run this script and verify the following:
 
@@ -1190,12 +1240,12 @@ After the NJ/PA reimport, re-run this script and verify the following:
 | PA Supabase charges | See PA row in Section 3 (DDB Charges column) | PA row Match = ✓ |
 | NJ providers | See NJ row — DDB Hosps column | NJ SB Providers = DDB Hosps |
 | PA providers | See PA row — DDB Hosps column | PA SB Providers = DDB Hosps |
-| Null-location providers | 385 (unchanged by reimport) | Section 5 count |
+| Null-location providers | 385 (unchanged by reimport) | Section 6 count |
 
 _Null-location count will not change with NJ/PA reimport — those providers are already in Supabase._
-_Fixing null-location requires a separate geocoding task (see Section 5)._
+_Fixing null-location requires a separate geocoding task (see Section 6)._
 
-## 7. Full Data Inventory — What We're Sitting On
+## 8. Full Data Inventory — What We're Sitting On
 
 This section shows the complete Trilliant Oria dataset and how much of it ClearCost currently uses.
 It is intended to inform product roadmap and investor conversations.
