@@ -257,6 +257,11 @@ See `.env.local.example` for required keys:
 | `ANTHROPIC_API_KEY` | Claude API for billing code translation |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view) |
 
+## Data Architecture Principles
+
+**Prefer bringing the calculation to the data, not the data to the calculation.**
+When possible and optimal, push reference data and logic into SQL (temp tables, CTEs, JOINs) rather than pulling large result sets to Node.js for local processing. This minimizes network transfer, respects Supabase Pro CPU/IO limits, and leverages Postgres's query optimizer. Not a hard rule — sometimes client-side processing is simpler or necessary (e.g., when logic depends on npm packages with no SQL equivalent). Use judgment.
+
 ## Code Style & Guidelines
 
 - **Imports**: Group by external packages, then internal using `@/` path alias

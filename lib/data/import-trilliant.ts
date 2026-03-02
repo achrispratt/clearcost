@@ -472,7 +472,7 @@ async function importCharges(
 
   // The WHERE clause: match our codes in either column, skip inpatient
   const codeFilter = `(cpt IN (${codeList}) OR hcpcs IN (${codeList}))
-    AND (setting IS NULL OR LOWER(setting) != 'inpatient')`;
+    AND (setting IS NULL OR TRIM(LOWER(setting)) != 'inpatient')`;
 
   // Get list of states to process one at a time (keeps Parquet scans small)
   let states: string[];
