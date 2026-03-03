@@ -40,6 +40,13 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
     .filter(Boolean)
     .join(", ");
 
+  const billingClassCallout = (() => {
+    const bc = result.billingClass?.toLowerCase();
+    if (bc === "facility") return "Facility fee only — professional fees may apply separately";
+    if (bc === "professional") return "Professional fee only — facility charges may apply separately";
+    return null;
+  })();
+
   return (
     <div
       data-result-id={result.id}
@@ -185,6 +192,31 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
               )}
             </div>
           </div>
+
+          {/* Billing class callout */}
+          {billingClassCallout && (
+            <div
+              className="flex items-start gap-1.5 mt-2"
+              style={{ color: "var(--cc-accent)" }}
+            >
+              <svg
+                className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+              <span className="text-xs">
+                {billingClassCallout}
+              </span>
+            </div>
+          )}
 
           {/* Footer row */}
           <div
