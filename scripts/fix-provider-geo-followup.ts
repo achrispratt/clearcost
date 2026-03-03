@@ -65,9 +65,9 @@ async function main(): Promise<void> {
   console.log("=== Provider Geography Follow-up Fix ===\n");
   if (DRY_RUN) console.log("  *** DRY RUN MODE ***\n");
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const dbUrl = process.env.SUPABASE_DB_URL!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const dbUrl = process.env.SUPABASE_DB_URL;
   const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!supabaseUrl || !supabaseKey || !dbUrl) {

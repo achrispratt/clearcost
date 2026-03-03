@@ -23,13 +23,14 @@ import { spawnSync } from "node:child_process";
 import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+// @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 
-const PSQL_BIN = "/opt/homebrew/Cellar/libpq/18.2/bin/psql";
+const PSQL_BIN = process.env.PSQL_BIN || "/opt/homebrew/opt/libpq/bin/psql";
 const DB_URL = process.env.SUPABASE_DB_URL;
 
 if (!DB_URL) {
