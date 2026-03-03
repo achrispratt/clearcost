@@ -1,0 +1,46 @@
+-- Migration: Deduplicate Charges
+-- GitHub Issue: #8 ("Investigate + deduplicate existing charges")
+-- Date: 2026-03-03
+-- Before: 13,115,268 charges
+-- After:  8,358,148 charges (4,757,120 removed, 36.3%)
+--
+-- Root cause: Trilliant Oria source data lists the same procedure under
+-- multiple revenue codes (hospital department classifications). ~90% of
+-- "duplicates" are revenue code variants with identical prices; ~10% are
+-- true all-column duplicates.
+--
+-- Approach: Aggressive dedup excluding revenue_code, ndc, icd from
+-- PARTITION BY. All 7 price columns + payer_count ARE in the partition,
+-- so zero distinct price points are lost. Revenue code variants with
+-- different prices survive as separate rows.
+--
+-- Execution: state-by-state via scripts/deduplicate-charges.ts
+--   Run 1 (2026-03-03): 39 states (AK-PA, WY) — 2,608,450 removed
+--   Run 2 (2026-03-03): 12 states (PR-WV) — 2,148,670 removed
+--
+-- Verification: post-dedup GROUP BY confirms 0 remaining duplicate groups.
+-- Source Parquet data preserved at lib/data/mrf_lake/parquet/ (81GB).
+
+-- Dedup SQL executed per state (kept for reproducibility):
+--
+-- DELETE FROM charges WHERE id IN (
+--   SELECT id FROM (
+--     SELECT c.id, ROW_NUMBER() OVER (
+--       PARTITION BY c.provider_id,
+--         COALESCE(c.cpt, ''), COALESCE(c.hcpcs, ''), COALESCE(c.ms_drg, ''),
+--         COALESCE(c.description, ''), COALESCE(c.billing_class, ''),
+--         COALESCE(c.setting, ''), COALESCE(c.modifiers, ''),
+--         c.cash_price, c.gross_charge, c.min_price, c.max_price,
+--         c.avg_negotiated_rate, c.min_negotiated_rate, c.max_negotiated_rate,
+--         c.payer_count
+--       ORDER BY c.created_at ASC, c.id ASC
+--     ) AS row_num
+--     FROM charges c
+--     JOIN providers p ON c.provider_id = p.id
+--     WHERE p.state = $1
+--   ) ranked WHERE row_num > 1
+-- );
+--
+-- Unique index deferred to issue #10 (pipeline hardening).
+
+SELECT 'Dedup migration recorded. Executed via scripts/deduplicate-charges.ts on 2026-03-03.' AS info;
