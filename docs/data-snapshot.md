@@ -16,7 +16,7 @@ Each run creates a new file in `docs/snapshots/YYYY-MM-DD_HH-MM-SS.md` and updat
 | DuckDB target (filtered) | 13,077,101 | — |
 | Gap | -38,167 | unknown missing |
 | Supabase providers | 5,419 | ✅ all completed hospitals |
-| Geocoded providers | 5,034 (92.9%) | ⚠ 385 invisible to search |
+| Geocoded providers | 5,409 (99.8%) | ✅ 10 unfixable (see docs/unfixable-providers.md) |
 | Excluded hospitals (DuckDB) | 620 | ℹ Trilliant data quality |
 
 ### Open Action Items
@@ -24,7 +24,7 @@ Each run creates a new file in `docs/snapshots/YYYY-MM-DD_HH-MM-SS.md` and updat
 | Priority | Issue | Rows Affected |
 |----------|-------|--------------|
 | 🔴 | unknown charges missing — reimport needed | 293,490 |
-| 🟡 | 385 providers null lat/lng — geocode backfill needed | — |
+| ✅ | Geocode backfill complete — 10 unfixable remain (26 charges) | docs/unfixable-providers.md |
 
 ### Data We're Sitting On
 
@@ -52,7 +52,7 @@ DuckDB (Trilliant Oria)
                  13,077,101
 
 Supabase (current state)
-  ├─ Providers:    5,419  (5,034 geocoded, 385 null lat/lng — see Section 5)
+  ├─ Providers:    5,419  (5,409 geocoded, 10 unfixable — see docs/unfixable-providers.md)
   └─ Charges:   13,115,268
 
   Gap: -38,167 charges not yet in Supabase
@@ -767,416 +767,23 @@ data is queried. These are a Trilliant data quality limitation, not a ClearCost 
 | 271 | creekside behavioral health | unknown | — | `parse_error` |
 | 545 | john heinz institute of rehabilitation | unknown | — | `parse_error` |
 
-## 5. Null-Location Providers (invisible to search)
+## 5. Provider Geography (RESOLVED 2026-03-03)
 
-**385 providers** exist in Supabase but have `lat = NULL` and `lng = NULL`.
-These are **invisible to all distance-based searches** because PostGIS `ST_DWithin()` requires a non-null
-geometry point.
+**Fixed:** 599 of 609 affected providers remediated. Geocoding rate: **92.9% → 99.8%**.
 
-**Root cause:** `geocodeByZip()` in `import-trilliant.ts` only extracts zip codes from the
-`hospital_address` string. These hospitals had addresses without a parseable 5-digit zip.
-The `hospital_city` and `hospital_state` fields were populated but never used for geocoding.
+**Root cause:** `extractZip()` in `import-trilliant.ts` grabbed street numbers instead of real ZIP codes (e.g., "10018 Gravois Rd" → ZIP "10018" which is NYC, not Missouri). Since lat/lng are derived from ZIP via `zipcodes.lookup()`, coordinates were wrong too. Additionally, 385 providers had no parseable ZIP at all.
 
-### Geocoding Improvement Opportunity
+**Fix applied:** Three-tier geocoding cascade (see `scripts/fix-provider-geography.ts`):
+1. `extractZipV2` — find all 5-digit numbers, walk backwards, validate via zipcodes + state match (387 fixed)
+2. `lookupByName` — city+state → ZIP centroid with abbreviation expansion (28 fixed)
+3. Google Maps Geocoding API — full address → precise lat/lng (184 fixed)
 
-These providers could be fixed using `hospital_city + hospital_state` via the Google Maps
-Geocoding API (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is already configured). Approach:
+Follow-up pass (`scripts/fix-provider-geo-followup.ts`): corrected 45 wrong state fields + 12 placeholder ZIPs via reverse geocode.
 
-1. Query `providers WHERE lat IS NULL AND trilliant_hospital_id IS NOT NULL`
-2. Geocode each via `{city}, {state}` → Google Maps Geocoding API → lat/lng
-3. `UPDATE providers SET lat=?, lng=? WHERE id=?`
+**Pipeline hardened:** `extractZip()` and `geocodeByZip()` in `import-trilliant.ts` replaced with validated versions. Future imports won't reintroduce this issue.
 
-This is a separate task — not part of the NJ/PA reimport.
-
-### Full Listing
-
-| Name | State | City | Address | Trilliant ID |
-|------|-------|------|---------|-------------|
-| Athens-Limestone Hospital | AL | — | 700 W MARKET ST, Athens,AL 356112457 | 1621 |
-| Marion Regional Medical Center, Inc. | AL | — | [] | 3044 |
-| UAB St. Vincent's Blount | AL | — | [] | 5736 |
-| UAB St. Vincent's Chilton | AL | — | [] | 1860 |
-| UAB St. Vincent's East | AL | — | [] | 1399 |
-| Washington County Hospital and Nursing Home | AL | — | 14600 St. Stephens Ave | 3124 |
-| Baxter Health Fulton County Hospital | AR | Salem | 679 N Main Street, Salem, AR, 725769998 | 5256 |
-| Mercy Hospital Jefferson | AR | — | 1390 US Highway 61 Festus MO 6302 | 699 |
-| Mercy Hospital South | AR | — | 10050 Kennerly Road Saint Louis MO 63128 | 1975 |
-| Stone County Medical Center | AR | — | N/A | 979 |
-| White River Medical Center | AR | — | N/A | 2246 |
-| Abrazo Surprise Hospital | AZ | Surprise | 16815 W Bell Rd, Surprise, AZ 85374 | 5860 |
-| Avenir Behavioral Center | AZ | — | 16561 N PARKVIEW PLACE, SURPRISE AZ 85374 | 5829 |
-| Banner Boswell Medical Center | AZ | Sun City | 10401 West Thunderbird Blvd, Sun City, AZ 85351 | 2775 |
-| Banner Ironwood Medical Center | AZ | San Tan Valley | 37000 North Gantzel Road, San Tan Valley, AZ 85140 | 3165 |
-| ClearSky Rehabilitation Hospital of Avondale | AZ | Avondale | 10903 West McDowell Road, Avondale, AZ 85392 | 5136 |
-| Honor Health Deer Valley Medical Center | AZ | — | 19829 N 27th AVE, PHOENIX AZ 85027-4001 | 3141 |
-| Honor Health Sonoran Crossing Medical Center | AZ | — | 33400 N 32ND AVE, PHOENIX AZ 85085-8876 | 4560 |
-| Western Regional Medical Center | AZ | Goodyear | 14200 West Celebrate Life Way, Goodyear, AZ 85338 | 5559 |
-| ADVENTIST HEALTH - CLEAR LAKE | CA | — | 15630 18th Ave Clearlake CA 95422 | 4903 |
-| BEAR VALLEY COMMUNITY HOSPITAL | CA | Big Bear Lake | 41870 Garstin Drive, PO Box 1649, Big Bear Lake, CA, 92315-1649 | 1731 |
-| Children's Hospital of Orange County | CA | — | 1201 W La Veta Ave | 5601 |
-| CHOC at Mission Hospital | CA | — | 27700 Medical Center Rd | 4100 |
-| Coast Plaza Hospital | CA | Norwalk | 13100 Studebaker Road, Norwalk, CA 90650 | 5844 |
-| Community Memorial Healthcare - Ojai | CA | — | 1306 Maricopa Highway | 2707 |
-| Del Amo Behavioral Health System | CA | TORRANCE | 23700  CAMINO DEL SOL, TORRANCE, CA 90505 | 4874 |
-| Doctors Hospital of Riverside | CA | — | 3865 Jackson Street | 4938 |
-| Eisenhower Medical Center | CA | Rancho Mirage | 39000 Bob Hope Dr, Rancho Mirage, CA 92270 | 5928 |
-| Encino Hospital Medical Center | CA | — | 16237 Ventura Boulevard Encino, CA  91436 | 4184 |
-| Fairmont Hospital | CA | San Leandro | 15400 Foothill Blvd, San Leandro, CA 94578 | 4882 |
-| Fremont Hospital | CA | FREMONT | 39001 SUNDALE DRIVE, FREMONT, CA 94538 | 1501 |
-| Fremont Medical Center | CA | FREMONT | 39400 PASEO PADRE PARKWAY, FREMONT, CA 94538 | 2977 |
-| Garfield Medical Center | CA | — | 525 N Garfield Ave | 5400 |
-| Gateways Hospital and Mental Health Center | CA | Los Angeles | — | 1686 |
-| Hayward sisters hospital dba st rose hospital | CA | — | 27200 Calaroga Ave Hayward Ca  94545 | 2694 |
-| Hoag Hospital Irvine | CA | Irvine | 16200 Sand Canyon Avenue, Irvine, CA 92618 | 1879 |
-| Kindred Hospital Baldwin Park | CA | Baldwin Park | 14148 Francisquito Avenue, Baldwin Park, CA 91706 | 1735 |
-| Kindred Hospital La Mirada | CA | La Mirada | 14900 E Imperial Hwy, La Mirada, CA 90638 | 5666 |
-| Kindred Hospital Paramount | CA | Paramount | 16453  Colorado Avenue, Paramount, CA 90723 | 3573 |
-| Kindred Hospital Rancho | CA | Rancho Cucamonga | 10841 White Oak Avenue, Rancho Cucamonga, CA 91730 | 4086 |
-| Loma Linda University Medical Center Murrieta | CA | Murrieta | 28062 Baxter Road, Murrieta, CA 92563 | 1874 |
-| Los Angeles Community Hospital at Norwalk | CA | Norwalk | 13222 Bloomfield Ave, Norwalk, CA, 90650 | 6034 |
-| Los Angeles Downtown Medical Center | CA | — | 1711 W TEMPLE STREET SUITE 8135 | 5618 |
-| MemorialCare Saddleback Medical Center | CA | Laguna Hills | 24451 Health Center Drive, Laguna Hills, CA 92653 | 3133 |
-| Monterey Park Hospital | CA | — | 900 S Atlantic Blvd | 1831 |
-| Moreno Valley Medical Center | CA | MORENO VALLEY | 27300 IRIS AVENUE, MORENO VALLEY, CA 92555 | 3997 |
-| Northridge Hospital Medical Center | CA | Northridge | 18300 Roscoe Blvd, Northridge, CA 91328 | 1949 |
-| Providence Mission Hospital - Laguna Beach | CA | Laguna Beach | 31872 Coast Hwy, Laguna Beach, CA 92651 | 4647 |
-| Providence Mission Hospital - Mission Viejo | CA | Mission Viejo | 27700 Medical Center Rd, Mission Viejo, CA 92691 | 1059 |
-| Rehabilitation Hospital of Southern California, LLC | CA | Rancho Mirage | 70077 Ramon Road, Rancho Mirage, CA 92270 | 2207 |
-| Riverside Medical Center | CA | RIVERSIDE | 10800 MAGNOLIA AVE, RIVERSIDE, CA 92505 | 2539 |
-| San Leandro Hospital | CA | San Leandro | 13855 E 14th Street, San Leandro, CA 94578 | 4305 |
-| Sherman Oaks Hospital | CA | — | 4929 Van Nuys Boulevard Sherman Oaks, CA91403 | 4558 |
-| St Mary Medical Center | CA | Apple Valley | 18300 Highway 18, Apple Valley, CA 92307 | 2406 |
-| UCI Health - Fountain Valley | CA | Fountain Valley | 11250 Warner Avenue, Fountain Valley, CA 92708 | 1815 |
-| Valley Presbyterian Hospital | CA | Van Nuys | 15107 Vanowen Street, Van Nuys, CA 91405 | 3393 |
-| Whittier Hospital Medical Center | CA | — | 9080 Colima Road | 1140 |
-| Baxter Health | CO | — | TBD | 5949 |
-| Delta County Memorial Hospital | CO | — | [] | 1404 |
-| Fulton County Medical Center | CO | — | 214 Peach  Orchard Rd Mc Connellsburg PA | 1707 |
-| HCA HealthONE CENTENNIAL, A PART OF AURORA HOSPITAL | CO | ENGLEWOOD | 14200 EAST ARAPHOE ROAD, ENGLEWOOD, CO, 80112 | 5327 |
-| HCA HealthONE NORTHEAST ER, A PART OF MOUNTAIN RIDGE HOSPITAL | CO | THORNTON | 12793 HOLLY STREET, THORNTON, CO, 80241 | 5264 |
-| OrthoColorado Hospital at St. Anthony Campus | CO | Lakewood | 11650 W 2nd Pl, Lakewood, CO 80228 | 4877 |
-| Spanish Peaks Regional Health Center | CO | — | 23500 Us Highway 160 Walsenburg CO 81089 | 5532 |
-| St. Anthony Hospital | CO | Lakewood | 11600 W 2nd Pl, Lakewood, CO 80228 | 907 |
-| St. Anthony North Health Campus | CO | Westminster | 14300 Orchard Pkwy, Westminster, CO 80023 | 2871 |
-| St. Francis Hospital - Interquest | CO | Colorado Springs | 10860 New Allegiance Drive, Colorado Springs, CO 80921 | 1823 |
-| UCHealth Broomfield Hospital | CO | Broomfield | 11820 Destination Drive, Broomfield, CO 80021 | 4741 |
-| UCHealth University of Colorado Hospital | CO | Aurora | 12605 E. 16th Avenue, Aurora, CO 80045 | 5022 |
-| Warren Medical Group | CO | — | TBD | 4288 |
-| AdventHealth Dade City | FL | Dade City | 13100 Fort King Road, Dade City, FL  33525 | 5208 |
-| AdventHealth Heart of Florida | FL | Davenport | 40100 US Highway 27, Davenport, FL  33837 \| 17430 Bali Boulevard, Winter Garden, FL  34787 | 2827 |
-| Baptist North Medical Campus | FL | Jacksonville | 11250 Baptist Health Drive, Jacksonville, FL  32218 | 4450 |
-| HCA FL HAINES CITY ER | FL | HAINES CITY | 36810 US HWY 27 N, HAINES CITY, FL, 33844 | 2668 |
-| HCA FL HUNTERS CREEK ER | FL | ORLANDO | 12100 SOUTH JOHN YOUNG PKWY, ORLANDO, FL, 32837 | 1190 |
-| HCA FL MOUNT DORA FSED | FL | MOUNT DORA | 16831 US HIGHWAY 441, MOUNT DORA, FL, 32757 | 2554 |
-| HCA FL PALM LAKES ER | FL | HIALEAH | 18000 NW 57TH AVE, HIALEAH, FL, 33015 | 1241 |
-| HCA FL SUMMERFIELD ER | FL | SUMMERFIELD | 14193 S US HIGHWAY 441, SUMMERFIELD, FL, 34491 | 2472 |
-| HCA FL TOWN AND COUNTRY ER | FL | MIAMI | 11800 SHERRI LN, MIAMI, FL, 33183 | 3479 |
-| HCA FL WEST END ER | FL | NEWBERRY | 12311 W NEWBERRY RD, NEWBERRY, FL, 32669 | 1598 |
-| HCA FLORIDA AVENTURA HOSPITAL | FL | AVENTURA | 20900 BISCAYNE BLVD, AVENTURA, FL, 33180 | 3162 |
-| HCA FLORIDA BAYONET POINT HOSPITAL | FL | HUDSON | 14000 FIVAY ROAD, HUDSON, FL, 34667 | 3101 |
-| HCA FLORIDA PALMS WEST HOSPITAL | FL | LOXAHATCHEE | 13001 SOUTHERN BLVD, LOXAHATCHEE, FL, 33470 | 5880 |
-| Jay Hospital | FL | — | 14114 Alabama Street, Jay FL 32565 | 4539 |
-| Lakeside Medical Center | FL | Belle Glade | 39200 Hooker Hwy., Belle Glade, FL 33430 | 1133 |
-| Moffitt Cancer Center | FL | — | 12902  Magnolia Dr, Tampa, Florida, 33612 | 4688 |
-| NEMOURS CHILDREN'S HOSPITAL | FL | — | 6535 Nemours Parkway | 1849 |
-| Orlando Health - Health Central Hospital | FL | Ocoee | 10000 W Colonial Dr, Ocoee, FL 34761 | 4365 |
-| Orlando Health Emergency Room - Reunion Village | FL | Ocoee | 10000 W Colonial Dr, Ocoee, FL 34761 | 5548 |
-| Orlando Health Horizon West Hospital | FL | Winter Garden | 17000 Porter Rd., Winter Garden, FL 34787 | 5597 |
-| Windmoor Healthcare of Clearwater | FL | CLEARWATER | 11300 U.S. HIGHWAY 19 NORTH, CLEARWATER, FL 33764 | 3061 |
-| Emanuel Medical Center | GA | — | N/A | 3137 |
-| Jasper Memorial Hospital | GA | — | N/A | 4517 |
-| Landmark Hospital of Savannah | GA | — | 800 East 68th St. Savannah, GA 3 | 689 |
-| Tanner Medical Center/Carrollton | GA | — | 705 Dixie Highway | 3753 |
-| Wayne Memorial Hospital | GA | — | N/A | 6024 |
-| Kohala Hospital | HI | — | 54-383 Hospital Rd | 1114 |
-| Kona Community Hospital | HI | — | 79-1019 Haukapila St | 5688 |
-| Leahi Hospital | HI | — | 3675 Kilauea Avenue | 3228 |
-| Cascade Medical Center | ID | — | N/A | 2837 |
-| Advocate South Suburban Hospital | IL | Hazel Crest | 17800 South Kedzie Avenue, Hazel Crest, IL 60429 | 5016 |
-| John H. Stroger Jr. Hospital | IL | — | [] | 5182 |
-| Provident Hospital Cook County | IL | — | [] | 3400 |
-| Vista Medical Center | IL | — | [] | 3098 |
-| Ascension St. Vincent Carmel (St. Vincent Carmel Hospital, Inc.) | IN | — | 13500 N Meridian St Carmel IN 46032 | 1604 |
-| Franciscan Health Orthopedic-Carmel | IN | — | 10777 ILLINOIS STREET CARMEL, IN 46032 | 6009 |
-| Parkview Ortho Hospital | IN | Fort Wayne | 11130 Parkview Circle Dr, Fort Wayne, IN 46845 | 3017 |
-| RCG Taft Street | IN | — | 8555 Taft St | 4705 |
-| UChicago Crown Point | IN | Crown Point | 10855 Virginia Street, Crown Point, IN 46307 | 851 |
-| Allen County Regional Hospital | KS | — | 3066 North. Kentucky Street | 2038 |
-| Ascension Via Christi Hospital St. Teresa, Inc. | KS | — | 14800 St Teresa St Wichita KS 67235 | 680 |
-| Cottonwood Springs | KS | — | 13351 S Arapaho Dr Olathe KS 66062 | 4653 |
-| Cottonwood Springs Changes | KS | — | 13351 S Arapaho Dr Olathe KS 66062 | 5326 |
-| Goodland Regional Medical Center | KS | — | N/A | 1742 |
-| Greeley County Health Services, Inc. | KS | — | 506 3rd Street | 1835 |
-| Neosho Memorial Regional Medical Center | KS | — | [] | 3437 |
-| OVERLAND PARK REGIONAL MEDICAL CENTER | KS | Overland Park | 10500 Quivira, Overland Park, KS, 66215 | 4398 |
-| Rawlins County Health Center | KS | — | N/A | 2588 |
-| Saint Luke's South Hospital | KS | — | 12300 Metcalf Avenue | 2964 |
-| The University of Kansas Health System Olathe Hospital/Olathe Medical Center | KS | — | 20333 W. 151st Street, Olathe, Kansas 66061 | 4666 |
-| Baptist Health Rehabilitation Hospital | KY | Louisville | 11800 Bluegrass Pkwy, Louisville, KY 40299-2303 | 1434 |
-| Norton Audubon Hospital | KY | Louisville | One Audubon Plaza Drive, Louisville, KY 70217-1318 | 2031 |
-| Norton Scott Hospital | KY | — | Norton Scott Hospital | 3991 |
-| Norton West Louisville Hospital | KY | — | Norton West Louisville Hospital | 3740 |
-| Abbeville General Hospital | LA | — | 118 North Hospital Drive | 5707 |
-| Baton Rouge General - Ascension | LA | — | 3600 FLORIDA BLVD, BATON ROUGE,LA 708063842 | 3045 |
-| Baton Rouge General - Bluebonnet | LA | — | 3600 FLORIDA BLVD, BATON ROUGE,LA 708063842 | 1345 |
-| Baton Rouge General - Mid City | LA | — | 3600 FLORIDA BLVD, BATON ROUGE,LA 708063842 | 5911 |
-| Baton Rouge IOP | LA | — | 10425 Plaza Americana, Baton Rouge, Louisiana 70816 | 4949 |
-| Hammond IOP | LA | — | 10425 Plaza Americana, Baton Rouge, Louisiana 70816 | 1646 |
-| New Orleans Hospital | LA | — | 14500 Hayne Blvd, Suite 200, New Orleans, Louisiana 70128 | 1535 |
-| Northshore Hospital | LA | — | 64026 Hwy 434, Suite 300, Lacombe, Louisiana 70445 | 5425 |
-| Oceans Behavioral Hospital of Baton Rouge | LA | — | 11135 Florida Boulevard; Baton Rouge, LA 70518 | 3713 |
-| Ochsner Medical Center - Baton Rouge | LA | Baton Rouge | 17000 Medical Center Dr, Baton Rouge, LA 70816\|10310 The Grove Boulevard, Baton Rouge, LA 70836 | 5759 |
-| PAM Specialty Hospital of Hammond | LA | Hammond | 42074 Veterans Ave., Hammond, LA 70403 | 3689 |
-| Surgical Specialty Center of Baton Rouge | LA | — | [] | 3682 |
-| Boston Children's Lexington | MA | — | 482 Bedford Street Lexington, MA 02173 | 2077 |
-| MedStar St Mary's Hospital | MD | — | 25500 Point Lookout Rd. Leonardtown, MD 20650 | 4930 |
-| Meritus Medical Center, Inc. | MD | — | 11116 Medical Campus Road Hagerstown, MD 21742 | 1125 |
-| North Oaks Medical Center | MD | Drive. Hammond | 15790 Paul Vega, MD, Drive. Hammond, LA 70403 | 2617 |
-| Rehabilitation Hospital of Bowie | MD | Bowie | 17351 Melford Blvd, Bowie, MD 20715-4457 | 5569 |
-| UPMC Western Maryland | MD | Cumberland | 12500 Willowbrook Road Se, Cumberland, MD 21502 | 709 |
-| UPMC Western Maryland | MD | Cumberland | 12500 Willowbrook Road Se, Cumberland, MD 21502 | 2921 |
-| Corewell Health Farmington Hills | MI | Farmington Hills | 28050 Grand River Avenue, Farmington Hills, MI 48336 | 2293 |
-| Corewell Health Taylor | MI | Taylor | 10000 Telegraph Road, Taylor, MI 48180 | 2885 |
-| Harbor Beach Community Hospital | MI | — | 210_S_1st_Street_Harbor_Beach_MI_48441 | 3881 |
-| Henry Ford Kingswood Hospital | MI | Ferndale | 10300 Eight Mile Rd, Ferndale, MI 48220 | 866 |
-| Henry Ford Macomb Hospital | MI | Clinton Twp | 15855 19 Mile Rd, Clinton Twp, MI 48038 | 3995 |
-| Henry Ford Warren Hospital | MI | Warren | 11800 Twelve Mile Rd, Warren, MI 48093 | 4531 |
-| McKenzie Health System | MI | — | 120_N._Delaware_St_Sandusky_MI_48471 | 3173 |
-| Munson Healthcare Charlevoix | MI | Charlevoix | 14700 Lake Shore Drive, Charlevoix, MI 49720 | 3526 |
-| ProMedica Charles and Virginia Hickman Hospital | MI | — | 5640 N Adrian Hwy | 1012 |
-| ProMedica Coldwater Regional Hospital | MI | — | 274 E Chicago St | 5240 |
-| ProMedica Monroe Regional Hospital | MI | — | 718 N. Macomb St. | 3344 |
-| StoneCrest Behavioral Health Hospital | MI | — | 15000 Gratiot Avenue, Detroit, Michigan 48205 | 1693 |
-| Trinity Health Ann Arbor | MI | Ypsilanti | 5301 McAuley Dr, Ypsilanti, MI 48171 | 1640 |
-| Allina Health Faribault Medical Center | MN | — | 200 St Ave. | 5722 |
-| Buffalo Hospital | MN | — | 303 Caitlin St | 1850 |
-| Cambridge Medical Center | MN | — | 701 Dellwood St S | 2206 |
-| Hendricks Community Hospital Association | MN | Hendricks | 503 E Lincoln St, Hendricks , MN | 4541 |
-| Owatonna Hospital | MN | — | 2250 26th St NW, | 3572 |
-| River Falls Area Hospital | MN | — | 1617 E Division St | 1987 |
-| CENTERPOINT MEDICAL CENTER | MO | Independence | 19600 E 39TH ST , Independence, MO, 64057 | 1316 |
-| Christian Hospital | MO | St. Louis | ['11133 Dunn Road, St. Louis, MO 63136', '1225 Dunn Road, St. Louis, MO 63031'] | 3968 |
-| Hedrick Medical Center | MO | — | 2799 North Washington Street | 5621 |
-| Mercy Hospital St Louis | MO | — | 12990 Manchester RD STE 1 Saint Louis MO 63131 | 1243 |
-| Northwest HealthCare | MO | St. Louis | ['11133 Dunn Road, St. Louis, MO 63136', '1225 Dunn Road, St. Louis, MO 63031'] | 3667 |
-| Saint Luke's East Hospital | MO | — | 100 N.E. Saint Luke's Boulevard | 3094 |
-| Saint Luke's North Hospital | MO | — | 5830 NW Barry Road | 1587 |
-| Salem Memorial Hospital | MO | P.O. Box 774;Salem | 35629 Highway 72, P.O. Box 774;Salem, MO 65560 | 2678 |
-| SSM Health Rehabilitation Hospital - Bridgeton | MO | Saint Louis | 12380 DePaul Drive, Saint Louis, MO 63044 | 750 |
-| Washington County Memorial Hospital | MO | — | 300 HEALTH WAY DR | 3103 |
-| Wright Memorial Hospital | MO | — | 191 Iowa Boulevard | 1938 |
-| Clay County Medical Corporation | MS | — | [] | 5644 |
-| Gulfport Behavioral | MS | GULFPORT | 11150 HIGHWAY 49 NORTH, GULFPORT, MS 39503 | 716 |
-| Monroe Health Services, Inc. | MS | — | [] | 4418 |
-| North Mississippi Medical Center, Inc. | MS | — | [] | 5671 |
-| Oceans Behavioral Hospital Biloxi | MS | — | 180C Debuys Road; Biloxi, MS 39351 | 4054 |
-| Ochsner Laird Hospital | MS | Union | 25117 Highway 15, Union, MS 39365 | 3857 |
-| Ochsner Stennis Hospital | MS | DeKalb | 14365 Highway 16 West, DeKalb, MS 39328 | 4969 |
-| Pontotoc Health Services, Inc. | MS | — | [] | 1901 |
-| Singing River Gulfport | MS | — | 15200 Community Rd,Gulfport,MS,39503 | 4311 |
-| Tishomingo Health Services, Inc. | MS | — | [] | 2070 |
-| UMMC Grenada Hospital | MS | — | [] | 2612 |
-| UMMC Holmes County Hospital | MS | — | [] | 4848 |
-| UMMC Jackson Hospital | MS | — | [] | 2003 |
-| UMMC Madison Hospital | MS | — | [] | 2613 |
-| Webster Health Services, Inc. | MS | — | [] | 1993 |
-| Atrium Health Ballantyne Emergency Department, a facility of Atrium Health Pineville | NC | Charlotte | 10628 Park Rd, Charlotte, NC 28210  | 3750 |
-| Atrium Health Pineville | NC | Charlotte | 10628 Park Rd, Charlotte, NC 28210  | 2701 |
-| Atrium Health Providence Emergency Department, a facility of Atrium Health Pineville | NC | Charlotte | 10628 Park Rd, Charlotte, NC 28210  | 5202 |
-| Atrium Health Steele Creek Emergency Department, a facility of Atrium Health Pineville | NC | Charlotte | 10628 Park Rd, Charlotte, NC 28210  | 4711 |
-| Novant Health Ballantyne Medical Center | NC | — | 10905_Providence_Rd_West_Charlotte_NC_28277 | 5876 |
-| Novant Health Brunswick Medical Center | NC | — | 240_Hospital_Drive_NE_Bolivia_NC_28422 | 4866 |
-| Novant Health Charlotte Orthopedic Hospital | NC | — | 1901_Randolph_Rd._Charlotte_NC_28207 | 3930 |
-| Novant Health Clemmons Medical Center | NC | — | 6915_Village_Medical_Circle_Clemmons_NC_27012 | 1982 |
-| Novant Health Forsyth Medical Center | NC | — | 3333_Silas_Creek_Pkwy_Winston_Salem_NC_27103 | 4729 |
-| Novant Health Huntersville Medical Center | NC | — | 10030_Gilead_Road_Huntersville_NC_28078 | 3776 |
-| Novant Health Kernersville Medical Center | NC | — | 1750_Kernersville_Medical_Parkway_Kernersville_NC_27284 | 2614 |
-| Novant Health Matthews Medical Center | NC | — | 1500_Matthews_Township_Pkwy_Matthews_NC_28105 | 4169 |
-| Novant Health Medical Park Hospital | NC | — | 1950_South_Hawthorne_Rd_Winston_Salem_NC27103 | 1749 |
-| Novant Health Mint Hill Medical Center | NC | — | 8201_Healthcare_Loop_Charlotte_NC_28215 | 2990 |
-| Novant Health New Hanover Regional Medical Center | NC | — | 2131_S_17th_St_Wilmington_NC_28401 | 3553 |
-| Novant Health Pender Medical Center | NC | — | 507_E_Fremont_St_Burgaw_NC_28425 | 3024 |
-| Novant Health Presbyterian Medical Center | NC | — | 200_Hawthorne_Lane_Charlotte_NC_28204 | 5915 |
-| Novant Health Rowan Medical Center | NC | — | 612_Mocksville_Avenue_Salisbury_NC_28144 | 5552 |
-| Novant Health Thomasville Medical Center | NC | — | 207_Old_Lexington_Rd._Thomasville_NC_27360 | 2180 |
-| Boys Town National Research Hospital | NE | Boys Town | 14000 Boys Town Hospital Road, Boys Town, NE 68010 | 4050 |
-| CHI Health Midlands | NE | Papillion | 11111 S 84th Street, Papillion, NE 68046 | 4471 |
-| Atlantic Rehabilitation Institute | NJ | — | 200 Madison Avenue Madison NJ 7940 | 3412 |
-| Easton Avenue | NJ | — | [] | 1698 |
-| Virtua Marlton Hospital | NJ | — | 90_Brick_Road_Marlton_NJ_08053 | 4372 |
-| Virtua Mount Holly Hospital | NJ | — | 175_Madison_Avenue_Mount_Holly_NJ_08060 | 5558 |
-| Virtua Our Lady of Lourdes Hospital | NJ | — | 1600_Haddon_Avenue_Camden_NJ_08103 | 2238 |
-| Virtua Voorhees Hospital | NJ | — | 100_Bowman_Drive_Voorhees_NJ_08043 | 1771 |
-| Virtua Willingboro Hospital | NJ | — | 218A_Sunset_Road_Willingboro_NJ_08046 | 5712 |
-| Miners Colfax Medical Center | NM | — | 203 Hospital Dr | 4381 |
-| LAS VEGAS HEART ASSOCIATES | NV | LAS VEGAS | — | 5070 |
-| MOUNTAINVIEW CRITICAL CARE ASSOCIATES | NV | LAS VEGAS | — | 5462 |
-| MOUNTAINVIEW MEDICAL ASSOCIATES | NV | LAS VEGAS | — | 1818 |
-| NEUROSCIENCES INPATIENT SERVICES | NV | LAS VEGAS | — | 729 |
-| NEVADA CARDIOVASCULAR AND THORACIC INST | NV | LAS VEGAS | — | 804 |
-| NEVADA NEUROSCIENCES INSTITUTE | NV | LAS VEGAS | — | 4948 |
-| SARAH CANNON BMT CLINIC AT MVH | NV | LAS VEGAS | — | 2138 |
-| SLS - MOUNTAINVIEW HOSPITAL | NV | LAS VEGAS | — | 3855 |
-| SLS - SUNRISE HOSPITAL AND MC | NV | LAS VEGAS | — | 2545 |
-| SOUTHERN HILLS CRITICAL CARE ASSOCIATES | NV | LAS VEGAS | — | 913 |
-| SUNRISE BURN | NV | LAS VEGAS | — | 5479 |
-| Auburn Community Hospital | NY | — | [] | 3020 |
-| Carthage Area Hospital | NY | Carthage | 1001 West Street, Carthage, NY, 136199703 | 1607 |
-| Claxton Hepburn Medical Center | NY | — | 214 King St Ogdensburg, NY  | 3433 |
-| NYU Langone Hospital - Suffolk | NY | Patchogue | 101 Hospital Road, Patchogue, NY 1177 | 1165 |
-| avon hospital | OH | Avon | 33300 Cleveland Clinic Blvd, Avon, OH 44011 | 5910 |
-| Bethesda North Hospital | OH | — | 10500 Montgomery Road Cincinnati OH 45242 | 3695 |
-| Brunswick Medical Center & Emergency Room | OH | Middleburg Heights | 18697 Bagley Rd, Middleburg Heights, OH  | 2595 |
-| Institute for Orthopaedic Surgery | OH | — | 801 Medical Drive, Suite B | 931 |
-| Margaret Mary Health | OH | — | 321 Mitchell Avenue | 1827 |
-| marymount hospital | OH | Garfield Heights | 12300 McCracken Road, Garfield Heights, OH 44125 | 4521 |
-| PAM Health Rehabilitation Hospital of Miamisburg | OH | Miamisburg | 2310 Cross Pointe Dr, Miamisburg, OH | 2239 |
-| PERRYSBURG HOSPITAL | OH | Perrysburg | 12623 Eckel Junction Rd., Perrysburg, OH 43551 | 5945 |
-| ProMedica Bay Park Hospital | OH | — | 2801 Bay Park Dr | 1623 |
-| ProMedica Defiance Regional Hospital | OH | — | 1200 Ralston Ave | 4723 |
-| ProMedica Fostoria Community Hospital | OH | — | 501 Van Buren St | 3845 |
-| ProMedica Memorial Hospital | OH | — | 715 S. Taft Ave. | 5388 |
-| Select Specialty Hospital - Cincinnati North | OH | Cincinnati | 10500 Montgomery Road, Cincinnati, OH 45242 | 3940 |
-| Select Specialty Hospital - Cleveland Fairhill | OH | Cleveland | 11900 Fairhill Road, Cleveland, OH 44120-1062 | 5296 |
-| south pointe hospital | OH | Warrensville Heights | 20000 Harvard Road, Warrensville Heights, OH 44122 | 2981 |
-| Southwest General Health Center | OH | Middleburg Heights | 18697 Bagley Rd, Middleburg Heights, OH  | 5678 |
-| UH Rainbow Babies & Children's Hospital | OH | — | 11100 Euclid Avenue, Cleveland OH  44106  | 3539 |
-| University Hospitals Cleveland Medical Center | OH | — | 11100 Euclid Avenue, Cleveland OH  44106  | 4247 |
-| University Hospitals Lake West Medical Center | OH | — | 36000 Euclid Avenue, Willoughby OH  44094 | 4781 |
-| University Hospitals St. John Medical Center | OH | — | 29000 Center Ridge Road, Westlake OH, 44145 | 2734 |
-| Windsor-Laurelwood Center | OH | WILLOUGHBY | 35900 EUCLID AVE., WILLOUGHBY, OH 44094 | 3261 |
-| Brookhaven Hospital LLC | OK | Tulsa | 201 S Garnett Rd, Tulsa, OK | 2387 |
-| Cleveland Area Hospital | OK | — | [] | 4764 |
-| INTEGRIS Health Lakeside Women's Hospital | OK | Oklahoma City | 11200 North Portland Avenue, Oklahoma City, OK 73120 | 1545 |
-| Rural Wellness Fairfax | OK | — | 40 Hospital Rd | 2823 |
-| Cedar Hills Hospital | OR | PORTLAND | 10300 SW EASTRIDGE ST, PORTLAND, OR 97225 | 1352 |
-| Coquille Valley Hospital | OR | — | [] | 5926 |
-| Curry Family Medical | OR | Gold Beach | 94220 4th Street, Gold Beach, OR 97444\ | 3004 |
-| Curry General Hospital | OR | Gold Beach | 94220 4th Street, Gold Beach, OR 97444\ | 2616 |
-| Curry Medical Center | OR | Gold Beach | 94220 4th Street, Gold Beach, OR 97444\ | 3614 |
-| Legacy Meridian Park Medical Center | OR | Tualatin | 19300 Sw 65Th Avenue, Tualatin, OR 97062 | 5850 |
-| Legacy Mount Hood Medical Center | OR | Gresham | 24800 Se Stark Street, Gresham, OR 97030 | 934 |
-| Oregon Health and Science University | OR | — | 3181 S.W. SAM JACKSON PARK RD., PORTLAND,OR 972393098 | 4395 |
-| Sunnyside Medical Center | OR | — | 10180 SE SUNNYSIDE ROAD CLACKAMAS OR 97015 | 4119 |
-| Vibra Specialty Hospital of Portland | OR | Portland | 10300 NE Hancock St, Portland, OR 97220 | 1267 |
-| Haven Behavioral Hospital of Philadelphia | PA | — | 3300 Henry Avenue | 5390 |
-| Heritage Valley Beaver | PA | — | 1000 Dutch Ridge Road, BEAVER,PA 150099727 | 1255 |
-| Heritage Valley Kennedy | PA | — | 720 BLACKBURN RD, SEWICKLEY,PA 151431459 | 1580 |
-| Heritage Valley Sewickley | PA | — | 720 BLACKBURN RD, SEWICKLEY,PA 151431459 | 3524 |
-| Jefferson Methodist Hospital | PA | Philadelphia | 2301 S Broad Street , Philadelphia, PA 19418 | 1644 |
-| Jefferson Torresdale Hospital | PA | Philadelphia | 10800 Knights Road , Philadelphia, PA 19114 | 4510 |
-| Rothman Orthopaedic Specialty Hospital | PA | — | 3300 Tillman Dr | 1729 |
-| UPMC Green | PA | — | 250 Bonor Avenue  Waynesburg, PA | 5814 |
-| UPMC Green | PA | — | 250 Bonor Avenue  Waynesburg, PA | 4663 |
-| UPMC Washington | PA | — | 155 Wilson Avenue  Washington, PA | 2922 |
-| UPMC Washington | PA | — | 155 Wilson Avenue  Washington, PA | 1740 |
-| Warren General Hospital | PA | — | 2 Crescent Park West Warren PA | 4177 |
-| Charleston-AMG Specialty Hospital | SC | — | 1200 Hospital Drive | 5751 |
-| Ascension Saint Thomas Three Rivers | TN | — | 451 Highway 13 S Waverly TN | 1875 |
-| Macon Community Hospital | TN | — | [] | 4324 |
-| Turkey Creek Medical Center | TN | Knoxville | 10820 Parkside Dr, Knoxville, TN 37934 | 4840 |
-| WTH Camden Hospital | TN | — | 175 Hospital Dr | 1019 |
-| WTH Dyersburg Hospital | TN | — | 400 E Tickle St | 5355 |
-| WTH Volunteer Hospital | TN | — | 161 Mt Pelia Rd | 4155 |
-| 23330 Emergency Center, LLC d/b/a/ Elite Hospital Kingwood | TX | Kingwood | 23330 US-59, Kingwood, TX 77339 | 3074 |
-| Ascension Seton Northwest (Ascension Seton) | TX | — | 11113 Research Blvd Austin TX 78759 | 3085 |
-| Baptist Neighborhood Hospital -Shavano Park | TX | San Antonio | 16088 San Pedro Avenue, Suite 101, San Antonio, TX 78232 | 5835 |
-| Baptist Neighborhood Hospital Overlook | TX | San Antonio | 16088 San Pedro Avenue, Suite 101, San Antonio, TX 78232 | 5482 |
-| Baptist Neighborhood Hospital Rigsby | TX | San Antonio | 16088 San Pedro Avenue, Suite 101, San Antonio, TX 78232 | 693 |
-| Baptist Neighborhood Hospital Schertz | TX | San Antonio | 16088 San Pedro Avenue, Suite 101, San Antonio, TX 78232 | 2250 |
-| Baptist Neighborhood Hospital Thousand Oaks | TX | San Antonio | 16088 San Pedro Avenue, Suite 101, San Antonio, TX 78232 | 4181 |
-| Baptist Neighborhood Hospital Westover Hills | TX | Schertz | 16977 I-35 North, Suite 100, Schertz, TX 78154 | 3220 |
-| Baylor Scott & White Emergency Hospital Aubrey | TX | Aubrey | 26791 US Highway 380 E, Aubrey, TX 76227 | 4547 |
-| Baylor Scott & White Emergency Hospital Burleson | TX | Burleson | 12500 South Freeway, Suite 100, Burleson, TX 76028 | 1006 |
-| Baylor Scott & White Emergency Hospital Colleyville | TX | Aubrey | 26791 US Highway 380 E, Aubrey, TX 76227 | 3654 |
-| Baylor Scott & White Emergency Hospital Grand Prairie | TX | Burleson | 12500 South Freeway, Suite 100, Burleson, TX 76028 | 2533 |
-| Baylor Scott & White Emergency Hospital Keller | TX | Aubrey | 26791 US Highway 380 E, Aubrey, TX 76227 | 3895 |
-| Baylor Scott & White Emergency Hospital Mansfield | TX | Burleson | 12500 South Freeway, Suite 100, Burleson, TX 76028 | 1669 |
-| Baylor Scott & White Emergency Hospital Murphy | TX | Aubrey | 26791 US Highway 380 E, Aubrey, TX 76227 | 5576 |
-| Baylor Scott & White Emergency Hospital Rockwall | TX | Aubrey | 26791 US Highway 380 E, Aubrey, TX 76227 | 646 |
-| BAYLOR SCOTT & WHITE MEDICAL CENTER - CENTENNIAL | TX | Frisco | 12505 Lebanon Road, Frisco, TX 75035 | 4249 |
-| BAYLOR SCOTT & WHITE MEDICAL CENTER - LAKEWAY | TX | Lakeway | 100 Medical Parkway, Lakeway, TX | 2948 |
-| BAYLOR SCOTT & WHITE MEDICAL CENTER - TEMPLE | TX | Temple | 2401 S 31st Street, Temple, TX 96508 | 4939 |
-| BAYLOR SCOTT & WHITE PAVILION - TEMPLE | TX | — | TX | 1402 |
-| CHRISTUS Santa Rosa Emergency Center - Alon | TX | San Antonio | 11503 NW Military Hwy, San Antonio, TX 78230 | 755 |
-| Comanche County Medical Center | TX | — | 10201 TX-16 Comanche TX 76442 | 5508 |
-| Covenant Health Emergency Center - Quaker Ave | TX | Lubbock | 10205 Quaker Ave, Lubbock, TX 79424 | 4980 |
-| Eagle Lake | TX | — | Austin Road | 4391 |
-| Encompass Health Rehabilitation Hospital of Katy | TX | Katy | 23331 Grand Reserve Drive, Katy, TX 77494-4850 | 3582 |
-| Encompass Health Rehabilitation Hospital of The Woodlands | TX | Shenandoah | 18550 IH 45 South, Shenandoah, TX 77384-4119 | 1303 |
-| ER 24/7 NORTHWEST | TX | CORPUS CHRISTI | 13725 NORTHWEST BOULEVARD, CORPUS CHRISTI, TX, 78410 | 4378 |
-| Faith Community Hospital | TX | — | N/A | 653 |
-| Hamilton General Hospital | TX | — | North Brown Street | 1848 |
-| HCA HOUSTON ER 24/7 WILLOWBROOK | TX | HOUSTON | 22475 TOMBALL PKWY, HOUSTON, TX, 77070 | 3348 |
-| HCA HOUSTON KINGWOOD | TX | KINGWOOD | 22999 US HWY 59 NORTH, KINGWOOD, TX, 77339 | 5272 |
-| HCA HOUSTON PEARLAND | TX | Pearland | 11100 Shadow Creek Pkwy, Pearland, TX, 77584 | 2875 |
-| Heart of Texas Healthcare System | TX | — | Brady, TX | 1183 |
-| Houston Methodist Clear Lake Hospital | TX | Nassau Bay | 18300 St John Drive, Nassau Bay, TX 77058 | 3442 |
-| Houston Methodist Cypress Hospital | TX | Cypress | 24500 Northwest FWY, Cypress, TX 77429 | 1585 |
-| Houston Methodist Emergency Care Center at Cinco Ranch | TX | Houston | 18500 Katy Freeway, Houston, TX 77094 | 4844 |
-| Houston Methodist Emergency Care Center in Deer Park | TX | Nassau Bay | 18300 St John Drive, Nassau Bay, TX 77058 | 4221 |
-| Houston Methodist Emergency Care Center in League City | TX | Nassau Bay | 18300 St John Drive, Nassau Bay, TX 77058 | 1564 |
-| Houston Methodist West Hospital | TX | Houston | 18500 Katy Freeway, Houston, TX 77094 | 2324 |
-| Kell West Regional Hospital | TX | — | [] | 5863 |
-| Kindred Hospital Houston Northwest | TX | Houston | 11297 Fallbrook, Houston, TX 77065 | 633 |
-| Legent North Houston Surgical Hospital | TX | Tomball | 24429 Tomball Parkway, Tomball, TX, 77375 | 2586 |
-| Limestone Medical Center | TX | — | N/A | 4687 |
-| Medical Behavioral Hospital of Clear Lake, LLC | TX | — | [] | 855 |
-| MEDICAL CITY ER HASLET | TX | HASLET | 13172 HIGHWAY 287, HASLET, TX, 76052 | 5768 |
-| Memorial Hermann Cypress Hospital | TX | — | 27800 Northwest Freeway Cypress TX 77433 | 6015 |
-| Memorial Hermann Imaging Center (Cypress) | TX | — | 27800 Northwest Freeway Cypress TX 77433 | 4253 |
-| Memorial Hermann Katy Hospital | TX | — | 23900 KATY FREEWAY KATY TX 77494 \|22430 Grand Corner Dr Ste C1 100 Katy TX 77494 | 4678 |
-| Memorial Hermann Pearland Hospital | TX | — | 16100 SOUTH FREEWAY Pearland TX 77584 | 1224 |
-| Memorial Hermann Southeast Hospital | TX | — | 11800 ASTORIA BOULEVARD Houston TX 77089 \|2555 Gulf Fwy S Ste C1 100 League City TX 77573 | 898 |
-| Memorial Hermann Sugar Land Hospital | TX | — | 17500 WEST GRAND PARKWAY SOUTH Sugar Land TX 77479 \|8780 Highway 6 Ste B100 Missouri City TX 77459 | 4080 |
-| Memorial Hermann Surgical Hospital First Colony | TX | Sugar Land | 16906 Southwest Fwy, Sugar Land, TX 77479 | 6006 |
-| METHODIST ER HELOTES | TX | HELOTES | 12285 BANDERA RD, HELOTES, TX, 78023 | 1300 |
-| METHODIST ER NACOGDOCHES | TX | SAN ANTONIO | 13434 NACOGDOCHES RD, SAN ANTONIO, TX, 78217 | 5131 |
-| Mid Coast Medical Clinic - Wharton | TX | Wharton | 10358 Hwy 59 #A , Wharton, TX 77488 | 1358 |
-| NEW BRAUNFELS ER | TX | NEW BRAUNFELS | 1850 W TX STATE HIGHWAY 46, NEW BRAUNFELS, TX, 78312 | 1245 |
-| NORTH AUSTIN MEDICAL CENTER | TX | AUSTIN | 12221 N MO PAC EXPY, AUSTIN, TX, 78758 | 5616 |
-| PAM Health Rehabilitation Hospital Northeast San Antonio | TX | San Antonio | 11407 Wayland Way, San Antonio, TX 78233 | 2247 |
-| PAM Rehabilitation Hospital of Humble | TX | Humble | 18839 McKay Blvd., Humble, TX 77338 | 5220 |
-| Parkland Health | TX | — | [] | 4073 |
-| Rice Medical Center | TX | — | Austin Road | 4669 |
-| South Texas Spine & Surgical Hospital | TX | — | 18600 N. Hardy Oak Blvd,San Antonio,TX,78258 | 5734 |
-| ST. DAVID'S EMERGENCY CENTER - BEE CAVE | TX | BEE CAVE | 12813 GALLERIA CIR, BEE CAVE, TX, 78738 | 4966 |
-| St. Luke's Health - Lakeside Hospital | TX | The Woodlands | 17400 St Lukes Way, The Woodlands, TX 77384 | 5716 |
-| St. Luke's Health - The Woodlands Hospital | TX | The Woodlands | 17200 St Lukes Way, The Woodlands, TX 77384 | 5512 |
-| Texas Health Hospital Frisco | TX | Frisco | 12400 Dallas Parkway, Frisco, TX 75033 | 3096 |
-| Texas Health Methodist Hospital Alliance | TX | Fort Worth | 10864 Texas Health Trail, Fort Worth, TX 76244 | 5673 |
-| The Hospital at Westlake Medical Center | TX | — | [] | 1869 |
-| The Hospitals of Providence Emergency Room Montwood | TX | Horizon City | 13600 Horizon Blvd, Suite 100, Horizon City, TX 79928 | 4428 |
-| The Hospitals of Providence Horizon City Campus | TX | Horizon City | 13600 Horizon Blvd, Suite 100, Horizon City, TX 79928 | 2132 |
-| The Hospitals of Providence Northeast Campus | TX | Horizon City | 13600 Horizon Blvd, Suite 100, Horizon City, TX 79928 | 5836 |
-| UMC Health & Wellness Hospital | TX | Lubbock | 11011 Slide Road, Lubbock, TX 79424 | 1407 |
-| Warm Springs Rehabilitation Center Lockhart | TX | — | 1710 S. Colorado Street, Suite 102 | 3784 |
-| Warm Springs Rehabilitation Hospital of San Antonio | TX | San Antonio | 5101 Medical Drive, San Antonio, TX 7822 | 4958 |
-| Warm Springs Rehabilitation Hospital of Westover Hills | TX | San Antonio | 10323 State Highway 151, San Antonio, TX 78251 | 5815 |
-| HERRIMAN EMERGENCY CENTER | UT | HERRIMAN | 13306 S FORT HERRIMAN PKWY, HERRIMAN, UT, 84096 | 5857 |
-| Intermountain Health Riverton Hospital | UT | Riverton | 3741 W 12600 S, Riverton, UT 84065 | 1706 |
-| LONE PEAK HOSPITAL | UT | Draper | 11925 S State St, Draper, UT, 84020 | 3818 |
-| Children's Hospital of The King's Daughters | VA | — | 601 Children's Lane | 5421 |
-| Johnston Memorial Hospital | VA | — | 16000 JOHNSTON MEMORIAL DRIVE, ABINGDON,VA 24211 | 2988 |
-| North Spring Behavioral Healthcare | VA | LEESBURG | 42009 VICTORY LANE, LEESBURG, VA 20176 | 1985 |
-| Sentara Lake Ridge | VA | Lake Ridge | 12825 Minnieville Road, Lake Ridge, VA 22192 | 3184 |
-| Sheltering Arms Institute | VA | — | [] | 5436 |
-| Shore Health Services, Inc. | VA | — | 20480 Market Street, Onancock, Virginia 23417 | 1154 |
-| ST FRANCIS MEDICAL CENTER | VA | Midlothian | 13710 St. Francis Blvd., Midlothian, VA 23114 | 3738 |
-| VCU Medical Center | VA | — | 1250 East Marshall Street, Richmond VA | 3819 |
-| MultiCare Covington Medical Center | WA | Covington | 17700 SE 272nd Street, Covington, WA 98042 | 968 |
-| MultiCare Valley Hospital | WA | Spokane Valley | 12606 East Mission Ave, Spokane Valley, WA 99216 | 2028 |
-| St. Anne Hospital | WA | Burien | 16251 Sylvester Rd SW, Burien, WA 98166 | 2863 |
-| St. Anthony Hospital | WA | Gig Harbor | 11567 Canterwood Blvd, Gig Harbor, WA 98332 | 4740 |
-| St. Clare Hospital | WA | Lakewood | 11315 Bridgeport Way SW, Lakewood, WA 98499 | 4601 |
-| St. Francis Hospital | WA | Federal Way | 34515 Ninth Avenue South, Federal Way, WA 98003 | 897 |
-| Swedish Medical Center - Redmond Campus | WA | Redmond | 18100 NE Union Hill Rd, Redmond, WA 98052 | 5893 |
-| Aurora Medical Center Kenosha | WI | Kenosha | 10400 75th St, Kenosha, WI 53027 | 4973 |
-| Aurora Medical Center Summit | WI | Summit | 36500 Aurora Dr, Summit, WI 53066 | 5093 |
-| Cumberland Healthcare | WI | Cumberland | 1705 16th Ave, Cumberland, WI 54829860 | 908 |
-| Froedtert Bluemound Rehabilitation Hospital | WI | Wauwatosa | 10000 W Bluemound Rd, Wauwatosa, WI 53226 | 3541 |
-| Summersville Regional Medical Center | WV | Summersville | 400 Fairview Heights Rd, Summersville, WV 26551 | 2046 |
-| Niobrara Community Hospital | WY | — | N/A | 2798 |
+**10 unfixable providers remain** — garbage addresses (`[]`, `TBD`) with no city data. Only 26 total charges affected.
+See `docs/unfixable-providers.md` for full listing.
 
 ## 6. Post-Import Verification Targets
 
@@ -1189,10 +796,10 @@ After the NJ/PA reimport, re-run this script and verify the following:
 | PA Supabase charges | See PA row in Section 3 (DDB Charges column) | PA row Match = ✓ |
 | NJ providers | See NJ row — DDB Hosps column | NJ SB Providers = DDB Hosps |
 | PA providers | See PA row — DDB Hosps column | PA SB Providers = DDB Hosps |
-| Null-location providers | 385 (unchanged by reimport) | Section 5 count |
+| Null-location providers | 10 (RESOLVED — was 385, fixed 2026-03-03) | Section 5 / docs/unfixable-providers.md |
 
 _Null-location count will not change with NJ/PA reimport — those providers are already in Supabase._
-_Fixing null-location requires a separate geocoding task (see Section 5)._
+_Null-location geocoding completed 2026-03-03 — 375 of 385 fixed, 10 unfixable remain (see Section 5)._
 
 ## 7. Full Data Inventory — What We're Sitting On
 
