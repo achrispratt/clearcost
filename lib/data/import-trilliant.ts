@@ -159,34 +159,76 @@ function parseArgs() {
 // ---------------------------------------------------------------------------
 
 function extractZip(address: string, state?: string | null): string | null {
-  const normalizedState = state?.trim().toUpperCase();
-  if (normalizedState && normalizedState.length === 2) {
-    const escapedState = normalizedState.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const scopedMatch = address
-      .toUpperCase()
-      .match(new RegExp(`\\b${escapedState}\\s+(\\d{5})(?:-\\d{4})?\\b`));
-    if (scopedMatch?.[1]) return scopedMatch[1];
+  if (!state) return null;
+  const normalizedState = state.trim().toUpperCase();
+  if (normalizedState.length !== 2) return null;
+
+  // Find ALL 5-digit sequences (with optional +4 extension)
+  const regex = /\b(\d{5})(?:-\d{4})?\b/g;
+  const candidates: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(address)) !== null) {
+    candidates.push(match[1]);
   }
 
-  const trailingMatch = address.match(/(\d{5})(?:-\d{4})?\s*$/);
-  if (trailingMatch?.[1]) return trailingMatch[1];
+  // Walk backwards — ZIPs appear after city/state, street numbers come first.
+  // Validate each candidate against the zipcodes library + provider's state.
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const candidate = candidates[i];
+    const info = zipcodes.lookup(candidate);
+    if (info && info.state === normalizedState) {
+      return candidate;
+    }
+  }
 
   return null;
 }
 
+// Common city abbreviation expansions for lookupByName fallback
+const CITY_EXPANSIONS: [RegExp, string][] = [
+  [/\bSt\.?\s/i, "Saint "],
+  [/\bFt\.?\s/i, "Fort "],
+  [/\bMt\.?\s/i, "Mount "],
+];
+
 function geocodeByZip(
   address: string | null,
-  state?: string | null
+  state?: string | null,
+  city?: string | null
 ): { lat: number; lng: number; zip: string } | null {
-  if (!address) return null;
+  // Tier 1: extract validated ZIP from address
+  if (address) {
+    const zip = extractZip(address, state);
+    if (zip) {
+      const result = zipcodes.lookup(zip);
+      if (result) return { lat: result.latitude, lng: result.longitude, zip };
+    }
+  }
 
-  const zip = extractZip(address, state);
-  if (!zip) return null;
+  // Tier 2: city+state → ZIP centroid via lookupByName
+  if (city && state) {
+    const normalizedState = state.trim().toUpperCase();
+    const normalizedCity = city.trim();
+    const candidates = [normalizedCity];
 
-  const result = zipcodes.lookup(zip);
-  if (!result) return null;
+    for (const [pattern, replacement] of CITY_EXPANSIONS) {
+      if (pattern.test(normalizedCity)) {
+        candidates.push(normalizedCity.replace(pattern, replacement).trim());
+      }
+    }
 
-  return { lat: result.latitude, lng: result.longitude, zip };
+    for (const cityName of candidates) {
+      const results = zipcodes.lookupByName(cityName, normalizedState);
+      if (Array.isArray(results) && results.length > 0) {
+        const first = results[0];
+        if (first.zip && first.latitude != null && first.longitude != null) {
+          return { lat: first.latitude, lng: first.longitude, zip: first.zip };
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -377,7 +419,7 @@ async function importProviders(
   const providerRows: Record<string, unknown>[] = [];
 
   for (const hospital of hospitals) {
-    const geo = geocodeByZip(hospital.hospital_address, hospital.hospital_state);
+    const geo = geocodeByZip(hospital.hospital_address, hospital.hospital_state, hospital.hospital_city);
 
     if (!hospital.hospital_address) {
       noZip++;
