@@ -177,7 +177,7 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - 6,039 hospitals total (5,419 with complete data)
 - 274 million standard_charges rows, 6 billion payer-specific detail rows
 - Local storage: 81GB Parquet files + 11MB DuckDB index in `lib/data/`
-- Import filters to 1,002 curated codes, outpatient only, national scope → ~13.1M rows
+- Import filters to 1,002 curated codes, all settings, national scope → ~13.1M rows
 
 ### Import Technical Notes
 
@@ -194,12 +194,12 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 ### MVP Data Scope
 
 The MVP imports ~4.8% of the full Oria dataset:
-- **274M total rows → ~13.1M imported** (1,002 codes × outpatient only)
+- **274M total rows → ~13.1M imported** (1,002 codes × all settings)
 - **6B payer detail rows → 0 imported** (using pre-aggregated avg/min/max instead)
 - **120K+ distinct billing codes → 1,002 curated** (0.4% of unique codes)
 - The 1,002 codes cover the most common shoppable procedures but the Parquet files contain 95%+ more data available for future phases
-- Inpatient exclusion drops ~18.5% of all source rows (50.8M of 274M)
-- Expansion path: more codes, inpatient, payer details → Phases 6-8 in roadmap
+- **Setting filter removed**: the code list defines shoppability, not the setting label. Investigation showed ~895K inpatient rows in source data are 100% duplicates of existing outpatient rows (same hospital, same code, same price). No backfill needed. See #41.
+- Expansion path: more codes, payer details → Phases 6-8 in roadmap
 - Full breakdown with precise numbers: see `docs/prd.md` Section 4.2.1
 
 ### Data Import Workflow

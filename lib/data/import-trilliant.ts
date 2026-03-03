@@ -495,7 +495,7 @@ async function importProviders(
 // Instead of scanning all 274M rows (which froze the machine), this:
 //   - Filters to only our 1,010 curated CPT/HCPCS codes
 //   - Checks BOTH the cpt AND hcpcs columns (many hospitals code under hcpcs)
-//   - Excludes inpatient rows (outpatient/shoppable only for MVP)
+//   - Includes all settings (inpatient/outpatient/both) — the code list defines shoppability
 //   - Processes state-by-state to keep DuckDB memory usage manageable
 //     (each state scans a smaller partition of the Parquet files)
 // ---------------------------------------------------------------------------
@@ -512,9 +512,10 @@ async function importCharges(
   // Build the SQL IN list from our curated codes
   const codeList = codes.map((c) => `'${c}'`).join(",");
 
-  // The WHERE clause: match our codes in either column, skip inpatient
-  const codeFilter = `(cpt IN (${codeList}) OR hcpcs IN (${codeList}))
-    AND (setting IS NULL OR TRIM(LOWER(setting)) != 'inpatient')`;
+  // The WHERE clause: match our curated codes in either column
+  // Setting (inpatient/outpatient/both) is kept as metadata, not used as a filter —
+  // the code list itself defines shoppability.
+  const codeFilter = `(cpt IN (${codeList}) OR hcpcs IN (${codeList}))`;
 
   // Get list of states to process one at a time (keeps Parquet scans small)
   let states: string[];
@@ -875,7 +876,7 @@ async function main() {
       console.log(`  Loaded ${providerIdMap.size} existing provider mappings`);
     }
 
-    // Step 2: Import charges (filtered to curated codes, non-inpatient)
+    // Step 2: Import charges (filtered to curated codes, all settings)
     if (!config.skipCharges) {
       // Phase A: Drop indexes for reliable bulk loading
       if (config.fresh) {
