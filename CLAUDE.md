@@ -161,14 +161,9 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 
 ## Key Concepts
 
-- **MRF** = Machine Readable File (hospital pricing data, required by CMS since 2021)
-- **CPT** = Current Procedural Terminology (procedure billing codes, e.g., 70553 = knee MRI)
-- **HCPCS** = Healthcare Common Procedure Coding System (superset of CPT, adds supplies/drugs)
-- **MS-DRG** = Diagnosis Related Groups (inpatient hospital stays)
-- **PostGIS** = Spatial database extension for geographic queries (ST_DWithin for radius search)
-- **Hybrid AI approach**: Claude interprets plain English → verified code lookup confirms codes → PostGIS queries prices by location
 - **billing_class**: "facility", "professional", "Both", or null — determines what cost component a charge represents
 - **All-in cost problem**: Hospital charges often represent only facility fees (~70-80% of total). Professional fees (radiologist, anesthesiologist) billed separately. MVP shows available price with smart contextual callouts.
+- **Hybrid AI approach**: Claude interprets plain English → verified code lookup confirms codes → PostGIS queries prices by location
 
 ## Data Source: Trilliant Oria
 
@@ -179,71 +174,20 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - Local storage: 81GB Parquet files + 11MB DuckDB index in `lib/data/`
 - Import filters to 1,002 curated codes, all settings, national scope → ~13.1M rows
 
-### Import Technical Notes
+### Import Details
 
-- DuckDB needs `SET memory_limit = '2GB'` and `SET threads = 2` to avoid RAM exhaustion (note: `generate-snapshot.ts` uses `4GB` — it runs alone, not during imports)
-- Many hospitals code under `hcpcs` column instead of `cpt` — always check BOTH
-- DuckDB returns BigInt — wrap in `Number()` before passing to Supabase/JSON
-- Oria DuckDB views use relative paths to `parquet/` — must CWD to `lib/data/mrf_lake/` when querying
-- State-by-state processing keeps DuckDB memory manageable
-- Import script uses `db.stream()` (not `db.all()`) — never loads full state into JS heap
-- **Auto-resume trap**: `--limit N` test runs mark a state as "completed" in auto-resume. DELETE test rows before full import or the state gets skipped.
-- **`final-codes.json` format**: Flat `string[]`, not `{code: string}[]`. Scripts consume values directly.
-- **DuckDB ↔ Supabase column mismatch**: DuckDB uses `hospital_state` on both tables; Supabase uses `state` on `providers`.
+Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler port 6543). MVP imports ~4.8% of full Oria dataset (1,002 codes × all settings → ~13.1M rows). Setting filter was removed — code list is the quality gate. See `docs/prd.md` Section 4.2.1 for data scope breakdown.
 
-### MVP Data Scope
-
-The MVP imports ~4.8% of the full Oria dataset:
-- **274M total rows → ~13.1M imported** (1,002 codes × all settings)
-- **6B payer detail rows → 0 imported** (using pre-aggregated avg/min/max instead)
-- **120K+ distinct billing codes → 1,002 curated** (0.4% of unique codes)
-- The 1,002 codes cover the most common shoppable procedures but the Parquet files contain 95%+ more data available for future phases
-- **Setting filter removed**: the code list defines shoppability, not the setting label. Investigation showed ~895K inpatient rows in source data are 100% duplicates of existing outpatient rows (same hospital, same code, same price). No backfill needed. See #41.
-- Expansion path: more codes, payer details → Phases 6-8 in roadmap
-- Full breakdown with precise numbers: see `docs/prd.md` Section 4.2.1
-
-### Data Import Workflow
-
-**Fresh import** (wipe and reload all data):
-```
-npx tsx --env-file=.env.local lib/data/import-trilliant.ts
-```
-
-**Resume import** (keep existing states, import remaining):
-```
-npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
-  --skip-providers \
-  --skip-states AK,AL,AR,AZ,CA,CO,CT,DC,DE,FL
-```
-
-**Test import** (verify script works with small dataset):
-```
-npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
-  --skip-providers --state WY --limit 1000
-```
-
-**Key flags:**
-- `--skip-providers` — providers already loaded, skip re-import
-- `--skip-states AK,CA,...` — skip these states (preserves existing data, no DELETE)
-- `--state NY` — only import one state
-- `--limit 1000` — stop after N charges (for testing)
-- `--batch-size 2000` — rows per Supabase insert (default: 2000)
-
-**Memory**: Script uses streaming (`db.stream()`) + 3 concurrent inserts. Expected ~50-100MB heap. If it exceeds 500MB, something is wrong — kill it.
+**Full import reference** (flags, DuckDB quirks, resume workflow, gotchas): see `docs/import-reference.md`
 
 ## Current Status
 
-**Phases 1-5.6 complete. Data import complete for all 52 states/DC/PR. Deployed to Vercel.**
+**Phases 1-5.6 complete. Data import complete. Deployed to Vercel.**
 
 - **Live URL:** https://clearcost-orcin.vercel.app
-- Search pipeline working end-to-end (Claude AI translation → Supabase geo query → results)
-- Data import complete. See `docs/data-snapshot.md` for current numbers.
-- 1,002 curated codes in `lib/data/final-codes.json`
-- 7 indexes built (pkey + 6 custom: cpt, hcpcs, ms_drg, provider, cpt+provider, description GIN)
-- **Anthropic API key**: Required for live search (billing code translation).
-- **Google Maps API key**: Required for map UI and geocoding.
-
-**Work tracking:** GitHub Issues are the source of truth (issue # = priority). Current focus: data quality (#6-#12), then frontend polish (#13-#19), then pre-launch (#20-#23).
+- Search pipeline working end-to-end. See `docs/data-snapshot.md` for current numbers.
+- **Current phase:** Data quality — resolving issues discovered during initial frontend work
+- **Work tracking:** GitHub Issues are the source of truth (issue # = priority)
 
 ## Environment Variables
 
@@ -321,19 +265,6 @@ All work is tracked via GitHub Issues on the [ClearCost MVP project board](https
 - DaisyUI component library for consistent UI
 - Light mode only for MVP
 - CSS custom properties defined in `globals.css` (prefixed `--cc-*`) — use these, not raw colors
-
-## Visual Learning — ClearCost-Specific
-
-When explaining changes to the search flow, guided search, or any part of the query-to-results pipeline, **always include an ASCII diagram** of the affected portion of the pipeline. The search flow is the critical path through the app and visual context prevents misunderstandings.
-
-Specifically, diagram the pipeline when changes touch:
-- `SearchBar` → `/guided-search` → `/results` navigation flow
-- `/api/cpt`, `/api/clarify`, or `/api/search` request/response paths
-- `translateQueryToCPT()` → `lookupCharges()` → results rendering
-- The guided search state machine (turns, resolution states, back navigation)
-- Supabase RPC calls (`search_charges_nearby`, `search_charges_by_description`)
-
-Show where in the pipeline the change lives and what it affects downstream. Reference the full pipeline in the "Architecture: Search Flow" section above as the canonical diagram.
 
 ## Product Roadmap
 
