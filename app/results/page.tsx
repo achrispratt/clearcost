@@ -21,7 +21,6 @@ function ResultsContent() {
     interpretation,
     pricingPlan,
     loading,
-    loadingStage,
     error,
     view,
     setView,
@@ -196,7 +195,6 @@ function ResultsContent() {
             <ResultsList
               results={filteredResults}
               loading={loading}
-              loadingStage={loadingStage}
               selectedResultId={selectedResultId}
               codeDescriptionMap={codeDescriptionMap}
             />
