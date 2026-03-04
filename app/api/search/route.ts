@@ -15,6 +15,16 @@ import {
 import { handleApiError } from "@/lib/api-helpers";
 import type { BillingCodeType, CPTCode, PricingPlan } from "@/types";
 
+const SPARSE_RESULT_THRESHOLD = 3;
+const EXPANDED_RADIUS_MILES = 250;
+
+async function lookupWithAutoExpand(params: Parameters<typeof lookupWithPricingPlan>[0]) {
+  const results = await lookupWithPricingPlan(params);
+  if (results.length >= SPARSE_RESULT_THRESHOLD) return results;
+  if ((params.radiusMiles ?? 100) >= EXPANDED_RADIUS_MILES) return results;
+  return lookupWithPricingPlan({ ...params, radiusMiles: EXPANDED_RADIUS_MILES });
+}
+
 type CacheStatus = "hit" | "miss" | "skip";
 
 function normalizeCodeType(value: unknown): BillingCodeType {
@@ -156,7 +166,7 @@ export async function POST(request: NextRequest) {
       return respond({ error: "Location is required" }, 400);
     }
 
-    const radiusMiles = location.radiusMiles || 25;
+    const radiusMiles = location.radiusMiles || 100;
     const { lat, lng } = location;
     const directCodeGroups = normalizeCodeGroups(directCodeGroupsRaw);
     const normalizedDirectCodes = Array.isArray(directCodes)
@@ -185,7 +195,7 @@ export async function POST(request: NextRequest) {
       });
       const lookupDiagnostics = createLookupDiagnostics();
 
-      const results = await lookupWithPricingPlan({
+      const results = await lookupWithAutoExpand({
         pricingPlan,
         lat,
         lng,
@@ -231,7 +241,7 @@ export async function POST(request: NextRequest) {
       });
       const lookupDiagnostics = createLookupDiagnostics();
 
-      const results = await lookupWithPricingPlan({
+      const results = await lookupWithAutoExpand({
         pricingPlan,
         lat,
         lng,
@@ -290,7 +300,7 @@ export async function POST(request: NextRequest) {
     }
 
     const lookupDiagnostics = createLookupDiagnostics();
-    const results = await lookupWithPricingPlan({
+    const results = await lookupWithAutoExpand({
       pricingPlan,
       lat,
       lng,
