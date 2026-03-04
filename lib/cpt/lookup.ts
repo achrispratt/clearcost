@@ -5,6 +5,7 @@ import zipcodes from "zipcodes";
 import type {
   ChargeResult,
   BillingCodeType,
+  Laterality,
   OptionalAdderEstimate,
   OptionalAdderType,
   PlannedAdder,
@@ -19,6 +20,7 @@ interface LookupParams {
   radiusMiles?: number;
   limit?: number;
   providerLimit?: number;
+  laterality?: Laterality;
 }
 
 interface FallbackLookupParams {
@@ -902,6 +904,7 @@ export async function lookupCharges({
   radiusMiles = 25,
   limit = CODE_LOOKUP_LIMIT,
   providerLimit = PROVIDER_LIMIT,
+  laterality,
 }: LookupParams, context: RpcExecutionContext = {}): Promise<ChargeResult[]> {
   if (codes.length === 0) return [];
   const supabase = await createClient();
@@ -913,7 +916,7 @@ export async function lookupCharges({
     )
   );
 
-  const rpcParams = {
+  const rpcParams: Record<string, unknown> = {
     p_code_type: codeType,
     p_codes: normalizedCodes,
     p_lat: lat,
@@ -921,6 +924,7 @@ export async function lookupCharges({
     p_radius_km: milesToKm(radiusMiles),
     p_limit: limit,
     p_provider_limit: providerLimit,
+    ...(laterality ? { p_laterality: laterality } : {}),
   };
 
   const initial = await executeRpcWithRetry<RpcRow>({
@@ -1079,6 +1083,7 @@ interface RpcRow {
   description: string | null;
   setting: string | null;
   billing_class: string | null;
+  laterality: string | null;
   cpt: string | null;
   hcpcs: string | null;
   ms_drg: string | null;
@@ -1118,6 +1123,7 @@ function mapRows(rows: RpcRow[]): ChargeResult[] {
       description: row.description ?? undefined,
       setting: row.setting as ChargeResult["setting"],
       billingClass: row.billing_class ?? undefined,
+      laterality: (row.laterality as ChargeResult["laterality"]) ?? undefined,
       cpt: row.cpt ?? undefined,
       hcpcs: row.hcpcs ?? undefined,
       msDrg: row.ms_drg ?? undefined,

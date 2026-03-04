@@ -76,6 +76,7 @@ const DEDUP_DELETE_SQL = `
           COALESCE(c.cpt, ''), COALESCE(c.hcpcs, ''), COALESCE(c.ms_drg, ''),
           COALESCE(c.description, ''), COALESCE(c.billing_class, ''),
           COALESCE(c.setting, ''), COALESCE(c.modifiers, ''),
+          COALESCE(c.laterality, ''),
           c.cash_price, c.gross_charge, c.min_price, c.max_price,
           c.avg_negotiated_rate, c.min_negotiated_rate, c.max_negotiated_rate,
           c.payer_count
@@ -96,6 +97,7 @@ const DEDUP_COUNT_SQL = `
         COALESCE(c.cpt, ''), COALESCE(c.hcpcs, ''), COALESCE(c.ms_drg, ''),
         COALESCE(c.description, ''), COALESCE(c.billing_class, ''),
         COALESCE(c.setting, ''), COALESCE(c.modifiers, ''),
+        COALESCE(c.laterality, ''),
         c.cash_price, c.gross_charge, c.min_price, c.max_price,
         c.avg_negotiated_rate, c.min_negotiated_rate, c.max_negotiated_rate,
         c.payer_count
@@ -122,7 +124,7 @@ const VERIFY_SQL = `
     JOIN providers p ON c.provider_id = p.id
     WHERE p.state = $1
     GROUP BY c.provider_id, c.cpt, c.hcpcs, c.ms_drg, c.description,
-      c.billing_class, c.setting, c.modifiers,
+      c.billing_class, c.setting, c.modifiers, c.laterality,
       c.cash_price, c.gross_charge, c.min_price, c.max_price,
       c.avg_negotiated_rate, c.min_negotiated_rate, c.max_negotiated_rate,
       c.payer_count

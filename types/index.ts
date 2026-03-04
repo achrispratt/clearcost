@@ -8,6 +8,9 @@ export type BillingCodeType = 'cpt' | 'hcpcs' | 'ms_drg';
 export type QueryType = 'procedure' | 'symptom' | 'condition' | 'code';
 export type ConfidenceLevel = 'high' | 'low';
 
+// -- Laterality --
+export type Laterality = 'left' | 'right' | 'bilateral';
+
 // -- Care setting --
 export type ChargeSetting = 'inpatient' | 'outpatient' | 'both';
 export type AdderEstimateSource = 'facility' | 'local_fallback';
@@ -80,6 +83,7 @@ export interface ChargeResult {
   description?: string;
   setting?: ChargeSetting;
   billingClass?: string;
+  laterality?: Laterality;
 
   // Billing codes (a charge may have codes in multiple systems)
   cpt?: string;
