@@ -12,6 +12,7 @@ interface FilterBarProps {
 
 export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
   const [sort, setSort] = useState<SortOption>("distance");
+  const [radius, setRadius] = useState<number>(25);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [payers, setPayers] = useState<Payer[]>([]);
   const [selectedPayer, setSelectedPayer] = useState<string>("");
@@ -33,6 +34,10 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
 
   useEffect(() => {
     let filtered = [...results];
+
+    filtered = filtered.filter(
+      (r) => r.distanceMiles == null || r.distanceMiles <= radius
+    );
 
     if (maxPrice != null) {
       filtered = filtered.filter(
@@ -58,13 +63,13 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
     });
 
     onFilteredResults(filtered);
-  }, [results, sort, maxPrice, onFilteredResults]);
+  }, [results, sort, radius, maxPrice, onFilteredResults]);
 
   const handleSortChange = (newSort: SortOption) => {
     setSort(newSort);
   };
 
-  const hasFilters = maxPrice != null || selectedPayer;
+  const hasFilters = maxPrice != null || selectedPayer || radius !== 25;
 
   const selectStyles = {
     background: "var(--cc-surface)",
@@ -91,6 +96,21 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-3 py-3">
+      <div className="flex items-center gap-1.5">
+        <span style={labelStyles}>Within</span>
+        <select
+          value={radius}
+          onChange={(e) => setRadius(Number(e.target.value))}
+          style={selectStyles}
+        >
+          <option value={10}>10 mi</option>
+          <option value={25}>25 mi</option>
+          <option value={50}>50 mi</option>
+          <option value={100}>100 mi</option>
+          <option value={250}>250 mi</option>
+        </select>
+      </div>
+
       <div className="flex items-center gap-1.5">
         <span style={labelStyles}>Sort</span>
         <select
@@ -145,6 +165,7 @@ export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
       {hasFilters && (
         <button
           onClick={() => {
+            setRadius(25);
             setMaxPrice(null);
             setSelectedPayer("");
           }}
