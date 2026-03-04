@@ -8,11 +8,15 @@ export type SortOption = "price-asc" | "price-desc" | "estimated-total" | "dista
 interface FilterBarProps {
   results: ChargeResult[];
   onFilteredResults: (filtered: ChargeResult[]) => void;
+  radius?: number;
+  onRadiusChange?: (radius: number) => void;
 }
 
-export function FilterBar({ results, onFilteredResults }: FilterBarProps) {
+export function FilterBar({ results, onFilteredResults, radius: controlledRadius, onRadiusChange }: FilterBarProps) {
   const [sort, setSort] = useState<SortOption>("distance");
-  const [radius, setRadius] = useState<number>(25);
+  const [internalRadius, setInternalRadius] = useState<number>(25);
+  const radius = controlledRadius ?? internalRadius;
+  const setRadius = onRadiusChange ?? setInternalRadius;
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [payers, setPayers] = useState<Payer[]>([]);
   const [selectedPayer, setSelectedPayer] = useState<string>("");

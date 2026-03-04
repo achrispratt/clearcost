@@ -8,9 +8,11 @@ interface ResultsListProps {
   loading?: boolean;
   selectedResultId?: string | null;
   codeDescriptionMap?: Record<string, string>;
+  locationDisplay?: string;
+  onExpandRadius?: () => void;
 }
 
-export function ResultsList({ results, loading, selectedResultId, codeDescriptionMap }: ResultsListProps) {
+export function ResultsList({ results, loading, selectedResultId, codeDescriptionMap, locationDisplay, onExpandRadius }: ResultsListProps) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -87,11 +89,23 @@ export function ResultsList({ results, loading, selectedResultId, codeDescriptio
           <path d="M8 11h6" />
         </svg>
         <p className="font-medium" style={{ color: "var(--cc-text-secondary)" }}>
-          No results found
+          No results found{locationDisplay ? ` near ${locationDisplay}` : ""}
         </p>
         <p className="text-sm mt-1" style={{ color: "var(--cc-text-tertiary)" }}>
-          Try adjusting your search or expanding your location radius.
+          Try a larger search radius or a different location.
         </p>
+        {onExpandRadius && (
+          <button
+            onClick={onExpandRadius}
+            className="mt-3 text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            style={{
+              color: "var(--cc-primary)",
+              background: "var(--cc-primary-light)",
+            }}
+          >
+            Expand search area
+          </button>
+        )}
       </div>
     );
   }
@@ -104,15 +118,30 @@ export function ResultsList({ results, loading, selectedResultId, codeDescriptio
 
       {results.length < 3 && (
         <div
-          className="p-3 rounded-xl border text-sm"
+          className="p-3 rounded-xl border text-sm flex items-center justify-between gap-3"
           style={{
             background: "var(--cc-accent-light)",
             borderColor: "rgba(217, 119, 6, 0.2)",
             color: "var(--cc-accent)",
           }}
         >
-          Limited pricing data available for this area. Try expanding your
-          search radius or searching in a nearby metro area.
+          <span>
+            Only {results.length} result{results.length !== 1 ? "s" : ""} found
+            within your search radius. Try expanding your search area for more
+            options.
+          </span>
+          {onExpandRadius && (
+            <button
+              onClick={onExpandRadius}
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: "var(--cc-accent)",
+                background: "rgba(217, 119, 6, 0.12)",
+              }}
+            >
+              Expand radius
+            </button>
+          )}
         </div>
       )}
 

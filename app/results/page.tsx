@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsList } from "@/components/ResultsList";
 import { FilterBar } from "@/components/FilterBar";
@@ -8,6 +8,8 @@ import { MapView } from "@/components/MapView";
 import { SaveButton } from "@/components/SaveButton";
 import { useResultsSearch } from "./useResultsSearch";
 import { useResultSelection } from "./useResultSelection";
+
+const RADIUS_TIERS = [10, 25, 50, 100, 250];
 
 function ResultsContent() {
   const {
@@ -26,7 +28,17 @@ function ResultsContent() {
     setView,
     handleNewSearch,
     handleFilteredResults,
+    radius,
+    handleRadiusChange,
   } = useResultsSearch();
+
+  const handleExpandRadius = useCallback(() => {
+    const currentIndex = RADIUS_TIERS.indexOf(radius);
+    const nextIndex = currentIndex === -1
+      ? RADIUS_TIERS.indexOf(RADIUS_TIERS.find((t) => t > radius) ?? 250)
+      : Math.min(currentIndex + 1, RADIUS_TIERS.length - 1);
+    handleRadiusChange(RADIUS_TIERS[nextIndex]);
+  }, [radius, handleRadiusChange]);
 
   const { selectedResultId, handleMarkerClick } = useResultSelection();
 
@@ -177,6 +189,8 @@ function ResultsContent() {
             <FilterBar
               results={results}
               onFilteredResults={handleFilteredResults}
+              radius={radius}
+              onRadiusChange={handleRadiusChange}
             />
           )}
         </div>
@@ -197,6 +211,8 @@ function ResultsContent() {
               loading={loading}
               selectedResultId={selectedResultId}
               codeDescriptionMap={codeDescriptionMap}
+              locationDisplay={locationDisplay}
+              onExpandRadius={radius < 250 ? handleExpandRadius : undefined}
             />
           </div>
 
