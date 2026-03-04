@@ -227,6 +227,19 @@ All work is tracked via GitHub Issues on the [ClearCost MVP project board](https
 5. Push and open a PR with `gh pr create`, linking the issue (use "Closes #N" in the PR body)
 6. User reviews and merges — issue auto-closes on merge
 
+**Creating New Issues:**
+When creating GitHub issues, always:
+1. Assign to the **ClearCost MVP project** (`--project "ClearCost MVP"`)
+2. Set the appropriate **milestone**: `MVP Data Complete`, `MVP App Ready`, `Launch`, or `Growth`
+3. Add relevant **labels**: type (`enhancement`, `bug`), area (`data`), priority (`high`, `medium`)
+
+```bash
+gh issue create --title "..." --body "..." \
+  --milestone "MVP App Ready" \
+  --label "enhancement" \
+  --project "ClearCost MVP"
+```
+
 **Branch Naming:**
 - `data/` — data pipeline, import, quality work
 - `feat/` — new features, UI additions
