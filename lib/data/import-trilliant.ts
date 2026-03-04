@@ -31,6 +31,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { readFileSync } from "fs";
 import { Pool as PgPool } from "pg";
+import { parseLaterality } from "../cpt/parse-laterality";
 
 // @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
@@ -49,6 +50,7 @@ const DEFAULT_BATCH_SIZE = 500;
 const CHARGE_COLUMNS = [
   "provider_id", "description", "setting", "billing_class",
   "cpt", "hcpcs", "ms_drg", "revenue_code", "ndc", "icd", "modifiers",
+  "laterality",
   "gross_charge", "cash_price", "min_price", "max_price",
   "avg_negotiated_rate", "min_negotiated_rate", "max_negotiated_rate",
   "payer_count", "source",
@@ -63,6 +65,7 @@ const CHARGE_INDEXES = [
   { name: "idx_charges_cpt_provider", sql: "CREATE INDEX idx_charges_cpt_provider ON charges (cpt, provider_id)" },
   { name: "idx_charges_hcpcs_provider", sql: "CREATE INDEX idx_charges_hcpcs_provider ON charges (hcpcs, provider_id)" },
   { name: "idx_charges_description", sql: "CREATE INDEX idx_charges_description ON charges USING gin (to_tsvector('english', coalesce(description, '')))" },
+  { name: "idx_charges_laterality", sql: "CREATE INDEX idx_charges_laterality ON charges (laterality) WHERE laterality IS NOT NULL" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -625,6 +628,7 @@ async function importCharges(
         ndc: charge.ndc || null,
         icd: charge.icd || null,
         modifiers: charge.modifiers || null,
+        laterality: parseLaterality(charge.description, charge.modifiers),
         gross_charge: charge.gross_charge != null ? Number(charge.gross_charge) : null,
         cash_price: charge.discounted_cash != null ? Number(charge.discounted_cash) : null,
         min_price: charge.minimum != null ? Number(charge.minimum) : null,

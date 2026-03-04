@@ -60,6 +60,7 @@ create table if not exists charges (
   ndc text,            -- National Drug Code
   icd text,            -- ICD-10 diagnosis/procedure code
   modifiers text,      -- Modifier codes (comma-separated if multiple)
+  laterality text,     -- 'left', 'right', 'bilateral', or null (parsed from description/modifiers)
 
   -- Base prices (from hospital's published standard charges)
   gross_charge numeric(12, 2),     -- Chargemaster / list price
@@ -89,6 +90,41 @@ create index if not exists idx_charges_provider_cpt on charges (provider_id, cpt
 create index if not exists idx_charges_provider_hcpcs on charges (provider_id, hcpcs);
 create index if not exists idx_charges_provider_ms_drg on charges (provider_id, ms_drg);
 create index if not exists idx_charges_description on charges using gin (to_tsvector('english', coalesce(description, '')));
+create index if not exists idx_charges_laterality on charges (laterality) where laterality is not null;
+
+-- ============================================================================
+-- Laterality parser (SQL mirror of lib/cpt/parse-laterality.ts)
+-- ============================================================================
+create or replace function parse_laterality(
+  p_description text,
+  p_modifiers text
+)
+returns text
+language sql
+immutable
+as $$
+  select case
+    when p_modifiers is not null and upper(p_modifiers) ~ '\m50\M'
+      then 'bilateral'
+    when p_modifiers is not null and upper(p_modifiers) ~ '\mLT\M'
+      then 'left'
+    when p_modifiers is not null and upper(p_modifiers) ~ '\mRT\M'
+      then 'right'
+    when p_description is not null and upper(p_description) ~ '\mBI\M'
+      then 'bilateral'
+    when p_description is not null and upper(p_description) ~ '\mLT\M'
+      then 'left'
+    when p_description is not null and upper(p_description) ~ '\mRT\M'
+      then 'right'
+    when p_description is not null and (upper(p_description) ~ '\mBILATERAL\M' or upper(p_description) ~ '\mBILAT\M')
+      then 'bilateral'
+    when p_description is not null and upper(p_description) ~ '\mLEFT\M'
+      then 'left'
+    when p_description is not null and upper(p_description) ~ '\mRIGHT\M'
+      then 'right'
+    else null
+  end;
+$$;
 
 -- ============================================================================
 -- PAYER RATES (insurance-specific negotiated rates)
@@ -161,7 +197,8 @@ create or replace function search_charges_nearby(
   p_lng double precision,
   p_radius_km double precision default 40,
   p_limit integer default 600,
-  p_provider_limit integer default 300
+  p_provider_limit integer default 300,
+  p_laterality text default null -- 'left', 'right', 'bilateral', or null (no filter)
 )
 returns table (
   id uuid,
@@ -179,6 +216,7 @@ returns table (
   description text,
   setting text,
   billing_class text,
+  laterality text,
   cpt text,
   hcpcs text,
   ms_drg text,
@@ -238,6 +276,7 @@ as $$
     c.description,
     c.setting,
     c.billing_class,
+    c.laterality,
     c.cpt,
     c.hcpcs,
     c.ms_drg,
@@ -260,6 +299,7 @@ as $$
       or (p_code_type = 'hcpcs' and c.hcpcs = any(p_codes))
       or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
     )
+    and (p_laterality is null or c.laterality = p_laterality)
   order by np.distance_km asc, c.cash_price asc nulls last
   limit greatest(coalesce(p_limit, 600), 1);
 $$;
@@ -293,6 +333,7 @@ returns table (
   description text,
   setting text,
   billing_class text,
+  laterality text,
   cpt text,
   hcpcs text,
   ms_drg text,
@@ -356,6 +397,7 @@ as $$
     c.description,
     c.setting,
     c.billing_class,
+    c.laterality,
     c.cpt,
     c.hcpcs,
     c.ms_drg,
