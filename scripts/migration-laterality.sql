@@ -38,8 +38,7 @@ AS $$
       THEN 'right'
 
     -- Priority 2: Suffix abbreviations in description
-    WHEN p_description IS NOT NULL AND upper(p_description) ~ '\mBI\M'
-      THEN 'bilateral'
+    -- Note: no \mBI\M here — too many false positives (BI-RADS, BI-V, etc.)
     WHEN p_description IS NOT NULL AND upper(p_description) ~ '\mLT\M'
       THEN 'left'
     WHEN p_description IS NOT NULL AND upper(p_description) ~ '\mRT\M'

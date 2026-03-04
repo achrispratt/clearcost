@@ -110,8 +110,7 @@ as $$
       then 'left'
     when p_modifiers is not null and upper(p_modifiers) ~ '\mRT\M'
       then 'right'
-    when p_description is not null and upper(p_description) ~ '\mBI\M'
-      then 'bilateral'
+    -- no \mBI\M here — too many false positives (BI-RADS, BI-V, etc.)
     when p_description is not null and upper(p_description) ~ '\mLT\M'
       then 'left'
     when p_description is not null and upper(p_description) ~ '\mRT\M'

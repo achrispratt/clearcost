@@ -6,14 +6,16 @@
  * mirrors this logic for in-database backfill.
  */
 
-export type Laterality = "left" | "right" | "bilateral";
+// Relative import — this file is used by import-trilliant.ts which runs via
+// npx tsx outside Next.js, so the @/ path alias doesn't resolve.
+import type { Laterality } from "../../types";
 
 /**
  * Extract laterality from a charge's description and modifiers fields.
  *
  * Priority order:
  *   1. Modifiers field — CMS standard modifier codes (LT, RT, 50)
- *   2. Suffix abbreviations in description — word-boundary RT, LT, BI
+ *   2. Suffix abbreviations in description — word-boundary RT, LT
  *   3. Full words in description — LEFT, RIGHT, BILATERAL, BILAT
  *   4. No match → null
  */
@@ -35,7 +37,7 @@ export function parseLaterality(
     const desc = description.toUpperCase();
 
     // Priority 2: Suffix abbreviations (word-boundary)
-    if (/\bBI\b/.test(desc)) return "bilateral";
+    // Note: no \bBI\b here — too many false positives (BI-RADS, BI-V, etc.)
     if (/\bLT\b/.test(desc)) return "left";
     if (/\bRT\b/.test(desc)) return "right";
 
