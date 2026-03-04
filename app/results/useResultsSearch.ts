@@ -78,6 +78,7 @@ export function useResultsSearch() {
   const [loadingStage, setLoadingStage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "map">("list");
+  const [radius, setRadius] = useState<number>(25);
 
   useEffect(() => {
     if ((!query && directCodeGroups.length === 0 && directCodes.length === 0) || !lat || !lng) return;
@@ -188,6 +189,10 @@ export function useResultsSearch() {
     setFilteredResults(filtered);
   }, []);
 
+  const handleRadiusChange = useCallback((newRadius: number) => {
+    setRadius(newRadius);
+  }, []);
+
   return {
     query,
     lat,
@@ -205,5 +210,7 @@ export function useResultsSearch() {
     setView,
     handleNewSearch,
     handleFilteredResults,
+    radius,
+    handleRadiusChange,
   };
 }
