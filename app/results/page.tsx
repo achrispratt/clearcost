@@ -34,10 +34,14 @@ function ResultsContent() {
 
   const handleExpandRadius = useCallback(() => {
     const currentIndex = RADIUS_TIERS.indexOf(radius);
-    const nextIndex = currentIndex === -1
-      ? RADIUS_TIERS.indexOf(RADIUS_TIERS.find((t) => t > radius) ?? 250)
-      : Math.min(currentIndex + 1, RADIUS_TIERS.length - 1);
-    handleRadiusChange(RADIUS_TIERS[nextIndex]);
+    let nextRadius: number;
+    if (currentIndex === -1) {
+      nextRadius = RADIUS_TIERS.find((t) => t > radius) ?? 250;
+    } else {
+      const nextIndex = Math.min(currentIndex + 1, RADIUS_TIERS.length - 1);
+      nextRadius = RADIUS_TIERS[nextIndex];
+    }
+    handleRadiusChange(nextRadius);
   }, [radius, handleRadiusChange]);
 
   const { selectedResultId, handleMarkerClick } = useResultSelection();
