@@ -214,7 +214,8 @@ When possible and optimal, push reference data and logic into SQL (temp tables, 
 - **Types**: Use interfaces from `types/index.ts` — do not create parallel type definitions
 - **Error Handling**: try/catch for async operations, display errors with `react-hot-toast`
 - **API Routes**: Feature-organized in `app/api/`; use server Supabase client (async)
-- **Formatting**: ESLint flat config (v9) extending next/core-web-vitals + next/typescript
+- **Formatting**: Prettier (`.prettierrc`) + ESLint flat config (v9) extending next/core-web-vitals + next/typescript + eslint-config-prettier
+- **CI**: GitHub Actions (`.github/workflows/ci.yml`) — format check, lint, type check, build on every PR
 
 ## Git Workflow & Development Practices
 

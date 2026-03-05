@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { LocationInput } from "./LocationInput";
 
 interface SearchBarProps {
@@ -36,11 +36,9 @@ export function SearchBar({
   } | null>(initialLocation || null);
   const [geocoding, setGeocoding] = useState(false);
 
-  const [placeholder, setPlaceholder] = useState(placeholders[0]);
-
-  useEffect(() => {
-    setPlaceholder(placeholders[Math.floor(Math.random() * placeholders.length)]);
-  }, []);
+  const [placeholder] = useState(
+    () => placeholders[Math.floor(Math.random() * placeholders.length)]
+  );
 
   const handleGeocodingChange = useCallback((isGeocoding: boolean) => {
     setGeocoding(isGeocoding);
@@ -60,18 +58,50 @@ export function SearchBar({
   const getButtonContent = (size: "compact" | "full") => {
     if (loading) {
       return (
-        <svg className={`${size === "compact" ? "w-4 h-4" : "w-5 h-5"} animate-spin`} viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <svg
+          className={`${size === "compact" ? "w-4 h-4" : "w-5 h-5"} animate-spin`}
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="2"
+            opacity="0.25"
+          />
+          <path
+            d="M12 2a10 10 0 0 1 10 10"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       );
     }
     if (isWaitingForLocation) {
       return (
         <span className="flex items-center gap-1.5">
-          <svg className={`${size === "compact" ? "w-3.5 h-3.5" : "w-4 h-4"} animate-spin`} viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <svg
+            className={`${size === "compact" ? "w-3.5 h-3.5" : "w-4 h-4"} animate-spin`}
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="2"
+              opacity="0.25"
+            />
+            <path
+              d="M12 2a10 10 0 0 1 10 10"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
           </svg>
           Locating...
         </span>
@@ -81,14 +111,19 @@ export function SearchBar({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={compact ? "w-full" : "w-full max-w-2xl mx-auto"}>
+    <form
+      onSubmit={handleSubmit}
+      className={compact ? "w-full" : "w-full max-w-2xl mx-auto"}
+    >
       <div
         className={`search-container flex flex-col sm:flex-row items-stretch border bg-[var(--cc-surface)] overflow-hidden ${
           compact ? "rounded-xl" : "rounded-2xl shadow-sm"
         }`}
         style={{ borderColor: "var(--cc-border)" }}
       >
-        <div className={`flex items-center flex-1 ${compact ? "px-3 gap-2" : "px-4 gap-3"}`}>
+        <div
+          className={`flex items-center flex-1 ${compact ? "px-3 gap-2" : "px-4 gap-3"}`}
+        >
           <svg
             className={`${compact ? "w-4 h-4" : "w-5 h-5"} shrink-0`}
             style={{ color: "var(--cc-text-tertiary)" }}
@@ -123,7 +158,9 @@ export function SearchBar({
           style={{ background: "var(--cc-border)" }}
         />
 
-        <div className={`flex items-center ${compact ? "px-3 sm:w-44" : "px-4 sm:w-44"}`}>
+        <div
+          className={`flex items-center ${compact ? "px-3 sm:w-44" : "px-4 sm:w-44"}`}
+        >
           <svg
             className={`${compact ? "w-3.5 h-3.5 mr-1.5" : "w-4 h-4 mr-2"} shrink-0`}
             style={{ color: "var(--cc-text-tertiary)" }}
