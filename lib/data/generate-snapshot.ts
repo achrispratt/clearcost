@@ -311,14 +311,14 @@ async function main() {
   // Build per-state DuckDB maps
   const duckStateMap = new Map<string, { completed: number; total: number }>();
   for (const row of stateStatusRows) {
-    const st = row.hospital_state ?? "UNKNOWN";
+    const st = (row.hospital_state ?? "UNKNOWN").toUpperCase();
     if (!duckStateMap.has(st)) duckStateMap.set(st, { completed: 0, total: 0 });
     const entry = duckStateMap.get(st)!;
     entry.total += Number(row.cnt);
     if (row.status === "completed") entry.completed += Number(row.cnt);
   }
   const duckChargeMap = new Map(
-    stateChargeRows.map((r) => [r.hospital_state ?? "UNKNOWN", Number(r.cnt)])
+    stateChargeRows.map((r) => [(r.hospital_state ?? "UNKNOWN").toUpperCase(), Number(r.cnt)])
   );
 
   // All states across both databases
