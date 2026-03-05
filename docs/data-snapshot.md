@@ -1,5 +1,8 @@
 # ClearCost Data Snapshot
 
+> **Owner:** Auto-generated (`generate-snapshot.ts`) · **Source of truth for:** Live data counts and state-by-state coverage
+> **Update when:** Run `npx tsx --env-file=.env.local lib/data/generate-snapshot.ts` after any import
+
 _Generated: 2026-03-02T20:40:25.918Z_
 
 To regenerate after an import:
@@ -32,7 +35,7 @@ Each run creates a new file in `docs/snapshots/YYYY-MM-DD_HH-MM-SS.md` and updat
 
 | Phase                                  | Available Rows | Status          |
 | -------------------------------------- | -------------: | --------------- |
-| 1-5: Current (1,002 codes, outpatient) |     13,077,101 | ✅ 100.3% live  |
+| 1-5: Current (1,002 curated codes)     |     13,077,101 | ✅ 100.3% live  |
 | 6: All outpatient codes                |   +210,400,206 | 📋 Planned      |
 | 7: Inpatient pricing                   |    +50,822,521 | 📋 Planned      |
 | 8: Payer-specific rates                | +6,381,051,296 | 🔮 Future infra |
@@ -50,7 +53,7 @@ DuckDB (Trilliant Oria)
   ├─ Raw charges (sum of total_charges_count across all hospitals):
   │              6,381,051,296  (~274M, not all are for our codes)
   │
-  └─ Filtered charges (1,002 codes, outpatient only, completed hospitals):
+  └─ Filtered charges (1,002 curated codes, all settings, completed hospitals):
                  13,077,101
 
 Supabase (current state)
@@ -71,7 +74,7 @@ Supabase (current state)
 
 ## 3. Per-State Data Table
 
-_DuckDB: completed hospitals + filtered charge count (1,002 codes, outpatient, completed hospitals only)_
+_DuckDB: completed hospitals + filtered charge count (1,002 curated codes, all settings, completed hospitals only)_
 _Supabase: providers imported + geocoding status + charges imported_
 _**MISSING** = DuckDB has completed hospitals with charges, but Supabase has 0 charges (needs import)_
 

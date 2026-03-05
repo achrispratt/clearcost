@@ -183,7 +183,7 @@ async function main() {
   )) as unknown as StateStatusRow[];
 
   console.log(
-    `[4/7] Per-state FILTERED charge counts (${codes.length.toLocaleString()} codes + outpatient + completed hospitals only)...`
+    `[4/7] Per-state FILTERED charge counts (${codes.length.toLocaleString()} curated codes + completed hospitals only)...`
   );
   console.log("  ⚠  Scanning ~81GB Parquet — this may take 3-5 minutes...");
   const codeList = codes.map((c) => `'${c}'`).join(",");
@@ -450,10 +450,10 @@ async function main() {
   lines.push(`| Phase | Available Rows | Status |`);
   lines.push(`|-------|---------------:|--------|`);
   lines.push(
-    `| 1-5: Current (${codes.length.toLocaleString()} codes, outpatient) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`
+    `| 1-5: Current (${codes.length.toLocaleString()} curated codes) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`
   );
   lines.push(
-    `| 6: All outpatient codes | +${fmtNum(outpatientOtherCodes)} | 📋 Planned |`
+    `| 6: All remaining codes | +${fmtNum(outpatientOtherCodes)} | 📋 Planned |`
   );
   lines.push(
     `| 7: Inpatient pricing | +${fmtNum(inpatientCount)} | 📋 Planned |`
@@ -490,7 +490,7 @@ async function main() {
   );
   lines.push(`  │`);
   lines.push(
-    `  └─ Filtered charges (${codes.length.toLocaleString()} codes, outpatient only, completed hospitals):`
+    `  └─ Filtered charges (${codes.length.toLocaleString()} curated codes, all settings, completed hospitals):`
   );
   lines.push(
     `             ${totalDuckDbFilteredCharges.toLocaleString().padStart(14)}`
@@ -532,7 +532,7 @@ async function main() {
   lines.push(`## 3. Per-State Data Table`);
   lines.push(``);
   lines.push(
-    `_DuckDB: completed hospitals + filtered charge count (${codes.length.toLocaleString()} codes, outpatient, completed hospitals only)_`
+    `_DuckDB: completed hospitals + filtered charge count (${codes.length.toLocaleString()} curated codes, all settings, completed hospitals only)_`
   );
   lines.push(
     `_Supabase: providers imported + geocoding status + charges imported_`
@@ -806,13 +806,13 @@ async function main() {
     `│                                                                  │`
   );
   lines.push(
-    `│  Phase 6 — More outpatient codes                                │`
+    `│  Phase 6 — All remaining codes                                  │`
   );
   lines.push(
     `│  ${outpatientOtherCodes.toLocaleString().padStart(14)} rows   (${pctOutpatientOther.padStart(5)}% of total)                    │`
   );
   lines.push(
-    `│  All outpatient codes NOT in our ${codes.length.toLocaleString()} curated set              │`
+    `│  All codes NOT in our ${codes.length.toLocaleString()} curated set                        │`
   );
   lines.push(
     `│                                                                  │`
@@ -865,7 +865,7 @@ async function main() {
     `| Phase 1-5 (current) | ${fmtNum(totalDuckDbFilteredCharges)} | ~2-3 GB | ✅ Supabase Pro |`
   );
   lines.push(
-    `| + Phase 6 (all outpatient) | ${fmtNum(outpatientOtherCodes + totalDuckDbFilteredCharges)} | ~40-50 GB | ⚠ Supabase scales, cost climbs |`
+    `| + Phase 6 (all codes) | ${fmtNum(outpatientOtherCodes + totalDuckDbFilteredCharges)} | ~40-50 GB | ⚠ Supabase scales, cost climbs |`
   );
   lines.push(
     `| + Phase 7 (+ inpatient) | ${fmtNum(totalStdCharges)} | ~60-70 GB | ⚠ Same order of magnitude |`

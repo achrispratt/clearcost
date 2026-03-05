@@ -1,5 +1,8 @@
 # Import Pipeline Reference
 
+> **Owner:** Engineering (Claude) · **Source of truth for:** Import commands, flags, gotchas, DuckDB quirks
+> **Update when:** Pipeline code changes
+
 Detailed reference for `lib/data/import-trilliant.ts` — the only working import path (Node.js INSERT via Supabase pooler port 6543, ~470 rows/s).
 
 ## Commands

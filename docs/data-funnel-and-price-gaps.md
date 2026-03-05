@@ -1,5 +1,8 @@
 # ClearCost Data Funnel & Price Coverage Analysis
 
+> **Owner:** Engineering (Claude) · **Source of truth for:** Data pipeline logic, price gap analysis, expansion path
+> **Update when:** Import pipeline or data scope changes
+
 _Created: 2026-03-03_
 _Purpose: Inform product strategy around price display, data gaps, and future expansion_
 

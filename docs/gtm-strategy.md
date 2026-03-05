@@ -1,9 +1,12 @@
 # ClearCost — Go-To-Market Strategy
 
+> **Owner:** PM (Chris) · **Source of truth for:** Positioning, messaging, channels, launch plan
+> **Update when:** Market positioning or numbers change · **Live numbers:** see `docs/data-snapshot.md`
+
 **Date:** February 25, 2026
 **Product:** ClearCost — "Kayak for Healthcare Pricing"
 **Live URL:** https://clearcost-orcin.vercel.app
-**Stage:** MVP live (Phases 1-5 complete), Guided Search (Phase 5.5) in progress
+**Stage:** MVP live (Phases 1-5.6 complete), Guided Search + Results polish shipped
 
 ---
 
@@ -28,7 +31,7 @@
 
 ## 1. Executive Summary
 
-ClearCost is a consumer healthcare pricing tool that translates plain-English queries into billing codes and returns real, localized hospital prices across 5,200+ US hospitals. The MVP is live with 12.5M+ price points covering 1,010 procedures.
+ClearCost is a consumer healthcare pricing tool that translates plain-English queries into billing codes and returns real, localized hospital prices across 5,400+ US hospitals. The MVP is live with 13M+ price points covering 1,002 procedures.
 
 **GTM thesis:** Healthcare price transparency is a regulatory tailwind with massive consumer demand but zero consumer-friendly tools at national scale. ClearCost's moat is AI-powered plain English search with guided diagnostic clarification — no competitor offers this. The GTM strategy prioritizes organic/earned channels (SEO, content, community, PR) over paid acquisition, given the product's zero-revenue stage and the high search intent inherent to healthcare pricing queries.
 
@@ -113,7 +116,7 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 - **Who:** Reporters covering healthcare costs, think tank researchers
 - **Behavior:** Need data to support stories about pricing disparities
 - **Channel:** Press outreach, data journalism communities, Twitter/X healthcare policy circles
-- **Message:** "5,200+ hospitals. 12.5M prices. The data behind your next healthcare pricing story."
+- **Message:** "5,400+ hospitals. 13M prices. The data behind your next healthcare pricing story."
 
 ---
 
@@ -121,13 +124,13 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 
 ### Positioning Statement
 
-**For** cost-conscious Americans facing medical procedures, **ClearCost** is a free healthcare pricing tool **that** lets you compare real hospital prices in plain English — like Kayak for healthcare. **Unlike** hospital price estimators or insurer cost tools, ClearCost covers 5,200+ hospitals nationwide, translates everyday language into billing codes using AI, and shows you what you'll actually pay before you walk through the door.
+**For** cost-conscious Americans facing medical procedures, **ClearCost** is a free healthcare pricing tool **that** lets you compare real hospital prices in plain English — like Kayak for healthcare. **Unlike** hospital price estimators or insurer cost tools, ClearCost covers 5,400+ hospitals nationwide, translates everyday language into billing codes using AI, and shows you what you'll actually pay before you walk through the door.
 
 ### Core Messages
 
 | Audience             | Headline                                  | Supporting Point                                                              |
 | -------------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
-| **General**          | Know what you'll pay before you go.       | Compare real prices at 5,200+ hospitals. Search in plain English.             |
+| **General**          | Know what you'll pay before you go.       | Compare real prices at 5,400+ hospitals. Search in plain English.             |
 | **Uninsured**        | Stop overpaying for healthcare.           | Cash prices vary by thousands of dollars. Find the lowest price near you.     |
 | **High-deductible**  | Your deductible means you're paying cash. | Until you hit your deductible, every dollar matters. Compare before you book. |
 | **Referral holders** | Got a referral? Compare prices first.     | The same MRI can cost $400 or $4,000 depending on where you go.               |
@@ -139,7 +142,7 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 
 2. **Search like a human.** Type "knee MRI" or "how much is a colonoscopy?" — AI does the medical billing translation for you.
 
-3. **Every hospital, everywhere.** 5,200+ hospitals across all 50 states. Not limited to one insurer's network or one metro area.
+3. **Every hospital, everywhere.** 5,400+ hospitals across all 50 states. Not limited to one insurer's network or one metro area.
 
 4. **Transparent and honest.** We show you what the price covers, flag when it's a facility fee only, and cite our data source on every result.
 
@@ -221,7 +224,7 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 - Consumers buy procedure vouchers at pre-negotiated cash prices
 - Strong SEO with programmatic state/procedure pages
 - Limited to ~250 participating facilities
-- _ClearCost advantage:_ 5,200+ hospitals with real MRF data vs. small opt-in network
+- _ClearCost advantage:_ 5,400+ hospitals with real MRF data vs. small opt-in network
 
 **Sesame Care** — Consumer marketplace, $10.99/month membership
 
@@ -279,7 +282,7 @@ Ada and Buoy validate that the diagnostic Q&A layer is commercially viable even 
 | Feature                        | ClearCost     | Turquoise Health | Valenz Bluebook | FAIR Health    | GoodRx         | MDsave            | Sesame            |
 | ------------------------------ | ------------- | ---------------- | --------------- | -------------- | -------------- | ----------------- | ----------------- |
 | **Consumer-facing**            | Yes (primary) | No (B2B)         | No (employer)   | Partial        | Yes (pharmacy) | Yes (marketplace) | Yes (marketplace) |
-| **National hospital coverage** | 5,200+        | Yes (data API)   | ~1,000 markets  | Reference only | No             | ~250 facilities   | No                |
+| **National hospital coverage** | 5,400+        | Yes (data API)   | ~1,000 markets  | Reference only | No             | ~250 facilities   | No                |
 | **Plain English AI search**    | Yes (Claude)  | No               | No              | No             | No             | No                | No                |
 | **Guided diagnostic Q&A**      | Yes           | No               | No              | No             | No             | No                | No                |
 | **Real hospital MRF data**     | Yes           | Yes              | No (survey)     | No (claims)    | No             | No (contracted)   | No                |
@@ -293,7 +296,7 @@ Ada and Buoy validate that the diagnostic Q&A layer is commercially viable even 
 
 2. **Guided diagnostic clarification** — When a query is vague ("my back hurts"), ClearCost's multi-turn AI conversation narrows to specific procedures through clinical triage logic. This is the product moat — competitors show a blank screen for ambiguous queries.
 
-3. **National scale, consumer-first** — Turquoise Health has the data but sells to businesses. Valenz Bluebook serves employers. FAIR Health shows statistical ranges, not hospital-specific prices. ClearCost is the only consumer-first tool with real posted prices from 5,200+ hospitals.
+3. **National scale, consumer-first** — Turquoise Health has the data but sells to businesses. Valenz Bluebook serves employers. FAIR Health shows statistical ranges, not hospital-specific prices. ClearCost is the only consumer-first tool with real posted prices from 5,400+ hospitals.
 
 4. **Trust through transparency** — Every result shows the data source, freshness date, and billing context. Competitors either hide their methodology or show opaque "fair price" ranges.
 
@@ -365,7 +368,7 @@ Healthcare pricing queries have massive search volume and clear commercial inten
 Generate static or ISR pages at scale for high-value keyword combinations:
 
 ```
-/prices/knee-mri/                     → "Knee MRI Cost — Compare Prices at 5,200+ Hospitals"
+/prices/knee-mri/                     → "Knee MRI Cost — Compare Prices at 5,400+ Hospitals"
 /prices/knee-mri/houston-tx/          → "Knee MRI Cost in Houston, TX — Compare Hospital Prices"
 /prices/colonoscopy/                  → "Colonoscopy Cost — Compare Prices Nationwide"
 /prices/colonoscopy/new-york-ny/      → "Colonoscopy Cost in New York — Hospital Price Comparison"
@@ -380,7 +383,7 @@ Generate static or ISR pages at scale for high-value keyword combinations:
 - FAQ section (auto-generated): "How much does a [procedure] cost without insurance?", "Why do [procedure] prices vary?", "How to save on [procedure] costs"
 - Internal links to related procedures and nearby cities
 
-**Scale:** 1,010 procedures × top 200 metro areas = ~200,000 potential pages. Start with top 50 procedures × top 50 metros = 2,500 pages in Phase 1.
+**Scale:** 1,002 procedures × top 200 metro areas = ~200,000 potential pages. Start with top 50 procedures × top 50 metros = 2,500 pages in Phase 1.
 
 #### 6.2 Content Marketing
 
@@ -463,7 +466,7 @@ Reddit is where healthcare cost conversations already happen organically. This i
 
 3. **David vs. Goliath.** "One developer built a tool that makes the hospital pricing data the government mandated actually useful for regular people — something billion-dollar health systems haven't done." (Founder story angle.)
 
-4. **The data-journalism angle.** "We analyzed 12.5 million hospital prices across 5,200 hospitals. Here's what we found about healthcare pricing in America." (Offer exclusive data access to reporters.)
+4. **The data-journalism angle.** "We analyzed 12.5 million hospital prices across 5,400hospitals. Here's what we found about healthcare pricing in America." (Offer exclusive data access to reporters.)
 
 **Target publications:**
 
@@ -543,7 +546,7 @@ Reddit is where healthcare cost conversations already happen organically. This i
 
 1. Product Hunt launch (see section 6.4)
 2. Press outreach to Tier 2-3 publications (see section 6.5)
-3. "We analyzed 12.5M hospital prices" data story published as blog post + shared on Reddit, HN, Twitter/X
+3. "We analyzed 13M hospital prices" data story published as blog post + shared on Reddit, HN, Twitter/X
 4. Reach out to 10 healthcare influencers / patient advocacy accounts for amplification
 5. Scale programmatic SEO pages to 500+ (top 20 procedures × top 25 cities)
 
@@ -616,7 +619,7 @@ Reddit is where healthcare cost conversations already happen organically. This i
 | ---- | -------------------------------------------------------------- | ----------------------------------------- | ----------------------------- |
 | 1    | "How Much Does a Knee MRI Cost in 2026?"                       | Top 10 procedures × 5 cities (50 pages)   | Reddit r/personalfinance      |
 | 2    | "Understanding Cash Prices: What Hospitals Don't Tell You"     | 10 more cities added (50 pages)           | Twitter/X thread              |
-| 3    | "We Analyzed 12.5M Hospital Prices — Here's What Surprised Us" | —                                         | Reddit, HN, Product Hunt prep |
+| 3    | "We Analyzed 13M Hospital Prices — Here's What Surprised Us" | —                                         | Reddit, HN, Product Hunt prep |
 | 4    | "The 10 Procedures With the Wildest Price Differences"         | Top 20 procedures × 10 cities (100 pages) | Press outreach with data      |
 | 5    | "How to Save Thousands on Your Next Medical Procedure"         | —                                         | Email to early subscribers    |
 | 6    | "Colonoscopy Costs: A Complete State-by-State Guide"           | Top 30 procedures × 15 cities (150 pages) | SEO-focused, Reddit           |
@@ -674,7 +677,7 @@ Prepare a media page (clearcost.com/press) with:
 
 - One-paragraph product description
 - Founder bio and headshot
-- Key statistics (5,200+ hospitals, 12.5M prices, 1,010 procedures)
+- Key statistics (5,400+ hospitals, 13M prices, 1,002 procedures)
 - 3-5 compelling data points about price disparities
 - High-resolution screenshots and logo
 - Contact information for press inquiries
@@ -815,9 +818,9 @@ ClearCost's current infrastructure costs ~$25/month. The GTM strategy is designe
 
 ### Week 3-4: Soft Launch
 
-- [ ] **Hacker News "Show HN":** Write a compelling post. Lead with the data angle: "Show HN: I indexed 12.5M hospital prices to build Kayak for healthcare."
+- [ ] **Hacker News "Show HN":** Write a compelling post. Lead with the data angle: "Show HN: I indexed 13M hospital prices to build Kayak for healthcare."
 - [ ] **Reddit seeding:** Identify 10 recent threads about healthcare costs in r/personalfinance, r/HealthInsurance, r/uninsured. Contribute genuinely helpful answers with ClearCost data.
-- [ ] **First blog posts:** Publish "How Much Does a Knee MRI Cost in 2026?" and "We Analyzed 12.5M Hospital Prices — Here's What Surprised Us."
+- [ ] **First blog posts:** Publish "How Much Does a Knee MRI Cost in 2026?" and "We Analyzed 13M Hospital Prices — Here's What Surprised Us."
 - [ ] **Programmatic SEO v1:** Generate and publish 50 location + procedure pages for top 5 procedures × top 10 metros.
 - [ ] **Collect initial feedback.** Reach out to first 50 users for qualitative feedback on search quality and UX.
 
@@ -840,7 +843,7 @@ ClearCost's current infrastructure costs ~$25/month. The GTM strategy is designe
 
 - [ ] **Follow up on press outreach.** Offer exclusive data access to interested journalists.
 - [ ] **Healthcare influencer outreach:** Identify 10 patient advocacy accounts, healthcare policy influencers, and medical finance creators. Offer early access and data for their content.
-- [ ] **Reddit data story:** Post "We Analyzed 12.5M Hospital Prices" to r/dataisbeautiful with compelling visualizations.
+- [ ] **Reddit data story:** Post "We Analyzed 13M Hospital Prices" to r/dataisbeautiful with compelling visualizations.
 - [ ] **Email newsletter launch:** "Healthcare Price of the Week" — send to accumulated email list.
 
 ### Week 11-12: Optimization & Planning
@@ -859,7 +862,7 @@ ClearCost's current infrastructure costs ~$25/month. The GTM strategy is designe
 ### Homepage Hero (current — already strong)
 
 > **Know what you'll pay before you go.**
-> Compare real hospital prices across 5,200+ providers. Search in plain English. No insurance required.
+> Compare real hospital prices across 5,400+ providers. Search in plain English. No insurance required.
 
 ### Email Signup CTA
 
@@ -867,7 +870,7 @@ ClearCost's current infrastructure costs ~$25/month. The GTM strategy is designe
 
 ### Social Media Bio
 
-> Real hospital prices for real people. Compare costs at 5,200+ hospitals. Search in plain English. Free. | Built on public hospital pricing data.
+> Real hospital prices for real people. Compare costs at 5,400+ hospitals. Search in plain English. Free. | Built on public hospital pricing data.
 
 ### Press One-Liner
 
@@ -907,9 +910,9 @@ These statistics from ClearCost's actual database make compelling marketing cont
 
 | Data Point                                       | Use In                             |
 | ------------------------------------------------ | ---------------------------------- |
-| 5,200+ hospitals nationwide                      | Trust/credibility in all channels  |
+| 5,400+ hospitals nationwide                      | Trust/credibility in all channels  |
 | 12.5 million prices indexed                      | Scale authority in press/content   |
-| 1,010 most common procedures                     | Coverage reassurance               |
+| 1,002 most common procedures                     | Coverage reassurance               |
 | All 50 states + DC + PR                          | National credibility               |
 | Prices sourced from federal mandate data         | Trust and methodology transparency |
 | Cash price ranges of 5-10x for common procedures | Shock value in social/PR/content   |

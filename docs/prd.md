@@ -1,5 +1,8 @@
 # ClearCost — Product Requirements Document
 
+> **Owner:** PM (Chris) · **Source of truth for:** Product vision, scope, key decisions, roadmap, success metrics
+> **Update when:** Product direction changes · **Not for:** Engineering implementation details (see `CLAUDE.md`)
+
 ## 1. Product Vision & Problem Statement
 
 ### The Problem
@@ -24,7 +27,7 @@ ClearCost is the **Kayak for healthcare pricing** — a consumer tool that lets 
 - The data is public, free, and federally mandated — no partnerships needed for MVP
 - AI (Claude) can bridge the gap between how patients describe procedures and how hospitals code them (CPT/HCPCS)
 - PostGIS enables fast geographic queries across 5,000+ hospitals
-- The 1,010 most common shoppable procedures cover the vast majority of what consumers actually search for
+- The 1,002 most common shoppable procedures cover the vast majority of what consumers actually search for
 
 ---
 
@@ -86,7 +89,7 @@ Google Maps integration showing hospital locations as pins with price labels. Cl
 ### 3.4 Filtering & Sorting
 
 - **Sort by**: Price (low-high), distance (near-far), hospital name (A-Z)
-- **Filter by**: Distance radius (25/50/100/250 miles), price range, setting (outpatient/inpatient), provider type
+- **Filter by**: Distance radius (25/50/100/250 miles), price range, provider type
 - **Insurance dropdown**: Select a payer to see payer-specific negotiated rate (from aggregated data)
 
 ### 3.5 Save & Bookmark
@@ -110,9 +113,9 @@ The MVP uses Trilliant Health's free Oria data lake — a consolidated, pre-proc
 - **Pre-computed aggregates**: avg/min/max negotiated rates, payer count per charge
 - **Freshness**: Updated periodically by Trilliant (exact cadence TBD)
 
-### 4.2 Code List: 1,010 Curated Codes
+### 4.2 Code List: 1,002 Curated Codes
 
-Rather than importing all 274M charges, the MVP filters to 1,010 carefully curated CPT/HCPCS codes representing the most shoppable procedures. This reduces the import to ~13.1M rows (~3.9GB).
+Rather than importing all 274M charges, the MVP filters to 1,002 carefully curated CPT/HCPCS codes representing the most shoppable procedures. This reduces the import to ~13.1M rows (~3.9GB).
 
 Sources merged into `lib/data/final-codes.json`:
 
@@ -121,69 +124,19 @@ Sources merged into `lib/data/final-codes.json`:
 3. **Top 500** — Most universally reported codes by hospital coverage count
 4. **FAIR Health 300+** — Consumer-oriented shoppable services from the leading healthcare cost database
 
-### 4.2.1 Data Scope & Exclusions
+### 4.2.1 Data Scope
 
-The MVP imports a curated subset of the full Oria dataset — roughly 4.8% of source rows. This section documents what's included, what's excluded, and why.
+The MVP imports ~4.8% of the full Oria dataset: 1,002 curated codes × 5,419 hospitals × all settings → ~13.1M charge rows in Supabase (~3.9 GB). Payer-specific detail rows (~6B) are skipped — pre-aggregated avg/min/max rates are sufficient for MVP.
 
-**Data Funnel: Full Dataset → MVP Import**
+**Key scoping decisions:**
+- The **code list** defines shoppability, not the setting (inpatient/outpatient). All settings are imported.
+- 8 inpatient-only codes (hospital rounding visits) were removed from the code list — not consumer-shoppable.
+- Inpatient vs. outpatient context is handled at the **interpretation layer** (guided search / AI intake), not at import.
 
-```
-Trilliant Oria Full Dataset
-├── 274M standard_charges rows
-├── 6B standard_charge_details rows (payer-specific)
-├── 120K distinct CPT codes, 109K HCPCS, 5.6K MS-DRG
-└── 6,039 hospitals
-        │
-        ▼ Filter 1: Code filter (1,010 curated codes)
-        │   Keeps rows where cpt OR hcpcs matches our code list
-        │   Drops ~95% of rows (most hospital line items are for codes outside our list)
-        │
-        ▼ Filter 2: Outpatient only
-        │   Drops rows where setting = 'inpatient' (~7% of code-matched rows)
-        │   Inpatient pricing is complex, not consumer-shoppable
-        │
-        ▼ Filter 3: Aggregated payer stats only
-        │   Uses pre-computed avg/min/max from standard_charges
-        │   Skips ALL 6 billion payer detail rows entirely
-        │
-        ▼ Result: MVP Import
-            ~13.1M charges rows (~4.8% of standard_charges)
-            0 payer detail rows (0% of standard_charge_details)
-            5,419 providers
-            ~3.9 GB in Supabase
-```
+**Expansion path:** More codes (Phase 6), plan-level payer pricing (Phase 7), payer transparency data (Phase 8). Nothing is permanently excluded — the funnel can be widened at any phase.
 
-**What's excluded and why:**
-
-| Exclusion               | Rows Dropped         | % of Total     | Reason                                                                 |
-| ----------------------- | -------------------- | -------------- | ---------------------------------------------------------------------- |
-| Non-matching codes      | ~261M                | ~95.2%         | MVP focuses on 1,010 most shoppable procedures                         |
-| Inpatient rows          | ~62K of matched      | ~7% of matched | Not consumer-shoppable (complex multi-day stays)                       |
-| Payer detail rows       | ~6B                  | 100%           | Pre-aggregated stats sufficient for MVP; plan-level pricing is Phase 7 |
-| Revenue/ICD/other codes | (overlap with above) | —              | Too generic (revenue) or not procedure-based (ICD)                     |
-
-**Precise source counts (from DuckDB queries on full Oria dataset):**
-
-| Metric                                         | Value               |
-| ---------------------------------------------- | ------------------- |
-| Total standard_charges                         | 274,299,828         |
-| Total standard_charge_details (payer-specific) | ~6 billion          |
-| Distinct CPT codes                             | 120,097             |
-| Distinct HCPCS codes                           | 109,354             |
-| Distinct MS-DRG codes                          | 5,628               |
-| Inpatient rows                                 | 50,777,849 (18.5%)  |
-| Outpatient/null rows                           | 223,521,979 (81.5%) |
-| Hospitals total                                | 6,039               |
-| Hospitals with data                            | 5,419               |
-| Curated MVP codes                              | 1,010               |
-| Estimated MVP rows                             | ~13.1M              |
-
-**Expansion path:**
-
-- More codes → import more of the 120K CPT / 109K HCPCS codes
-- Inpatient → add MS-DRG data (~50.8M rows, Phase 7+)
-- Payer detail → 6B rows, requires self-hosted Postgres (~50-100GB, Phase 7)
-- Full dataset → ~274M charges + 6B details, requires dedicated infrastructure (Phase 8+)
+> For detailed data funnel, row counts, and price gap analysis, see `docs/data-funnel-and-price-gaps.md`.
+> For current live numbers, see `docs/data-snapshot.md`.
 
 ### 4.3 Billing Code Types
 
@@ -191,7 +144,7 @@ Trilliant Oria Full Dataset
 | ---------------- | ------------------------------------------ | ---------------------------------------------------------- |
 | **CPT**          | Procedures (MRI, surgery, office visit)    | Primary search target                                      |
 | **HCPCS**        | Superset of CPT + supplies/drugs/equipment | Secondary search (many hospitals use HCPCS instead of CPT) |
-| **MS-DRG**       | Inpatient hospital stays by diagnosis      | Excluded for MVP (inpatient filtered out)                  |
+| **MS-DRG**       | Inpatient hospital stays by diagnosis      | Not in curated code list (inpatient-only by definition)    |
 | **Revenue Code** | Facility line items (OR time, pharmacy)    | Too generic for consumer search                            |
 | **ICD**          | Diagnosis codes                            | Not used (Claude handles symptom-to-procedure translation) |
 
@@ -210,86 +163,19 @@ Hospital charges come in components: facility fee + professional fee (radiologis
 - Procedure-aware callouts: MRI → "radiologist reading fee may apply"; surgery → "anesthesia and surgeon fees may be billed separately"
 - Do NOT label everything as "facility fee" — show what we have, flag gaps where data indicates them
 
-### 4.5 Database Schema
+### 4.5 Database
 
-**5 tables in Supabase (Postgres + PostGIS):**
+Supabase (Postgres + PostGIS). 5 tables: providers, charges, payer_rates, payers, saved_searches. Two RPC functions for code-based search and description fallback. RLS enforces public read on pricing data, user-scoped write on saved searches.
 
-- **`providers`** — Hospital records with PostGIS geography column for spatial queries. Geocoded via `zipcodes` npm package (zip-centroid lat/lng).
-- **`charges`** — Procedure pricing with support for all billing code types. Includes cash price, gross charge, and pre-computed aggregated payer stats (avg/min/max negotiated rate, payer count).
-- **`payer_rates`** — Individual payer negotiated rates per charge (deferred for MVP — aggregates sufficient).
-- **`payers`** — Canonical payer list for UI dropdown.
-- **`saved_searches`** — User-scoped saved searches with location coordinates.
-
-**2 RPC functions:**
-
-- `search_charges_nearby()` — Code-based search with PostGIS radius filtering
-- `search_charges_by_description()` — Description-based fallback search
-
-**RLS policies**: Public read on providers/charges/payer_rates/payers. User-scoped write on saved_searches.
+> Schema details, RPC signatures, and client patterns: see `CLAUDE.md` and `supabase/schema.sql`.
 
 ---
 
 ## 5. Technical Architecture
 
-### 5.1 Stack
+Next.js 16 + React 19 + TypeScript on Vercel. Supabase (Postgres + PostGIS) for data and auth. Claude API for plain-English → billing code translation. Google Maps for geocoding and map view. Data pipeline: DuckDB + 81GB Parquet → bulk insert to Supabase.
 
-| Layer         | Technology                                              |
-| ------------- | ------------------------------------------------------- |
-| Frontend      | Next.js 16 (App Router), React 19, TypeScript           |
-| Styling       | Tailwind CSS v4, DaisyUI 5                              |
-| Database      | Supabase (Postgres 15 + PostGIS)                        |
-| Auth          | Supabase Auth (Google OAuth)                            |
-| AI            | Claude API (Anthropic SDK) — Sonnet for cost efficiency |
-| Maps          | Google Maps JavaScript API                              |
-| Data Pipeline | DuckDB + Parquet (local), bulk insert to Supabase       |
-| Hosting       | Vercel                                                  |
-
-### 5.2 Search Pipeline
-
-```
-User query ("knee MRI near 78701")
-  |
-  v
-Claude AI (plain English -> CPT/HCPCS codes + code type)
-  |
-  v
-PostGIS query (search_charges_nearby RPC)
-  - Joins charges <-> providers
-  - ST_DWithin for radius filtering
-  - Sorted by cash_price ASC
-  |
-  v
-[Zero results?] -> Fallback: description ILIKE search
-  |
-  v
-Results returned to frontend (list + map views)
-```
-
-### 5.3 Auth Flow
-
-1. User clicks "Sign in with Google"
-2. Supabase Auth redirects to Google OAuth
-3. Callback handler at `/auth/callback` exchanges code for session
-4. Supabase middleware manages session cookies
-5. RLS policies scope saved_searches to authenticated user
-
-### 5.4 Data Import Pipeline
-
-```
-Trilliant Oria (DuckDB + 81GB Parquet)
-  |
-  v
-import-trilliant.ts (TypeScript, runs locally)
-  - Step 1: hospitals -> providers (geocoded via zipcodes package)
-  - Step 2: standard_charges -> charges (filtered to 1,010 codes, outpatient only)
-  - State-by-state processing, 1000-row batches
-  - DuckDB memory limits: 4GB RAM, 2 threads
-  |
-  v
-Supabase (Postgres)
-  - ~5,419 providers
-  - ~13.1M charges (~3.9GB)
-```
+> Full architecture details (search flow, auth flow, directory structure, client patterns, import pipeline): see `CLAUDE.md`.
 
 ---
 
@@ -297,11 +183,11 @@ Supabase (Postgres)
 
 ### 6.1 National from Day One
 
-The original prototype targeted NYC only (30-50 hospitals, 20-30 codes). The current architecture supports all 5,200+ hospitals nationally with 1,010 codes. This is a strategic decision: national coverage enables health tourism use cases and broader market appeal.
+The original prototype targeted NYC only (30-50 hospitals, 20-30 codes). The current architecture supports all 5,400+ hospitals nationally with 1,002 codes. This is a strategic decision: national coverage enables health tourism use cases and broader market appeal.
 
-### 6.2 Outpatient Only for MVP
+### 6.2 Code List Defines Shoppability, Not Setting
 
-Inpatient charges (MS-DRG) are filtered out during import. Inpatient pricing is complex (multi-day stays, variable services) and less "shoppable." Outpatient procedures are what consumers can meaningfully comparison-shop.
+The curated code list (1,002 codes) is the quality gate for what's shoppable — not the inpatient/outpatient setting. All settings are imported. This means shoppable procedures that happen to be inpatient (e.g., C-sections, hernia repairs) are included with their pricing. Inpatient-only codes that aren't consumer-shoppable (hospital rounding visits, discharge management) were removed from the code list itself. The guided search / AI intake determines the clinical context of a query and surfaces the appropriate setting's pricing.
 
 ### 6.3 Aggregated Payer Stats vs. Plan-Level Pricing
 
@@ -315,9 +201,9 @@ Rather than filtering to only "bundled" charges, the MVP shows all available pri
 
 If Claude's translated billing code returns zero results from the database, the system falls back to fuzzy text matching on `charges.description`. This prevents dead-end searches and catches cases where hospitals use non-standard codes.
 
-### 6.6 Zip-Based Geocoding
+### 6.6 Hybrid Geocoding
 
-Providers are geocoded using the `zipcodes` npm package (zip-centroid lat/lng, ~5 mile accuracy) rather than Google Maps Geocoding API. This is free, instant, requires no API key, and is accurate enough for "hospitals near me" use cases.
+Providers are initially geocoded using the `zipcodes` npm package (zip-centroid lat/lng, ~5 mile accuracy) during import. A remediation pipeline then corrects providers with missing or garbage addresses using regex extraction, city/state lookup, and Google Maps Geocoding API as a final tier. Result: 99.8% of providers geocoded (5,409 of 5,419), with 10 unfixable due to garbage source data.
 
 ---
 
@@ -327,7 +213,7 @@ Providers are geocoded using the `zipcodes` npm package (zip-centroid lat/lng, ~
 
 - **Data**: Trilliant Oria hospital MRFs
 - **Users see**: Cash price, gross charge, avg/min/max negotiated rates
-- **Coverage**: 5,200+ hospitals, 1,010 procedure codes, national
+- **Coverage**: 5,400+ hospitals, 1,002 procedure codes, national
 - **Storage**: ~5-8 GB on Supabase Pro ($25/mo)
 - **Target users**: Uninsured, underinsured, high-deductible plan holders
 
