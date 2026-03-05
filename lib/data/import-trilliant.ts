@@ -49,6 +49,8 @@ const PROGRESS_FILE_PATH = resolve(__dirname, "import-progress.json");
 
 interface StateProgress {
   rows: number;
+  expected: number;
+  skipped: number;
   completedAt: string;
 }
 
@@ -301,10 +303,17 @@ function loadProgress(): ProgressData {
   return { trilliant_oria: {} };
 }
 
-function saveStateProgress(state: string, rows: number): void {
+function saveStateProgress(
+  state: string,
+  rows: number,
+  expected: number = 0,
+  skipped: number = 0
+): void {
   const progress = loadProgress();
   progress.trilliant_oria[state] = {
     rows,
+    expected,
+    skipped,
     completedAt: new Date().toISOString(),
   };
   writeFileSync(PROGRESS_FILE_PATH, JSON.stringify(progress, null, 2), "utf8");
@@ -755,6 +764,13 @@ async function importCharges(
       );
     }
 
+    // Pre-import: get expected row count from DuckDB for reconciliation
+    const expectedRes = (await db.all(
+      `SELECT COUNT(*) as cnt FROM standard_charges
+       WHERE hospital_state = '${state}' AND ${codeFilter}`
+    )) as unknown as { cnt: number }[];
+    const expectedCount = Number(expectedRes[0].cnt);
+
     let stateInserted = 0;
     let stateSkipped = 0;
     let consecutiveFailures = 0;
@@ -880,14 +896,27 @@ async function importCharges(
     totalSkipped += stateSkipped;
     const stateDuration = ((Date.now() - stateStart) / 1000).toFixed(1);
     const heapMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+    const processedCount = stateInserted + stateSkipped;
     console.log(
       `  ${state}: ${stateInserted.toLocaleString()} inserted, ${stateSkipped} skipped ` +
         `(${stateDuration}s) — heap: ${heapMB}MB — running total: ${totalInserted.toLocaleString()}`
     );
 
+    // Reconciliation: compare processed rows against DuckDB expected count
+    if (processedCount !== expectedCount) {
+      console.warn(
+        `  ${state}: RECONCILIATION MISMATCH — expected ${expectedCount.toLocaleString()} rows from DuckDB, ` +
+          `processed ${processedCount.toLocaleString()} (${stateInserted.toLocaleString()} inserted + ${stateSkipped} skipped)`
+      );
+    } else {
+      console.log(
+        `  ${state}: reconciliation OK — ${processedCount.toLocaleString()} rows match DuckDB expected count`
+      );
+    }
+
     // Record successful completion (skip if circuit breaker tripped or limit/test mode)
     if (!circuitBreakerTriggered && config.limit === 0 && stateInserted > 0) {
-      saveStateProgress(state, stateInserted);
+      saveStateProgress(state, stateInserted, expectedCount, stateSkipped);
     }
 
     // Respect --limit across all states
