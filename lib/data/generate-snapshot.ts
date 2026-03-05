@@ -192,7 +192,6 @@ async function main() {
      FROM standard_charges sc
      JOIN hospitals h ON sc.hospital_id = h.hospital_id
      WHERE (sc.cpt IN (${codeList}) OR sc.hcpcs IN (${codeList}))
-       AND (sc.setting IS NULL OR TRIM(LOWER(sc.setting)) != 'inpatient')
        AND h.status = 'completed'
      GROUP BY h.hospital_state
      ORDER BY h.hospital_state`
@@ -333,28 +332,7 @@ async function main() {
 
   const gap = totalDuckDbFilteredCharges - totalSupabaseCharges;
 
-  // Setting breakdown — normalized (TRIM + LOWER applied in query)
-  // (moved here so outpatientOtherCodes / inpatientCount are available for Executive Summary)
-  const inpatientRow = settingRows.find((r) => r.setting === "inpatient");
-  const outpatientRow = settingRows.find((r) => r.setting === "outpatient");
-  const bothRow = settingRows.find((r) => r.setting === "both");
-  const nullSettingRow = settingRows.find((r) => r.setting === "null");
-  const otherSettingRows = settingRows.filter(
-    (r) =>
-      !["inpatient", "outpatient", "both", "null"].includes(r.setting ?? "")
-  );
-
-  const inpatientCount = Number(inpatientRow?.cnt ?? 0);
-  const outpatientCount = Number(outpatientRow?.cnt ?? 0);
-  const bothCount = Number(bothRow?.cnt ?? 0);
-  const nullSettingCount = Number(nullSettingRow?.cnt ?? 0);
-  const otherSettingCount = otherSettingRows.reduce(
-    (s, r) => s + Number(r.cnt),
-    0
-  );
-  const notInpatientTotal =
-    outpatientCount + bothCount + nullSettingCount + otherSettingCount;
-  const outpatientOtherCodes = notInpatientTotal - totalDuckDbFilteredCharges;
+  const remainingCodes = totalStdCharges - totalDuckDbFilteredCharges;
 
   // Executive Summary pre-computations
   const supabasePct =
@@ -453,10 +431,7 @@ async function main() {
     `| 1-5: Current (${codes.length.toLocaleString()} curated codes) | ${fmtNum(totalDuckDbFilteredCharges)} | ✅ ${supabasePct}% live |`
   );
   lines.push(
-    `| 6: All remaining codes | +${fmtNum(outpatientOtherCodes)} | 📋 Planned |`
-  );
-  lines.push(
-    `| 7: Inpatient pricing | +${fmtNum(inpatientCount)} | 📋 Planned |`
+    `| 6: All remaining codes (all settings) | +${fmtNum(remainingCodes)} | 📋 Planned |`
   );
   lines.push(
     `| 8: Payer-specific rates | +${fmtNum(totalRawCharges)} | 🔮 Future infra |`
@@ -726,13 +701,9 @@ async function main() {
     totalStdCharges > 0
       ? ((totalDuckDbFilteredCharges / totalStdCharges) * 100).toFixed(1)
       : "?";
-  const pctOutpatientOther =
+  const pctRemaining =
     totalStdCharges > 0
-      ? ((outpatientOtherCodes / totalStdCharges) * 100).toFixed(1)
-      : "?";
-  const pctInpatient =
-    totalStdCharges > 0
-      ? ((inpatientCount / totalStdCharges) * 100).toFixed(1)
+      ? ((remainingCodes / totalStdCharges) * 100).toFixed(1)
       : "?";
 
   lines.push(`### standard_charges Setting Breakdown (Normalized)`);
@@ -753,7 +724,7 @@ async function main() {
         ? ((Number(row.cnt) / totalStdCharges) * 100).toFixed(1)
         : "?";
     let behavior = "";
-    if (row.setting === "inpatient") behavior = "❌ Excluded by import filter";
+    if (row.setting === "inpatient") behavior = "✅ Included (code list is the filter, not setting)";
     else if (row.setting === "outpatient") behavior = "✅ Included";
     else if (row.setting === "both")
       behavior = "✅ Included (can be done outpatient)";
@@ -809,22 +780,10 @@ async function main() {
     `│  Phase 6 — All remaining codes                                  │`
   );
   lines.push(
-    `│  ${outpatientOtherCodes.toLocaleString().padStart(14)} rows   (${pctOutpatientOther.padStart(5)}% of total)                    │`
+    `│  ${remainingCodes.toLocaleString().padStart(14)} rows   (${pctRemaining.padStart(5)}% of total)                    │`
   );
   lines.push(
-    `│  All codes NOT in our ${codes.length.toLocaleString()} curated set                        │`
-  );
-  lines.push(
-    `│                                                                  │`
-  );
-  lines.push(
-    `│  Phase 7 — Inpatient pricing (MS-DRG codes)                     │`
-  );
-  lines.push(
-    `│  ${inpatientCount.toLocaleString().padStart(14)} rows   (${pctInpatient.padStart(5)}% of total)                    │`
-  );
-  lines.push(
-    `│  Hospital admission-level pricing (not shoppable)               │`
+    `│  All codes NOT in our ${codes.length.toLocaleString()} curated set (all settings)          │`
   );
   lines.push(
     `└──────────────────────────────────────────────────────────────────┘`
@@ -865,10 +824,7 @@ async function main() {
     `| Phase 1-5 (current) | ${fmtNum(totalDuckDbFilteredCharges)} | ~2-3 GB | ✅ Supabase Pro |`
   );
   lines.push(
-    `| + Phase 6 (all codes) | ${fmtNum(outpatientOtherCodes + totalDuckDbFilteredCharges)} | ~40-50 GB | ⚠ Supabase scales, cost climbs |`
-  );
-  lines.push(
-    `| + Phase 7 (+ inpatient) | ${fmtNum(totalStdCharges)} | ~60-70 GB | ⚠ Same order of magnitude |`
+    `| + Phase 6 (all codes, all settings) | ${fmtNum(totalStdCharges)} | ~60-70 GB | ⚠ Supabase scales, cost climbs |`
   );
   lines.push(
     `| + Phase 8 (+ payer detail) | ${fmtNum(totalRawCharges)} | ~1-2 TB | 🔴 Needs dedicated infra or data warehouse |`
@@ -879,38 +835,6 @@ async function main() {
     `_Phase 8 (payer detail) is a fundamentally different infrastructure problem — likely needs MotherDuck, BigQuery, or a dedicated analytics DB rather than Supabase._`
   );
   lines.push(``);
-  lines.push(`### ⚠ Data Quality Finding: Import Filter Gap`);
-  lines.push(``);
-  lines.push(
-    `The import filter in \`import-trilliant.ts\` uses \`LOWER(setting) != 'inpatient'\` to exclude`
-  );
-  lines.push(
-    `inpatient rows. However, **LOWER() does not trim whitespace**. Trilliant's data contains`
-  );
-  lines.push(
-    `setting values like \`"inpatient "\` (trailing space) and \`" inpatient "\` (leading + trailing)`
-  );
-  lines.push(`that are NOT caught by this filter.`);
-  lines.push(``);
-  lines.push(`\`\`\``);
-  lines.push(
-    `LOWER('inpatient ')  = 'inpatient '  ← NOT equal to 'inpatient' → incorrectly imported`
-  );
-  lines.push(
-    `LOWER(' inpatient ') = ' inpatient ' ← NOT equal to 'inpatient' → incorrectly imported`
-  );
-  lines.push(
-    `LOWER('INPATIENT')   = 'inpatient'   ← equal to 'inpatient'    → correctly excluded`
-  );
-  lines.push(`\`\`\``);
-  lines.push(``);
-  lines.push(
-    `**Fix**: Change the filter to \`TRIM(LOWER(setting)) != 'inpatient'\` in import-trilliant.ts.`
-  );
-  lines.push(
-    `**Impact**: The current Supabase dataset may include a small number of inpatient charges.`
-  );
-  lines.push(`This is tracked in a future cleanup task.`);
 
   // ---------------------------------------------------------------------------
   // Write output
