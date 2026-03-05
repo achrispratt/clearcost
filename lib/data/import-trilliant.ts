@@ -7,14 +7,14 @@
  *
  * Prerequisites:
  *   1. Download the Oria DuckDB + Parquet archive from https://oria-data.trillianthealth.com/docs
- *   2. Extract to lib/data/ (should produce mrf_lake.duckdb + parquet/ directory)
+ *   2. Extract to lib/data/ (should produce mrf_lake/ directory with mrf_lake.duckdb + parquet/)
  *   3. Ensure final-codes.json exists in lib/data/ (1,010 curated codes)
  *
  * Run with:
  *   npx tsx --env-file=.env.local lib/data/import-trilliant.ts
  *
  * Options:
- *   --db-path <path>      Path to Oria DuckDB file (default: lib/data/mrf_lake.duckdb)
+ *   --db-path <path>      Path to Oria DuckDB file (default: lib/data/mrf_lake/mrf_lake.duckdb)
  *   --skip-providers       Skip provider import
  *   --skip-charges         Skip charges import
  *   --batch-size <n>       Postgres insert batch size (default: 500)
@@ -29,7 +29,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "duckdb-async";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { Pool as PgPool } from "pg";
 import { parseLaterality } from "../cpt/parse-laterality";
 
@@ -43,8 +43,18 @@ import zipcodes from "zipcodes";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DEFAULT_DB_PATH = resolve(__dirname, "mrf_lake.duckdb");
+const DEFAULT_DB_PATH = resolve(__dirname, "mrf_lake", "mrf_lake.duckdb");
 const DEFAULT_BATCH_SIZE = 500;
+const PROGRESS_FILE_PATH = resolve(__dirname, "import-progress.json");
+
+interface StateProgress {
+  rows: number;
+  completedAt: string;
+}
+
+interface ProgressData {
+  trilliant_oria: Record<string, StateProgress>;
+}
 
 // Column order for multi-row INSERT INTO charges
 const CHARGE_COLUMNS = [
@@ -271,6 +281,40 @@ function geocodeByZip(
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Import progress tracking
+// ---------------------------------------------------------------------------
+
+function loadProgress(): ProgressData {
+  try {
+    if (existsSync(PROGRESS_FILE_PATH)) {
+      const raw = readFileSync(PROGRESS_FILE_PATH, "utf8");
+      return JSON.parse(raw) as ProgressData;
+    }
+  } catch (err) {
+    console.warn(
+      `  Warning: could not read progress file: ${err instanceof Error ? err.message : err}`
+    );
+  }
+  return { trilliant_oria: {} };
+}
+
+function saveStateProgress(state: string, rows: number): void {
+  const progress = loadProgress();
+  progress.trilliant_oria[state] = {
+    rows,
+    completedAt: new Date().toISOString(),
+  };
+  writeFileSync(PROGRESS_FILE_PATH, JSON.stringify(progress, null, 2), "utf8");
+}
+
+function deleteProgressFile(): void {
+  if (existsSync(PROGRESS_FILE_PATH)) {
+    unlinkSync(PROGRESS_FILE_PATH);
+    console.log("  Deleted progress file");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -508,7 +552,7 @@ async function importProviders(
       name: hospital.hospital_name,
       address: hospital.hospital_address || null,
       city: (hospital.hospital_city || "").trim() || null,
-      state: hospital.hospital_state || null,
+      state: hospital.hospital_state?.trim().toUpperCase() || null,
       zip: geo?.zip || null,
       lat: geo?.lat || null,
       lng: geo?.lng || null,
@@ -606,23 +650,54 @@ async function importCharges(
   }
   console.log(`  Processing ${states.length} states: ${states.join(", ")}`);
 
-  // Auto-resume: check which states already have data in the DB
+  // Auto-resume: two-tier check
+  // 1. Progress file (authoritative for states completed after this feature was added)
+  // 2. Supabase row count (fallback for states imported before progress tracking)
+  // Explicit --state flag bypasses progress check (user said "import this state")
   let completedStates = new Set<string>();
-  if (!config.fresh) {
-    const existingRes = await pgPool.query(`
-      SELECT p.state, COUNT(*) as cnt
-      FROM charges c JOIN providers p ON c.provider_id = p.id
-      WHERE c.source = 'trilliant_oria'
-      GROUP BY p.state
-    `);
-    for (const row of existingRes.rows) {
-      if (row.state && parseInt(row.cnt, 10) > 0) {
-        completedStates.add(row.state);
+  if (!config.fresh && !config.state) {
+    // Tier 1: Check progress file
+    const progress = loadProgress();
+    const progressStates = Object.keys(progress.trilliant_oria);
+    for (const st of progressStates) {
+      completedStates.add(st);
+    }
+    if (progressStates.length > 0) {
+      console.log(
+        `  Progress file: ${progressStates.length} states completed: ${progressStates.sort().join(", ")}`
+      );
+    }
+
+    // Tier 2: Check Supabase for states not in progress file (backward compat)
+    const remainingStates = states.filter((s) => !completedStates.has(s));
+    if (remainingStates.length > 0) {
+      const existingRes = await pgPool.query(`
+        SELECT p.state, COUNT(*) as cnt
+        FROM charges c JOIN providers p ON c.provider_id = p.id
+        WHERE c.source = 'trilliant_oria'
+        GROUP BY p.state
+      `);
+      let dbResumeCount = 0;
+      for (const row of existingRes.rows) {
+        if (
+          row.state &&
+          parseInt(row.cnt, 10) > 0 &&
+          !completedStates.has(row.state)
+        ) {
+          completedStates.add(row.state);
+          dbResumeCount++;
+        }
+      }
+      if (dbResumeCount > 0) {
+        console.log(
+          `  DB fallback: ${dbResumeCount} additional states have data (pre-progress-tracking imports)`
+        );
       }
     }
+
     if (completedStates.size > 0) {
       console.log(
-        `  Auto-resume: ${completedStates.size} states already have data: ${[...completedStates].sort().join(", ")}`
+        `  Auto-resume: ${completedStates.size} total states skipped: ${[...completedStates].sort().join(", ")}`
       );
     }
   }
@@ -636,6 +711,7 @@ async function importCharges(
     await pgPool.query("SELECT 1");
     console.log("  Connection healthy after TRUNCATE");
     completedStates = new Set(); // clear after truncate
+    deleteProgressFile();
   }
 
   const CIRCUIT_BREAKER_THRESHOLD = 10;
@@ -672,6 +748,7 @@ async function importCharges(
     let stateInserted = 0;
     let stateSkipped = 0;
     let consecutiveFailures = 0;
+    let circuitBreakerTriggered = false;
     let batchNum = 0;
 
     const stream = db.stream(
@@ -755,6 +832,7 @@ async function importCharges(
           console.error(
             `  ${state}: CIRCUIT BREAKER — ${consecutiveFailures} consecutive failures, skipping rest of state`
           );
+          circuitBreakerTriggered = true;
           break;
         }
 
@@ -796,6 +874,11 @@ async function importCharges(
       `  ${state}: ${stateInserted.toLocaleString()} inserted, ${stateSkipped} skipped ` +
         `(${stateDuration}s) — heap: ${heapMB}MB — running total: ${totalInserted.toLocaleString()}`
     );
+
+    // Record successful completion (skip if circuit breaker tripped or limit/test mode)
+    if (!circuitBreakerTriggered && config.limit === 0 && stateInserted > 0) {
+      saveStateProgress(state, stateInserted);
+    }
 
     // Respect --limit across all states
     if (config.limit > 0 && totalInserted >= config.limit) {
@@ -906,12 +989,11 @@ async function main() {
   }
 
   // Verify DuckDB file exists
-  const { existsSync } = await import("fs");
   if (!existsSync(config.dbPath)) {
     console.error(
       `\nDuckDB file not found at: ${config.dbPath}\n\n` +
         "Download the Oria data from https://oria-data.trillianthealth.com/docs\n" +
-        "Extract to lib/data/ (should produce mrf_lake.duckdb + parquet/ directory)\n"
+        "Extract to lib/data/ (should produce mrf_lake/ directory with mrf_lake.duckdb + parquet/)\n"
     );
     process.exit(1);
   }
