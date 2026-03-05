@@ -50,6 +50,7 @@ lib/data/mrf_lake/
 lib/data/*.duckdb
 lib/data/*.zip
 lib/data/*.log
+lib/data/import-progress.json
 
 # IDE
 .vscode/
