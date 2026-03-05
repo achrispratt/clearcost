@@ -20,7 +20,7 @@ export interface PayerConfig {
  * Order: approximate market share (largest first).
  */
 export const TOP_PAYERS: Record<string, PayerConfig> = {
-  "UnitedHealthcare": {
+  UnitedHealthcare: {
     displayName: "UnitedHealthcare",
     aliases: [
       "unitedhealth",
@@ -41,15 +41,15 @@ export const TOP_PAYERS: Record<string, PayerConfig> = {
       "anthem bcbs",
     ],
   },
-  "Aetna": {
+  Aetna: {
     displayName: "Aetna (CVS Health)",
     aliases: ["aetna", "cvs health", "aetna health"],
   },
-  "Cigna": {
+  Cigna: {
     displayName: "Cigna Healthcare",
     aliases: ["cigna", "cigna healthcare", "cigna health", "evernorth"],
   },
-  "Humana": {
+  Humana: {
     displayName: "Humana",
     aliases: ["humana"],
   },
@@ -68,7 +68,7 @@ export const TOP_PAYERS: Record<string, PayerConfig> = {
     displayName: "Kaiser Permanente",
     aliases: ["kaiser", "kaiser permanente", "kaiser foundation"],
   },
-  "Centene": {
+  Centene: {
     displayName: "Centene / Ambetter",
     aliases: ["centene", "ambetter", "wellcare", "centene corporation"],
   },
@@ -76,7 +76,7 @@ export const TOP_PAYERS: Record<string, PayerConfig> = {
     displayName: "Molina Healthcare",
     aliases: ["molina", "molina healthcare"],
   },
-  "Medicare": {
+  Medicare: {
     displayName: "Medicare",
     aliases: ["medicare", "cms", "centers for medicare"],
   },

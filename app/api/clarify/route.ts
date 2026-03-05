@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assessQuery, clarifyQuery, translateQueryToCPT } from "@/lib/cpt/translate";
+import {
+  assessQuery,
+  clarifyQuery,
+  translateQueryToCPT,
+} from "@/lib/cpt/translate";
 import type { ClarificationTurn } from "@/types";
 
 /**
@@ -25,10 +29,7 @@ export async function POST(request: NextRequest) {
     const queryText = typeof query === "string" ? query : "";
 
     if (!queryText) {
-      return NextResponse.json(
-        { error: "Query is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
     try {
@@ -44,7 +45,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     } catch (parseError) {
       // If guided search fails (malformed response, etc.), fall back to single-shot
-      console.error("Guided search error, falling back to single-shot:", parseError);
+      console.error(
+        "Guided search error, falling back to single-shot:",
+        parseError
+      );
       const fallback = await translateQueryToCPT(queryText);
       return NextResponse.json({
         ...fallback,

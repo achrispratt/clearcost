@@ -35,6 +35,7 @@ Radiology & E/M codes tend to be broader    Surgical codes tend to be very speci
 ```
 
 **What this means for ClearCost:**
+
 - **Broad imaging codes** (like 73721): Hospitals price different body sites differently under the same code. Multiple rows per provider+code represent different body sites — this is expected, not a data quality issue.
 - **Specific surgical codes** (like 27447): Multiple rows per provider+code more likely indicate different billing classes (facility vs professional) or different payer-negotiated rates, not different body sites.
 - **E/M codes** (99xxx): Grouped by visit type and complexity, not anatomy. One code covers any complaint at that complexity level.
@@ -80,6 +81,7 @@ Of the 1,002 curated codes, ~46 are HCPCS Level II (alpha-prefixed). The remaini
 When searching for CPT codes, the RPC checks BOTH columns. This cross-column search is essential — without it, we'd miss ~1,800 hospitals' data entirely.
 
 **Code paths involved:**
+
 - Import: `lib/data/import-trilliant.ts` (filters `WHERE cpt IN (...) OR hcpcs IN (...)`)
 - Search RPC: `supabase/schema.sql` (cross-column WHERE clause)
 - Migration: `scripts/migrate-cross-column-search.ts`
@@ -98,11 +100,11 @@ Modifiers are suffixes that alter how a billing code is interpreted. Stored in t
 
 **Laterality modifiers (fully implemented):**
 
-| Modifier | Meaning   | Example                       |
-| -------- | --------- | ----------------------------- |
-| LT       | Left      | 73721-LT = left knee MRI     |
-| RT       | Right     | 73721-RT = right knee MRI    |
-| 50       | Bilateral | 73721-50 = both knees MRI    |
+| Modifier | Meaning   | Example                   |
+| -------- | --------- | ------------------------- |
+| LT       | Left      | 73721-LT = left knee MRI  |
+| RT       | Right     | 73721-RT = right knee MRI |
+| 50       | Bilateral | 73721-50 = both knees MRI |
 
 CMS rules: LT and RT are mutually exclusive with 50 (never combined). CMS rejects claims missing laterality modifiers when applicable — they're treated as duplicate claims without them. Both knees = either two line items with LT and RT, OR one item with modifier 50.
 
@@ -150,13 +152,13 @@ Don't assume a 1:1 mapping. A hospital that only bills facility fees (because ph
 
 **Other common modifiers** (not parsed, but present in data):
 
-| Modifier | Meaning                              | Pricing relevance                          |
-| -------- | ------------------------------------ | ------------------------------------------ |
-| 59       | Distinct procedural service          | Affects whether both charges get paid       |
+| Modifier    | Meaning                          | Pricing relevance                          |
+| ----------- | -------------------------------- | ------------------------------------------ |
+| 59          | Distinct procedural service      | Affects whether both charges get paid      |
 | XE/XS/XP/XU | Specific versions of 59          | CMS prefers these since 2015               |
-| 76       | Repeat procedure, same physician     | Same procedure again same day              |
-| 51       | Multiple procedures                  | Payment may be reduced for 2nd+ procedures |
-| 25       | Significant separate E&M             | Office visit + procedure same day          |
+| 76          | Repeat procedure, same physician | Same procedure again same day              |
+| 51          | Multiple procedures              | Payment may be reduced for 2nd+ procedures |
+| 25          | Significant separate E&M         | Office visit + procedure same day          |
 
 Only laterality modifiers are extracted into a dedicated column.
 
@@ -170,24 +172,24 @@ Each row in the `charges` table is one line item from a hospital's MRF: a single
 
 Key columns:
 
-| Column               | Type    | What it means                                          |
-| -------------------- | ------- | ------------------------------------------------------ |
-| `cpt`                | text    | CPT code (may be null if hospital used HCPCS column)   |
-| `hcpcs`              | text    | HCPCS code (may contain CPT-range codes)               |
-| `ms_drg`             | text    | MS-DRG code (unused in current data)                   |
-| `description`        | text    | Hospital's own description of the service              |
-| `billing_class`      | text    | "facility", "professional", "Both", or null            |
-| `setting`            | text    | "inpatient", "outpatient", "both" (current data is outpatient) |
-| `laterality`         | text    | "left", "right", "bilateral", or null (parsed)         |
-| `modifiers`          | text    | Raw modifier codes, comma-separated                    |
-| `cash_price`         | numeric | Self-pay/uninsured price                               |
-| `gross_charge`       | numeric | Hospital's list/"sticker" price (nobody pays this)     |
-| `min_price`          | numeric | De-identified minimum rate                             |
-| `max_price`          | numeric | De-identified maximum rate                             |
-| `avg_negotiated_rate`| numeric | Average of what insurers negotiated (pre-aggregated)   |
-| `min_negotiated_rate`| numeric | Lowest insurer rate (anonymized)                       |
-| `max_negotiated_rate`| numeric | Highest insurer rate (anonymized)                      |
-| `payer_count`        | integer | Number of payers in the aggregated stats               |
+| Column                | Type    | What it means                                                  |
+| --------------------- | ------- | -------------------------------------------------------------- |
+| `cpt`                 | text    | CPT code (may be null if hospital used HCPCS column)           |
+| `hcpcs`               | text    | HCPCS code (may contain CPT-range codes)                       |
+| `ms_drg`              | text    | MS-DRG code (unused in current data)                           |
+| `description`         | text    | Hospital's own description of the service                      |
+| `billing_class`       | text    | "facility", "professional", "Both", or null                    |
+| `setting`             | text    | "inpatient", "outpatient", "both" (current data is outpatient) |
+| `laterality`          | text    | "left", "right", "bilateral", or null (parsed)                 |
+| `modifiers`           | text    | Raw modifier codes, comma-separated                            |
+| `cash_price`          | numeric | Self-pay/uninsured price                                       |
+| `gross_charge`        | numeric | Hospital's list/"sticker" price (nobody pays this)             |
+| `min_price`           | numeric | De-identified minimum rate                                     |
+| `max_price`           | numeric | De-identified maximum rate                                     |
+| `avg_negotiated_rate` | numeric | Average of what insurers negotiated (pre-aggregated)           |
+| `min_negotiated_rate` | numeric | Lowest insurer rate (anonymized)                               |
+| `max_negotiated_rate` | numeric | Highest insurer rate (anonymized)                              |
+| `payer_count`         | integer | Number of payers in the aggregated stats                       |
 
 ### 2.2 The `billing_class` Field
 
@@ -270,6 +272,7 @@ Patient gets MRI at Hospital
 **What hospital MRFs contain:** Hospitals MUST include charges for employed physicians (professional charges). They do NOT have to include charges for independent physicians. This means MRF data often shows only the facility component.
 
 **Place of service matters for price comparison:**
+
 - **Hospital outpatient** = usually splits facility + professional → appears more expensive per-row
 - **Independent imaging center** = usually bills globally (one price, both components) → appears cheaper
 - This is partly a real price difference AND partly an apples-to-oranges comparison
@@ -287,13 +290,13 @@ ClearCost shows ALL available pricing with contextual callouts:
 
 CMS requires five categories of pricing. Our columns map as follows:
 
-| CMS Requirement                     | Our Column              | Mapping      |
-| ----------------------------------- | ----------------------- | ------------ |
-| Gross charge (list price)           | `gross_charge`          | Direct match |
-| Discounted cash price               | `cash_price`            | Direct match |
-| Payer-specific negotiated charge    | `avg_negotiated_rate`   | **Aggregated** — CMS requires per-payer/per-plan rates; we store the pre-aggregated average from Trilliant |
-| De-identified minimum negotiated    | `min_negotiated_rate`   | Direct match |
-| De-identified maximum negotiated    | `max_negotiated_rate`   | Direct match |
+| CMS Requirement                  | Our Column            | Mapping                                                                                                    |
+| -------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Gross charge (list price)        | `gross_charge`        | Direct match                                                                                               |
+| Discounted cash price            | `cash_price`          | Direct match                                                                                               |
+| Payer-specific negotiated charge | `avg_negotiated_rate` | **Aggregated** — CMS requires per-payer/per-plan rates; we store the pre-aggregated average from Trilliant |
+| De-identified minimum negotiated | `min_negotiated_rate` | Direct match                                                                                               |
+| De-identified maximum negotiated | `max_negotiated_rate` | Direct match                                                                                               |
 
 **Label `avg_negotiated_rate` carefully in the UI** — it's a derived average, not a single payer's rate.
 
@@ -301,12 +304,12 @@ CMS requires five categories of pricing. Our columns map as follows:
 
 Not every hospital publishes every price type (from `docs/data-funnel-and-price-gaps.md`):
 
-| Field               | Coverage | Notes                                         |
-| ------------------- | -------- | --------------------------------------------- |
-| `cash_price`        | ~48%     | Self-pay rate — primary display target         |
-| `gross_charge`      | ~48%     | Correlates almost identically with cash_price  |
-| `avg_negotiated_rate`| ~81%   | Best overall coverage                          |
-| `description`       | ~99%+    | Almost always present                          |
+| Field                 | Coverage | Notes                                         |
+| --------------------- | -------- | --------------------------------------------- |
+| `cash_price`          | ~48%     | Self-pay rate — primary display target        |
+| `gross_charge`        | ~48%     | Correlates almost identically with cash_price |
+| `avg_negotiated_rate` | ~81%     | Best overall coverage                         |
+| `description`         | ~99%+    | Almost always present                         |
 
 When `cash_price` is null, `gross_charge` is also null ~99% of the time. The gap is at the hospital/MRF level (entire hospitals either publish cash prices or don't), not per-procedure.
 
@@ -332,11 +335,11 @@ Example: "knee MRI" → CPT 73721 (covers all lower extremity joints) → guided
 
 Three imaging code families are hardcoded in `lib/cpt/translate.ts` with without/with/with-and-without contrast variants:
 
-| Family             | Without | With  | With + Without | Trigger regex                  |
-| ------------------ | ------- | ----- | -------------- | ------------------------------ |
-| Lower extremity MRI| 73721   | 73722 | 73723          | `mri` + knee/hip/ankle/leg/... |
-| Brain MRI          | 70551   | 70552 | 70553          | `mri` + brain/head/cranial/... |
-| Head CT            | 70450   | 70460 | 70470          | `ct` + head/brain/cranial/...  |
+| Family              | Without | With  | With + Without | Trigger regex                  |
+| ------------------- | ------- | ----- | -------------- | ------------------------------ |
+| Lower extremity MRI | 73721   | 73722 | 73723          | `mri` + knee/hip/ankle/leg/... |
+| Brain MRI           | 70551   | 70552 | 70553          | `mri` + brain/head/cranial/... |
+| Head CT             | 70450   | 70460 | 70470          | `ct` + head/brain/cranial/...  |
 
 Detection: `detectContrastPreference()` uses regex to find contrast keywords in the user query. Guardrail: `applyContrastGuardrails()` ensures the correct variant is returned even if Claude picks the wrong one.
 
@@ -363,6 +366,7 @@ The pricing plan system (`lib/cpt/pricing-plan.ts`) determines how results are s
 ```
 
 Query type is inferred via regex patterns:
+
 - **code**: CPT number detected → `procedure_first`
 - **procedure**: Named procedure (e.g., "knee MRI") → `procedure_first`
 - **symptom**: Pain/symptom words → `encounter_first` (office or ED)
@@ -427,10 +431,10 @@ Comparing a facility-only MRI fee ($800) to a bundled MRI fee ($1,100) is mislea
 
 **RPC functions:**
 
-| Function                        | Purpose                                | Key behavior                               |
-| ------------------------------- | -------------------------------------- | ------------------------------------------ |
-| `search_charges_nearby()`       | Code-based search with PostGIS radius  | Cross-column CPT/HCPCS, optional laterality |
-| `search_charges_by_description()`| Full-text fallback on descriptions    | PostgreSQL `ts_rank()` scoring             |
+| Function                          | Purpose                               | Key behavior                                |
+| --------------------------------- | ------------------------------------- | ------------------------------------------- |
+| `search_charges_nearby()`         | Code-based search with PostGIS radius | Cross-column CPT/HCPCS, optional laterality |
+| `search_charges_by_description()` | Full-text fallback on descriptions    | PostgreSQL `ts_rank()` scoring              |
 
 **Key indexes on `charges`:** `cpt`, `hcpcs`, `ms_drg`, `(provider_id, cpt)`, `(cpt, provider_id)`, `(provider_id, hcpcs)`, GIN on description tsvector, laterality (partial where not null).
 
@@ -483,15 +487,15 @@ WebMD, Ada Health, and Buoy Health all go further toward diagnosis than ClearCos
 
 ### 7.4 Regulations That Apply to ClearCost
 
-| Regulation | Applies? | Impact |
-| ---------- | -------- | ------ |
-| FTC Section 5 (deceptive practices) | **Yes** | Don't claim prices are "accurate" or "guaranteed." Disclose source and limitations. |
-| FTC Health Breach Notification Rule | **Yes** (if storing user search data) | User search queries are "health information" under HBNR. Never share with ad platforms. GoodRx was fined $25M for this. |
-| Washington My Health My Data Act | **Yes** (if WA users) | Requires separate consumer health data privacy policy linked from homepage. Covers search queries tied to identifiable users. |
-| State AI disclosure laws (CA, CO, UT, TX) | **Yes** | Must disclose AI is used in guided search. "Powered by AI" badge + ToS disclosure. |
-| HIPAA | **No** | ClearCost is not a covered entity. MRF data has no patient information. |
-| FDA medical device regs | **No** | ClearCost is informational, not clinical decision support. |
-| State medical licensing (UPL) | **No** (if properly disclaimed) | Guided search is search refinement, not diagnosis. |
+| Regulation                                | Applies?                              | Impact                                                                                                                        |
+| ----------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| FTC Section 5 (deceptive practices)       | **Yes**                               | Don't claim prices are "accurate" or "guaranteed." Disclose source and limitations.                                           |
+| FTC Health Breach Notification Rule       | **Yes** (if storing user search data) | User search queries are "health information" under HBNR. Never share with ad platforms. GoodRx was fined $25M for this.       |
+| Washington My Health My Data Act          | **Yes** (if WA users)                 | Requires separate consumer health data privacy policy linked from homepage. Covers search queries tied to identifiable users. |
+| State AI disclosure laws (CA, CO, UT, TX) | **Yes**                               | Must disclose AI is used in guided search. "Powered by AI" badge + ToS disclosure.                                            |
+| HIPAA                                     | **No**                                | ClearCost is not a covered entity. MRF data has no patient information.                                                       |
+| FDA medical device regs                   | **No**                                | ClearCost is informational, not clinical decision support.                                                                    |
+| State medical licensing (UPL)             | **No** (if properly disclaimed)       | Guided search is search refinement, not diagnosis.                                                                            |
 
 ### 7.5 Required Disclaimers (Pre-Launch)
 
@@ -505,23 +509,23 @@ WebMD, Ada Health, and Buoy Health all go further toward diagnosis than ClearCos
 
 ## 8. Glossary
 
-| Term                   | Definition                                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------------------- |
-| **billing_class**      | What cost component a charge covers: facility fee, professional fee, or both. Optional CMS MRF field. |
-| **cash_price**         | Self-pay/uninsured rate published in hospital MRF (CMS: "discounted cash price")             |
-| **CMS-1500**           | Professional claim form used by physicians. Separate from UB-04 hospital claims.             |
-| **CPT**                | Current Procedural Terminology — AMA-copyrighted codes for outpatient procedures (= HCPCS Level I) |
-| **cross-column search**| Checking both `cpt` and `hcpcs` columns because CPT IS HCPCS Level I and hospitals file them inconsistently |
-| **global fee**         | A charge that bundles both facility and professional components (no 26/TC modifier)          |
-| **gross_charge**       | Hospital's undiscounted list price — nobody actually pays this (CMS: "gross charge")         |
-| **HBNR**               | FTC Health Breach Notification Rule — applies to non-HIPAA entities handling health-related data |
-| **HCPCS**              | Healthcare Common Procedure Coding System — Level I is CPT, Level II is alpha-prefixed (J, G, etc.) |
-| **laterality**         | Left, right, or bilateral — which side of the body. Modifiers: LT, RT, 50                   |
-| **modifier**           | Suffix on a billing code that changes its meaning (LT, RT, 50, 26, TC, 59, etc.)            |
-| **MRF**                | Machine-Readable File — the standardized price file hospitals must publish under 45 CFR Part 180 |
-| **MS-DRG**             | Medicare Severity Diagnosis Related Group — bundled inpatient pricing                        |
-| **negotiated rate**    | Price an insurer has agreed to pay a hospital for a service                                   |
-| **payer_count**        | Number of insurers included in the pre-aggregated negotiated rate stats                      |
-| **revenue code**       | Facility line-item code (e.g., OR time, pharmacy) — too generic for consumer pricing search  |
-| **setting**            | Inpatient vs outpatient — current ClearCost data is outpatient only                          |
-| **UB-04**              | Institutional claim form used by hospitals/facilities. Separate from CMS-1500 physician claims. |
+| Term                    | Definition                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **billing_class**       | What cost component a charge covers: facility fee, professional fee, or both. Optional CMS MRF field.       |
+| **cash_price**          | Self-pay/uninsured rate published in hospital MRF (CMS: "discounted cash price")                            |
+| **CMS-1500**            | Professional claim form used by physicians. Separate from UB-04 hospital claims.                            |
+| **CPT**                 | Current Procedural Terminology — AMA-copyrighted codes for outpatient procedures (= HCPCS Level I)          |
+| **cross-column search** | Checking both `cpt` and `hcpcs` columns because CPT IS HCPCS Level I and hospitals file them inconsistently |
+| **global fee**          | A charge that bundles both facility and professional components (no 26/TC modifier)                         |
+| **gross_charge**        | Hospital's undiscounted list price — nobody actually pays this (CMS: "gross charge")                        |
+| **HBNR**                | FTC Health Breach Notification Rule — applies to non-HIPAA entities handling health-related data            |
+| **HCPCS**               | Healthcare Common Procedure Coding System — Level I is CPT, Level II is alpha-prefixed (J, G, etc.)         |
+| **laterality**          | Left, right, or bilateral — which side of the body. Modifiers: LT, RT, 50                                   |
+| **modifier**            | Suffix on a billing code that changes its meaning (LT, RT, 50, 26, TC, 59, etc.)                            |
+| **MRF**                 | Machine-Readable File — the standardized price file hospitals must publish under 45 CFR Part 180            |
+| **MS-DRG**              | Medicare Severity Diagnosis Related Group — bundled inpatient pricing                                       |
+| **negotiated rate**     | Price an insurer has agreed to pay a hospital for a service                                                 |
+| **payer_count**         | Number of insurers included in the pre-aggregated negotiated rate stats                                     |
+| **revenue code**        | Facility line-item code (e.g., OR time, pharmacy) — too generic for consumer pricing search                 |
+| **setting**             | Inpatient vs outpatient — current ClearCost data is outpatient only                                         |
+| **UB-04**               | Institutional claim form used by hospitals/facilities. Separate from CMS-1500 physician claims.             |

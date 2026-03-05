@@ -118,7 +118,7 @@ export function ClarificationStep({
       </div>
 
       {/* Free text "Other" input */}
-      {(question.allowFreeText !== false) && (
+      {question.allowFreeText !== false && (
         <div className="mt-3">
           <textarea
             value={freeText}
@@ -152,7 +152,9 @@ export function ClarificationStep({
             className="px-5 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5"
             style={{
               borderColor: "var(--cc-border-strong)",
-              color: loading ? "var(--cc-text-tertiary)" : "var(--cc-text-secondary)",
+              color: loading
+                ? "var(--cc-text-tertiary)"
+                : "var(--cc-text-secondary)",
               background: "transparent",
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.5 : 1,
@@ -182,9 +184,7 @@ export function ClarificationStep({
                 ? "var(--cc-primary)"
                 : "var(--cc-border)",
             color:
-              hasSelection && !loading
-                ? "white"
-                : "var(--cc-text-tertiary)",
+              hasSelection && !loading ? "white" : "var(--cc-text-tertiary)",
             cursor: hasSelection && !loading ? "pointer" : "not-allowed",
           }}
         >

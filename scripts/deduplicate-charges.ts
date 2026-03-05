@@ -51,7 +51,9 @@ function parseArgs(): {
       state = args[i + 1].toUpperCase();
       i++;
     } else if (args[i] === "--skip-states" && args[i + 1]) {
-      skipStates.push(...args[i + 1].split(",").map((s) => s.trim().toUpperCase()));
+      skipStates.push(
+        ...args[i + 1].split(",").map((s) => s.trim().toUpperCase())
+      );
       i++;
     }
   }
@@ -140,9 +142,12 @@ async function main() {
   const config = parseArgs();
 
   console.log("=== ClearCost Charge Deduplication ===\n");
-  console.log(`  Mode: ${config.dryRun ? "DRY RUN (no data will be modified)" : "LIVE — duplicates will be deleted"}`);
+  console.log(
+    `  Mode: ${config.dryRun ? "DRY RUN (no data will be modified)" : "LIVE — duplicates will be deleted"}`
+  );
   if (config.state) console.log(`  State filter: ${config.state}`);
-  if (config.skipStates.length > 0) console.log(`  Skipping states: ${config.skipStates.join(", ")}`);
+  if (config.skipStates.length > 0)
+    console.log(`  Skipping states: ${config.skipStates.join(", ")}`);
   console.log();
 
   // Connect via Supabase pooler (port 6543)
@@ -168,10 +173,12 @@ async function main() {
   console.log("  Postgres pool connected\n");
 
   // Baseline total count
-  const { rows: [{ cnt: totalBefore }] } = await pgPool.query(
-    "SELECT COUNT(*)::int AS cnt FROM charges"
+  const {
+    rows: [{ cnt: totalBefore }],
+  } = await pgPool.query("SELECT COUNT(*)::int AS cnt FROM charges");
+  console.log(
+    `  Total charges before: ${Number(totalBefore).toLocaleString()}\n`
   );
-  console.log(`  Total charges before: ${Number(totalBefore).toLocaleString()}\n`);
 
   // Get state list
   let states: string[];
@@ -199,13 +206,17 @@ async function main() {
     try {
       await pgPool.query("SELECT 1");
     } catch {
-      console.warn(`  [${ts()}] ${state}: Postgres health check failed, waiting 10s...`);
+      console.warn(
+        `  [${ts()}] ${state}: Postgres health check failed, waiting 10s...`
+      );
       await new Promise((r) => setTimeout(r, 10000));
       try {
         await pgPool.query("SELECT 1");
         console.log(`  [${ts()}] ${state}: reconnected after retry`);
       } catch (retryErr) {
-        console.error(`  [${ts()}] ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`);
+        console.error(
+          `  [${ts()}] ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`
+        );
         continue;
       }
     }
@@ -217,12 +228,16 @@ async function main() {
       await client.query("SET statement_timeout = 0");
 
       // Count before
-      const { rows: [{ cnt: before }] } = await client.query(STATE_COUNT_SQL, [state]);
+      const {
+        rows: [{ cnt: before }],
+      } = await client.query(STATE_COUNT_SQL, [state]);
 
       let deleted: number;
       if (config.dryRun) {
         // Dry run: count what would be deleted
-        const { rows: [{ cnt }] } = await client.query(DEDUP_COUNT_SQL, [state]);
+        const {
+          rows: [{ cnt }],
+        } = await client.query(DEDUP_COUNT_SQL, [state]);
         deleted = cnt;
       } else {
         // Live: execute the DELETE
@@ -233,19 +248,31 @@ async function main() {
       const after = before - deleted;
       const elapsed = (Date.now() - stateStart) / 1000;
 
-      results.push({ state, before, after, deleted, elapsedSec: parseFloat(elapsed.toFixed(1)) });
+      results.push({
+        state,
+        before,
+        after,
+        deleted,
+        elapsedSec: parseFloat(elapsed.toFixed(1)),
+      });
       grandTotalDeleted += deleted;
 
       if (deleted > 0) {
-        console.log(`  [${ts()}] ${state}: ${before.toLocaleString()} → ${after.toLocaleString()} (${deleted.toLocaleString()} ${config.dryRun ? "would be" : ""} removed, ${elapsed.toFixed(1)}s)`);
+        console.log(
+          `  [${ts()}] ${state}: ${before.toLocaleString()} → ${after.toLocaleString()} (${deleted.toLocaleString()} ${config.dryRun ? "would be" : ""} removed, ${elapsed.toFixed(1)}s)`
+        );
       } else {
-        console.log(`  [${ts()}] ${state}: ${before.toLocaleString()} charges, clean (${elapsed.toFixed(1)}s)`);
+        console.log(
+          `  [${ts()}] ${state}: ${before.toLocaleString()} charges, clean (${elapsed.toFixed(1)}s)`
+        );
       }
 
       client.release();
     } catch (err) {
       client.release(true); // destroy broken connection
-      console.error(`  [${ts()}] ${state}: ERROR — ${err instanceof Error ? err.message : err}`);
+      console.error(
+        `  [${ts()}] ${state}: ERROR — ${err instanceof Error ? err.message : err}`
+      );
     }
   }
 
@@ -257,22 +284,30 @@ async function main() {
     for (const state of states) {
       if (config.skipStates.includes(state)) continue;
       try {
-        const { rows: [{ remaining_dup_groups }] } = await pgPool.query(VERIFY_SQL, [state]);
+        const {
+          rows: [{ remaining_dup_groups }],
+        } = await pgPool.query(VERIFY_SQL, [state]);
         if (remaining_dup_groups > 0) {
-          console.log(`  ${state}: WARNING — ${remaining_dup_groups} duplicate groups still remain`);
+          console.log(
+            `  ${state}: WARNING — ${remaining_dup_groups} duplicate groups still remain`
+          );
           totalRemainingDups += remaining_dup_groups;
         }
       } catch (err) {
-        console.error(`  ${state}: verification error — ${err instanceof Error ? err.message : err}`);
+        console.error(
+          `  ${state}: verification error — ${err instanceof Error ? err.message : err}`
+        );
       }
     }
 
-    const { rows: [{ cnt: totalAfter }] } = await pgPool.query(
-      "SELECT COUNT(*)::int AS cnt FROM charges"
-    );
+    const {
+      rows: [{ cnt: totalAfter }],
+    } = await pgPool.query("SELECT COUNT(*)::int AS cnt FROM charges");
 
     console.log(`\n  Remaining duplicate groups: ${totalRemainingDups}`);
-    console.log(`  Final total charges: ${Number(totalAfter).toLocaleString()}`);
+    console.log(
+      `  Final total charges: ${Number(totalAfter).toLocaleString()}`
+    );
   }
 
   // ── Summary ───────────────────────────────────────────────────────────
@@ -282,22 +317,35 @@ async function main() {
   console.log("\n── Summary ──\n");
   console.log(`  Mode:            ${config.dryRun ? "DRY RUN" : "LIVE"}`);
   console.log(`  Total before:    ${Number(totalBefore).toLocaleString()}`);
-  console.log(`  Total ${config.dryRun ? "would remove" : "removed"}:  ${grandTotalDeleted.toLocaleString()}`);
+  console.log(
+    `  Total ${config.dryRun ? "would remove" : "removed"}:  ${grandTotalDeleted.toLocaleString()}`
+  );
   console.log(`  Total after:     ${totalAfterEstimate.toLocaleString()}`);
-  console.log(`  Reduction:       ${((grandTotalDeleted / Number(totalBefore)) * 100).toFixed(2)}%`);
+  console.log(
+    `  Reduction:       ${((grandTotalDeleted / Number(totalBefore)) * 100).toFixed(2)}%`
+  );
   console.log(`  Duration:        ${overallElapsed}s`);
 
   // JSON summary
   console.log("\n── JSON Summary ──\n");
-  console.log(JSON.stringify({
-    mode: config.dryRun ? "dry_run" : "live",
-    totalBefore: Number(totalBefore),
-    totalDeleted: grandTotalDeleted,
-    totalAfter: totalAfterEstimate,
-    reductionPercent: ((grandTotalDeleted / Number(totalBefore)) * 100).toFixed(2),
-    durationSec: parseFloat(overallElapsed),
-    states: results,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        mode: config.dryRun ? "dry_run" : "live",
+        totalBefore: Number(totalBefore),
+        totalDeleted: grandTotalDeleted,
+        totalAfter: totalAfterEstimate,
+        reductionPercent: (
+          (grandTotalDeleted / Number(totalBefore)) *
+          100
+        ).toFixed(2),
+        durationSec: parseFloat(overallElapsed),
+        states: results,
+      },
+      null,
+      2
+    )
+  );
 
   await pgPool.end();
   console.log("\n  Done.");

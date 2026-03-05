@@ -8,35 +8,35 @@
 
 :root {
   /* Surface & Background */
-  --cc-bg: #FAFAF8;
-  --cc-surface: #FFFFFF;
-  --cc-surface-hover: #F7F7F5;
-  --cc-surface-alt: #F5F3EF;
-  --cc-border: #E8E5DF;
-  --cc-border-strong: #D4D0C8;
+  --cc-bg: #fafaf8;
+  --cc-surface: #ffffff;
+  --cc-surface-hover: #f7f7f5;
+  --cc-surface-alt: #f5f3ef;
+  --cc-border: #e8e5df;
+  --cc-border-strong: #d4d0c8;
 
   /* Text */
-  --cc-text: #1A1A2E;
-  --cc-text-secondary: #5C5C6F;
-  --cc-text-tertiary: #9B9BA8;
+  --cc-text: #1a1a2e;
+  --cc-text-secondary: #5c5c6f;
+  --cc-text-tertiary: #9b9ba8;
 
   /* Primary — Teal (health, trust, calm) */
-  --cc-primary: #0F766E;
-  --cc-primary-hover: #0D9488;
-  --cc-primary-light: #F0FDFA;
-  --cc-primary-muted: #CCFBF1;
+  --cc-primary: #0f766e;
+  --cc-primary-hover: #0d9488;
+  --cc-primary-light: #f0fdfa;
+  --cc-primary-muted: #ccfbf1;
   --cc-primary-subtle: rgba(15, 118, 110, 0.08);
 
   /* Accent — Amber (savings, attention) */
-  --cc-accent: #D97706;
-  --cc-accent-light: #FEF3C7;
+  --cc-accent: #d97706;
+  --cc-accent-light: #fef3c7;
 
   /* Semantic */
   --cc-success: #059669;
-  --cc-success-light: #ECFDF5;
-  --cc-error: #DC2626;
-  --cc-error-light: #FEF2F2;
-  --cc-info: #1E40AF;
+  --cc-success-light: #ecfdf5;
+  --cc-error: #dc2626;
+  --cc-error-light: #fef2f2;
+  --cc-info: #1e40af;
 }
 
 @theme inline {
@@ -62,13 +62,21 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes slide-down {
@@ -83,8 +91,13 @@
 }
 
 @keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 @keyframes scale-in {
@@ -150,8 +163,16 @@
 
 .hero-gradient {
   background:
-    radial-gradient(ellipse at 60% 0%, rgba(15, 118, 110, 0.05) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 80%, rgba(217, 119, 6, 0.03) 0%, transparent 50%);
+    radial-gradient(
+      ellipse at 60% 0%,
+      rgba(15, 118, 110, 0.05) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 20% 80%,
+      rgba(217, 119, 6, 0.03) 0%,
+      transparent 50%
+    );
 }
 
 /* ============================================================================
@@ -159,7 +180,9 @@
    ============================================================================ */
 
 .search-container {
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .search-container:focus-within {
@@ -215,7 +238,9 @@ html {
    ============================================================================ */
 
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card-hover:hover {

@@ -30,10 +30,15 @@ export function getTranslationCacheKey(query: string): {
   return { normalizedQuery, queryHash };
 }
 
-function isTranslationCachePayload(value: unknown): value is TranslationCachePayload {
+function isTranslationCachePayload(
+  value: unknown
+): value is TranslationCachePayload {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
-  return Array.isArray(candidate.codes) && typeof candidate.interpretation === "string";
+  return (
+    Array.isArray(candidate.codes) &&
+    typeof candidate.interpretation === "string"
+  );
 }
 
 export async function getCachedTranslation(
@@ -52,7 +57,8 @@ export async function getCachedTranslation(
     return { queryHash, normalizedQuery, hit: false };
   }
 
-  const nextHitCount = typeof data.hit_count === "number" ? data.hit_count + 1 : 1;
+  const nextHitCount =
+    typeof data.hit_count === "number" ? data.hit_count + 1 : 1;
   const { error: updateError } = await supabase
     .from("translation_cache")
     .update({
@@ -80,18 +86,16 @@ export async function setCachedTranslation(
   const { normalizedQuery, queryHash } = getTranslationCacheKey(query);
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("translation_cache")
-    .upsert(
-      {
-        query_hash: queryHash,
-        normalized_query: normalizedQuery,
-        payload,
-        hit_count: 1,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "query_hash" }
-    );
+  const { error } = await supabase.from("translation_cache").upsert(
+    {
+      query_hash: queryHash,
+      normalized_query: normalizedQuery,
+      payload,
+      hit_count: 1,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "query_hash" }
+  );
 
   if (error) {
     console.error("translation_cache upsert failed:", error);

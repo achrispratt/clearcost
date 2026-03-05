@@ -6,7 +6,10 @@ import {
   lookupWithPricingPlan,
   type LookupDiagnostics,
 } from "@/lib/cpt/lookup";
-import { buildPricingPlan, normalizePricingPlanInput } from "@/lib/cpt/pricing-plan";
+import {
+  buildPricingPlan,
+  normalizePricingPlanInput,
+} from "@/lib/cpt/pricing-plan";
 import {
   getCachedTranslation,
   getTranslationCacheKey,
@@ -18,11 +21,16 @@ import type { BillingCodeType, CPTCode, PricingPlan } from "@/types";
 const SPARSE_RESULT_THRESHOLD = 3;
 const EXPANDED_RADIUS_MILES = 250;
 
-async function lookupWithAutoExpand(params: Parameters<typeof lookupWithPricingPlan>[0]) {
+async function lookupWithAutoExpand(
+  params: Parameters<typeof lookupWithPricingPlan>[0]
+) {
   const results = await lookupWithPricingPlan(params);
   if (results.length >= SPARSE_RESULT_THRESHOLD) return results;
   if ((params.radiusMiles ?? 100) >= EXPANDED_RADIUS_MILES) return results;
-  return lookupWithPricingPlan({ ...params, radiusMiles: EXPANDED_RADIUS_MILES });
+  return lookupWithPricingPlan({
+    ...params,
+    radiusMiles: EXPANDED_RADIUS_MILES,
+  });
 }
 
 type CacheStatus = "hit" | "miss" | "skip";
@@ -32,12 +40,15 @@ function normalizeCodeType(value: unknown): BillingCodeType {
   return "cpt";
 }
 
-function normalizeCodeGroups(value: unknown): { codeType: BillingCodeType; codes: string[] }[] {
+function normalizeCodeGroups(
+  value: unknown
+): { codeType: BillingCodeType; codes: string[] }[] {
   if (!Array.isArray(value)) return [];
 
   return value
-    .filter((group): group is { codeType?: unknown; codes?: unknown } =>
-      !!group && typeof group === "object"
+    .filter(
+      (group): group is { codeType?: unknown; codes?: unknown } =>
+        !!group && typeof group === "object"
     )
     .map((group) => ({
       codeType: normalizeCodeType(group.codeType),
@@ -72,7 +83,10 @@ function countCodesInPlan(pricingPlan: PricingPlan): {
     adderCodeCount: pricingPlan.adders.reduce(
       (sum, adder) =>
         sum +
-        adder.codeGroups.reduce((innerSum, group) => innerSum + group.codes.length, 0),
+        adder.codeGroups.reduce(
+          (innerSum, group) => innerSum + group.codes.length,
+          0
+        ),
       0
     ),
   };
@@ -175,7 +189,9 @@ export async function POST(request: NextRequest) {
             typeof code === "string" && code.trim().length > 0
         )
       : [];
-    const providedPricingPlan = normalizePricingPlanInput(providedPricingPlanRaw);
+    const providedPricingPlan = normalizePricingPlanInput(
+      providedPricingPlanRaw
+    );
 
     // Fast path: direct grouped codes, skips AI translation.
     if (directCodeGroups.length > 0) {
@@ -206,7 +222,9 @@ export async function POST(request: NextRequest) {
 
       maybeLogSearchDiagnostics({
         traceId,
-        queryHash: queryText ? getTranslationCacheKey(queryText).queryHash : undefined,
+        queryHash: queryText
+          ? getTranslationCacheKey(queryText).queryHash
+          : undefined,
         cacheStatus: "skip",
         pricingPlan,
         lookupDiagnostics,
@@ -252,7 +270,9 @@ export async function POST(request: NextRequest) {
 
       maybeLogSearchDiagnostics({
         traceId,
-        queryHash: queryText ? getTranslationCacheKey(queryText).queryHash : undefined,
+        queryHash: queryText
+          ? getTranslationCacheKey(queryText).queryHash
+          : undefined,
         cacheStatus: "skip",
         pricingPlan,
         lookupDiagnostics,
@@ -277,9 +297,10 @@ export async function POST(request: NextRequest) {
 
     const cacheLookup = await getCachedTranslation(queryText);
     const cacheStatus: CacheStatus = cacheLookup.hit ? "hit" : "miss";
-    const translated = cacheLookup.hit && cacheLookup.payload
-      ? cacheLookup.payload
-      : await translateQueryToCPT(queryText);
+    const translated =
+      cacheLookup.hit && cacheLookup.payload
+        ? cacheLookup.payload
+        : await translateQueryToCPT(queryText);
 
     const pricingPlan = buildPricingPlan({
       query: queryText,

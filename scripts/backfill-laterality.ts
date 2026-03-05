@@ -39,7 +39,9 @@ function parseArgs(): {
       state = args[i + 1].toUpperCase();
       i++;
     } else if (args[i] === "--skip-states" && args[i + 1]) {
-      skipStates.push(...args[i + 1].split(",").map((s) => s.trim().toUpperCase()));
+      skipStates.push(
+        ...args[i + 1].split(",").map((s) => s.trim().toUpperCase())
+      );
       i++;
     }
   }
@@ -102,9 +104,12 @@ async function main() {
   const config = parseArgs();
 
   console.log("=== ClearCost Laterality Backfill ===\n");
-  console.log(`  Mode: ${config.dryRun ? "DRY RUN (no data will be modified)" : "LIVE — laterality will be set"}`);
+  console.log(
+    `  Mode: ${config.dryRun ? "DRY RUN (no data will be modified)" : "LIVE — laterality will be set"}`
+  );
   if (config.state) console.log(`  State filter: ${config.state}`);
-  if (config.skipStates.length > 0) console.log(`  Skipping states: ${config.skipStates.join(", ")}`);
+  if (config.skipStates.length > 0)
+    console.log(`  Skipping states: ${config.skipStates.join(", ")}`);
   console.log();
 
   // Connect via Supabase pooler (port 6543)
@@ -135,7 +140,7 @@ async function main() {
   } catch {
     console.error(
       "ERROR: parse_laterality() function not found.\n" +
-      "Run migration-laterality.sql in Supabase SQL editor first."
+        "Run migration-laterality.sql in Supabase SQL editor first."
     );
     process.exit(1);
   }
@@ -166,13 +171,17 @@ async function main() {
     try {
       await pgPool.query("SELECT 1");
     } catch {
-      console.warn(`  [${ts()}] ${state}: Postgres health check failed, waiting 10s...`);
+      console.warn(
+        `  [${ts()}] ${state}: Postgres health check failed, waiting 10s...`
+      );
       await new Promise((r) => setTimeout(r, 10000));
       try {
         await pgPool.query("SELECT 1");
         console.log(`  [${ts()}] ${state}: reconnected after retry`);
       } catch (retryErr) {
-        console.error(`  [${ts()}] ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`);
+        console.error(
+          `  [${ts()}] ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`
+        );
         continue;
       }
     }
@@ -184,11 +193,15 @@ async function main() {
       await client.query("SET statement_timeout = 0");
 
       // Count total charges in state
-      const { rows: [{ cnt: total }] } = await client.query(STATE_COUNT_SQL, [state]);
+      const {
+        rows: [{ cnt: total }],
+      } = await client.query(STATE_COUNT_SQL, [state]);
 
       let updated: number;
       if (config.dryRun) {
-        const { rows: [{ cnt }] } = await client.query(DRY_RUN_SQL, [state]);
+        const {
+          rows: [{ cnt }],
+        } = await client.query(DRY_RUN_SQL, [state]);
         updated = cnt;
       } else {
         const result = await client.query(BACKFILL_SQL, [state]);
@@ -196,23 +209,32 @@ async function main() {
       }
 
       const elapsed = (Date.now() - stateStart) / 1000;
-      results.push({ state, total, updated, elapsedSec: parseFloat(elapsed.toFixed(1)) });
+      results.push({
+        state,
+        total,
+        updated,
+        elapsedSec: parseFloat(elapsed.toFixed(1)),
+      });
       grandTotalUpdated += updated;
 
       if (updated > 0) {
         const pct = ((updated / total) * 100).toFixed(1);
         console.log(
           `  [${ts()}] ${state}: ${updated.toLocaleString()} / ${total.toLocaleString()} ` +
-          `(${pct}%) ${config.dryRun ? "would be" : ""} updated (${elapsed.toFixed(1)}s)`
+            `(${pct}%) ${config.dryRun ? "would be" : ""} updated (${elapsed.toFixed(1)}s)`
         );
       } else {
-        console.log(`  [${ts()}] ${state}: ${total.toLocaleString()} charges, none matched (${elapsed.toFixed(1)}s)`);
+        console.log(
+          `  [${ts()}] ${state}: ${total.toLocaleString()} charges, none matched (${elapsed.toFixed(1)}s)`
+        );
       }
 
       client.release();
     } catch (err) {
       client.release(true);
-      console.error(`  [${ts()}] ${state}: ERROR — ${err instanceof Error ? err.message : err}`);
+      console.error(
+        `  [${ts()}] ${state}: ERROR — ${err instanceof Error ? err.message : err}`
+      );
     }
   }
 
@@ -231,18 +253,26 @@ async function main() {
       "SELECT laterality, COUNT(*)::int AS cnt FROM charges GROUP BY laterality ORDER BY cnt DESC"
     );
     for (const row of distRows) {
-      console.log(`  ${row.laterality ?? "(null)"}: ${Number(row.cnt).toLocaleString()}`);
+      console.log(
+        `  ${row.laterality ?? "(null)"}: ${Number(row.cnt).toLocaleString()}`
+      );
     }
   }
 
   // JSON summary
   console.log("\n── JSON Summary ──\n");
-  console.log(JSON.stringify({
-    mode: config.dryRun ? "dry_run" : "live",
-    totalUpdated: grandTotalUpdated,
-    durationSec: parseFloat(overallElapsed),
-    states: results,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        mode: config.dryRun ? "dry_run" : "live",
+        totalUpdated: grandTotalUpdated,
+        durationSec: parseFloat(overallElapsed),
+        states: results,
+      },
+      null,
+      2
+    )
+  );
 
   await pgPool.end();
   console.log("\n  Done.");

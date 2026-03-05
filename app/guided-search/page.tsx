@@ -36,7 +36,9 @@ function GuidedSearchContent() {
         onSearch={handleNewSearch}
         loading={loading}
         initialQuery={query}
-        initialLocation={lat && lng ? { lat, lng, display: locationDisplay } : undefined}
+        initialLocation={
+          lat && lng ? { lat, lng, display: locationDisplay } : undefined
+        }
         compact
       />
 
@@ -64,10 +66,7 @@ function GuidedSearchContent() {
               strokeLinecap="round"
             />
           </svg>
-          <p
-            className="text-sm"
-            style={{ color: "var(--cc-text-secondary)" }}
-          >
+          <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
             Understanding your query...
           </p>
         </div>
@@ -138,8 +137,8 @@ function GuidedSearchContent() {
             className="mt-8 text-xs text-center leading-relaxed"
             style={{ color: "var(--cc-text-tertiary)" }}
           >
-            This tool helps you find pricing, not diagnose conditions.
-            Always consult a healthcare provider for medical advice.
+            This tool helps you find pricing, not diagnose conditions. Always
+            consult a healthcare provider for medical advice.
           </p>
         </div>
       )}

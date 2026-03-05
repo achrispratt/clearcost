@@ -22,7 +22,8 @@ const DEFAULT_OFFICE_VISIT_CODES = [
 const EMERGENCY_RED_FLAG_REGEX =
   /\b(worst (headache|pain) of (my|their) life|sudden onset|thunderclap|stroke|can't breathe|cannot breathe|severe chest pain|severe abdominal pain|passed out|loss of consciousness)\b/i;
 const URGENT_CARE_REGEX = /\burgent care\b/i;
-const SPECIALIST_REGEX = /\bneurology|neurologist|orthopedic|orthopedist|dermatology|cardiology|gastroenterology|specialist\b/i;
+const SPECIALIST_REGEX =
+  /\bneurology|neurologist|orthopedic|orthopedist|dermatology|cardiology|gastroenterology|specialist\b/i;
 const CPT_QUERY_REGEX = /\bcpt\s*\d{4,5}\b|\b\d{5}\b/i;
 const SYMPTOM_HINT_REGEX =
   /\b(headache|pain|hurts|fever|cough|nausea|dizziness|shortness of breath|rash|fatigue|swelling)\b/i;
@@ -35,22 +36,30 @@ const ADDER_TEMPLATES: Record<string, AdderTemplate> = {
   ct_scan: {
     id: "ct_scan",
     label: "CT scan",
-    codeGroups: [{ codeType: "cpt", codes: ["70450", "70460", "70470", "71250", "74177"] }],
+    codeGroups: [
+      { codeType: "cpt", codes: ["70450", "70460", "70470", "71250", "74177"] },
+    ],
   },
   mri_scan: {
     id: "mri_scan",
     label: "MRI",
-    codeGroups: [{ codeType: "cpt", codes: ["70551", "70552", "70553", "72148", "73721"] }],
+    codeGroups: [
+      { codeType: "cpt", codes: ["70551", "70552", "70553", "72148", "73721"] },
+    ],
   },
   xray: {
     id: "xray",
     label: "X-ray",
-    codeGroups: [{ codeType: "cpt", codes: ["71046", "73564", "72040", "73610"] }],
+    codeGroups: [
+      { codeType: "cpt", codes: ["71046", "73564", "72040", "73610"] },
+    ],
   },
   ultrasound: {
     id: "ultrasound",
     label: "Ultrasound",
-    codeGroups: [{ codeType: "cpt", codes: ["76700", "76705", "76856", "93971"] }],
+    codeGroups: [
+      { codeType: "cpt", codes: ["76700", "76705", "76856", "93971"] },
+    ],
   },
   lab_work: {
     id: "lab_work",
@@ -93,13 +102,19 @@ function normalizeCodeGroups(value: unknown): PricingCodeGroup[] {
   if (!Array.isArray(value)) return [];
 
   return value
-    .filter((group): group is { codeType?: unknown; codes?: unknown; label?: unknown } =>
-      !!group && typeof group === "object"
+    .filter(
+      (
+        group
+      ): group is { codeType?: unknown; codes?: unknown; label?: unknown } =>
+        !!group && typeof group === "object"
     )
     .map((group) => {
       const normalizedCodes = Array.isArray(group.codes)
         ? group.codes
-            .filter((code): code is string => typeof code === "string" && code.trim().length > 0)
+            .filter(
+              (code): code is string =>
+                typeof code === "string" && code.trim().length > 0
+            )
             .map((code) => normalizeCode(code))
         : [];
 
@@ -116,18 +131,27 @@ function normalizePlannedAdders(value: unknown): PlannedAdder[] {
   if (!Array.isArray(value)) return [];
 
   return value
-    .filter((adder): adder is { id?: unknown; label?: unknown; codeGroups?: unknown; required?: unknown } =>
-      !!adder && typeof adder === "object"
+    .filter(
+      (
+        adder
+      ): adder is {
+        id?: unknown;
+        label?: unknown;
+        codeGroups?: unknown;
+        required?: unknown;
+      } => !!adder && typeof adder === "object"
     )
     .map((adder, index) => {
       const codeGroups = normalizeCodeGroups(adder.codeGroups);
-      const idValue = typeof adder.id === "string" && adder.id.trim().length > 0
-        ? adder.id.trim()
-        : `adder_${index + 1}`;
+      const idValue =
+        typeof adder.id === "string" && adder.id.trim().length > 0
+          ? adder.id.trim()
+          : `adder_${index + 1}`;
 
-      const labelValue = typeof adder.label === "string" && adder.label.trim().length > 0
-        ? adder.label.trim()
-        : idValue.replace(/_/g, " ");
+      const labelValue =
+        typeof adder.label === "string" && adder.label.trim().length > 0
+          ? adder.label.trim()
+          : idValue.replace(/_/g, " ");
 
       return {
         id: idValue,
@@ -186,16 +210,23 @@ function codesToGroups(codes: CPTCode[] = []): PricingCodeGroup[] {
   }));
 }
 
-function inferQueryType(query: string, codes: CPTCode[], explicit?: QueryType): QueryType {
+function inferQueryType(
+  query: string,
+  codes: CPTCode[],
+  explicit?: QueryType
+): QueryType {
   if (CPT_QUERY_REGEX.test(query)) return "code";
-  if (EMERGENCY_RED_FLAG_REGEX.test(query) || SYMPTOM_HINT_REGEX.test(query)) return "symptom";
+  if (EMERGENCY_RED_FLAG_REGEX.test(query) || SYMPTOM_HINT_REGEX.test(query))
+    return "symptom";
   if (CONDITION_HINT_REGEX.test(query)) return "condition";
   if (explicit) return explicit;
   if (codes.length > 0 && query.trim().length < 8) return "code";
   return "procedure";
 }
 
-function buildEncounterBaseCodeGroups(encounterType: PricingPlan["encounterType"]): PricingCodeGroup[] {
+function buildEncounterBaseCodeGroups(
+  encounterType: PricingPlan["encounterType"]
+): PricingCodeGroup[] {
   if (encounterType === "emergency") {
     return [
       {
@@ -249,7 +280,10 @@ function buildAddersFromIds(ids: string[]): PlannedAdder[] {
     .filter((adder): adder is PlannedAdder => !!adder);
 }
 
-function mergeAdders(primary: PlannedAdder[], secondary: PlannedAdder[]): PlannedAdder[] {
+function mergeAdders(
+  primary: PlannedAdder[],
+  secondary: PlannedAdder[]
+): PlannedAdder[] {
   const byId = new Map<string, PlannedAdder>();
 
   for (const adder of [...primary, ...secondary]) {
@@ -266,14 +300,21 @@ function mergeAdders(primary: PlannedAdder[], secondary: PlannedAdder[]): Planne
       ...existing,
       label: existing.label || adder.label,
       required: existing.required || adder.required,
-      codeGroups: dedupeCodeGroups([...existing.codeGroups, ...adder.codeGroups]),
+      codeGroups: dedupeCodeGroups([
+        ...existing.codeGroups,
+        ...adder.codeGroups,
+      ]),
     });
   }
 
-  return Array.from(byId.values()).filter((adder) => adder.codeGroups.length > 0);
+  return Array.from(byId.values()).filter(
+    (adder) => adder.codeGroups.length > 0
+  );
 }
 
-export function normalizePricingPlanInput(value: unknown): PricingPlan | undefined {
+export function normalizePricingPlanInput(
+  value: unknown
+): PricingPlan | undefined {
   if (!value || typeof value !== "object") return undefined;
 
   const raw = value as {
@@ -297,7 +338,9 @@ export function normalizePricingPlanInput(value: unknown): PricingPlan | undefin
     raw.encounterType === "specialist"
       ? raw.encounterType
       : undefined;
-  const baseCodeGroups = dedupeCodeGroups(normalizeCodeGroups(raw.baseCodeGroups));
+  const baseCodeGroups = dedupeCodeGroups(
+    normalizeCodeGroups(raw.baseCodeGroups)
+  );
   const adders = normalizePlannedAdders(raw.adders);
   const proxyLabel =
     typeof raw.proxyLabel === "string" && raw.proxyLabel.trim().length > 0
@@ -326,7 +369,11 @@ export function buildPricingPlan({
   const normalizedModelPlan = modelPricingPlan
     ? normalizePricingPlanInput(modelPricingPlan)
     : undefined;
-  const queryTypeResolved = inferQueryType(query, codes, queryType || normalizedModelPlan?.queryType);
+  const queryTypeResolved = inferQueryType(
+    query,
+    codes,
+    queryType || normalizedModelPlan?.queryType
+  );
   const text = `${query} ${interpretation || ""}`;
   const emergency = EMERGENCY_RED_FLAG_REGEX.test(text);
   const urgentCare = URGENT_CARE_REGEX.test(text);
@@ -343,7 +390,9 @@ export function buildPricingPlan({
           : normalizedModelPlan?.encounterType;
 
   const mode: PricingPlan["mode"] =
-    emergency || queryTypeResolved === "symptom" || queryTypeResolved === "condition"
+    emergency ||
+    queryTypeResolved === "symptom" ||
+    queryTypeResolved === "condition"
       ? "encounter_first"
       : "procedure_first";
 

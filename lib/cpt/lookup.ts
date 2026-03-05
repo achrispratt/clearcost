@@ -167,14 +167,21 @@ function normalizeZip(value: string | undefined): string | undefined {
   return match?.[1];
 }
 
-function extractStateAwareZip(address: string | undefined, state: string | undefined): string | undefined {
+function extractStateAwareZip(
+  address: string | undefined,
+  state: string | undefined
+): string | undefined {
   if (!address) return undefined;
 
   const normalizedState = state?.trim().toUpperCase();
   if (normalizedState && normalizedState.length === 2) {
     const scopedMatch = address
       .toUpperCase()
-      .match(new RegExp(`\\b${escapeRegex(normalizedState)}\\s+(\\d{5})(?:-\\d{4})?\\b`));
+      .match(
+        new RegExp(
+          `\\b${escapeRegex(normalizedState)}\\s+(\\d{5})(?:-\\d{4})?\\b`
+        )
+      );
     if (scopedMatch?.[1]) return scopedMatch[1];
   }
 
@@ -182,23 +189,34 @@ function extractStateAwareZip(address: string | undefined, state: string | undef
   return trailingMatch?.[1];
 }
 
-function lookupZipCoordinates(zip: string | undefined): { lat: number; lng: number } | undefined {
+function lookupZipCoordinates(
+  zip: string | undefined
+): { lat: number; lng: number } | undefined {
   if (!zip) return undefined;
 
-  const match = zipcodes.lookup(zip) as
-    | { latitude?: number; longitude?: number }
-    | null;
+  const match = zipcodes.lookup(zip) as {
+    latitude?: number;
+    longitude?: number;
+  } | null;
 
   if (match?.latitude == null || match?.longitude == null) return undefined;
   return { lat: match.latitude, lng: match.longitude };
 }
 
-function resolveProviderCoordinates(result: ChargeResult): { lat: number | undefined; lng: number | undefined } {
+function resolveProviderCoordinates(result: ChargeResult): {
+  lat: number | undefined;
+  lng: number | undefined;
+} {
   const providerLat = result.provider.lat;
   const providerLng = result.provider.lng;
-  const zipFromAddress = extractStateAwareZip(result.provider.address, result.provider.state);
+  const zipFromAddress = extractStateAwareZip(
+    result.provider.address,
+    result.provider.state
+  );
   const zipFromProvider = normalizeZip(result.provider.zip);
-  const zipCoordinates = lookupZipCoordinates(zipFromAddress || zipFromProvider);
+  const zipCoordinates = lookupZipCoordinates(
+    zipFromAddress || zipFromProvider
+  );
 
   if (!zipCoordinates) {
     return { lat: providerLat, lng: providerLng };
@@ -247,7 +265,12 @@ function normalizeAndRankResults({
       typeof lngValue === "number" &&
       Number.isFinite(lngValue)
     ) {
-      recomputedDistanceMiles = haversineMiles(userLat, userLng, latValue, lngValue);
+      recomputedDistanceMiles = haversineMiles(
+        userLat,
+        userLng,
+        latValue,
+        lngValue
+      );
     }
 
     if (
@@ -259,7 +282,8 @@ function normalizeAndRankResults({
     }
 
     const nextDistanceMiles =
-      recomputedDistanceMiles != null && Number.isFinite(recomputedDistanceMiles)
+      recomputedDistanceMiles != null &&
+      Number.isFinite(recomputedDistanceMiles)
         ? recomputedDistanceMiles
         : result.distanceMiles;
     const nextDistanceKm =
@@ -375,10 +399,7 @@ function buildPriceSummary(values: number[]): PriceSummary | undefined {
 
 function extractReferencePrice(row: ChargeResult): number | undefined {
   const value =
-    row.cashPrice ??
-    row.minPrice ??
-    row.avgNegotiatedRate ??
-    row.maxPrice;
+    row.cashPrice ?? row.minPrice ?? row.avgNegotiatedRate ?? row.maxPrice;
 
   if (value == null || Number.isNaN(value) || value <= 0) return undefined;
   return value;
@@ -395,7 +416,9 @@ function summarizeRows(rows: ChargeResult[]): PriceSummary | undefined {
   return buildPriceSummary(values);
 }
 
-function summarizeRowsByProvider(rows: ChargeResult[]): Map<string, PriceSummary> {
+function summarizeRowsByProvider(
+  rows: ChargeResult[]
+): Map<string, PriceSummary> {
   const valuesByProvider = new Map<string, number[]>();
 
   for (const row of rows) {
@@ -538,10 +561,10 @@ async function queryCodeGroupsWithFallback({
     summary.usedDescriptionFallback = true;
     const fallbackRows = await lookupChargesByDescription(
       {
-      searchTerms: descriptionFallback,
-      lat,
-      lng,
-      radiusMiles: expandedRadius,
+        searchTerms: descriptionFallback,
+        lat,
+        lng,
+        radiusMiles: expandedRadius,
       },
       { diagnostics, stage: `${stage}:description` }
     );
@@ -635,10 +658,16 @@ function withEstimatedTotals(
     adders.reduce((sum, adder) => sum + (adder.estimatePrice || 0), 0);
   const estimatedTotalMin =
     base.minPrice +
-    adders.reduce((sum, adder) => sum + (adder.minPrice || adder.estimatePrice || 0), 0);
+    adders.reduce(
+      (sum, adder) => sum + (adder.minPrice || adder.estimatePrice || 0),
+      0
+    );
   const estimatedTotalMax =
     base.maxPrice +
-    adders.reduce((sum, adder) => sum + (adder.maxPrice || adder.estimatePrice || 0), 0);
+    adders.reduce(
+      (sum, adder) => sum + (adder.maxPrice || adder.estimatePrice || 0),
+      0
+    );
 
   return {
     ...result,
@@ -795,10 +824,10 @@ export async function lookupWithPricingPlan({
           adderResults,
         })
       : buildProcedureFirstResults({
-        pricingPlan,
-        baseResults,
-        adderResults,
-      });
+          pricingPlan,
+          baseResults,
+          adderResults,
+        });
 
   return normalizeAndRankResults({
     results: rawResults,
@@ -857,7 +886,8 @@ async function executeRpcWithRetry<RowType>({
       }
 
       result.failures += 1;
-      result.errorCode = typeof error.code === "string" ? error.code : undefined;
+      result.errorCode =
+        typeof error.code === "string" ? error.code : undefined;
       result.errorMessage = error.message;
       if (diagnostics) {
         diagnostics.totalFailures += 1;
@@ -865,7 +895,8 @@ async function executeRpcWithRetry<RowType>({
     } catch (error) {
       result.failures += 1;
       result.errorCode = "rpc_exception";
-      result.errorMessage = error instanceof Error ? error.message : String(error);
+      result.errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (diagnostics) {
         diagnostics.totalFailures += 1;
       }
@@ -889,23 +920,29 @@ async function executeRpcWithRetry<RowType>({
     if (diagnostics) {
       diagnostics.totalRetries += 1;
     }
-    const retryDelay = RPC_RETRY_DELAYS_MS[Math.min(attempt - 1, RPC_RETRY_DELAYS_MS.length - 1)];
+    const retryDelay =
+      RPC_RETRY_DELAYS_MS[
+        Math.min(attempt - 1, RPC_RETRY_DELAYS_MS.length - 1)
+      ];
     await delay(retryDelay);
   }
 
   return result;
 }
 
-export async function lookupCharges({
-  codes,
-  codeType = "cpt",
-  lat,
-  lng,
-  radiusMiles = 25,
-  limit = CODE_LOOKUP_LIMIT,
-  providerLimit = PROVIDER_LIMIT,
-  laterality,
-}: LookupParams, context: RpcExecutionContext = {}): Promise<ChargeResult[]> {
+export async function lookupCharges(
+  {
+    codes,
+    codeType = "cpt",
+    lat,
+    lng,
+    radiusMiles = 25,
+    limit = CODE_LOOKUP_LIMIT,
+    providerLimit = PROVIDER_LIMIT,
+    laterality,
+  }: LookupParams,
+  context: RpcExecutionContext = {}
+): Promise<ChargeResult[]> {
   if (codes.length === 0) return [];
   const supabase = await createClient();
   const normalizedCodes = Array.from(
@@ -956,7 +993,10 @@ export async function lookupCharges({
   }
 
   const allChunkRows: RpcRow[] = [];
-  const codeChunks = splitIntoCodeChunks(normalizedCodes, CODE_CHUNK_FALLBACK_SIZE);
+  const codeChunks = splitIntoCodeChunks(
+    normalizedCodes,
+    CODE_CHUNK_FALLBACK_SIZE
+  );
   for (const [chunkIndex, chunk] of codeChunks.entries()) {
     const chunkResult = await executeRpcWithRetry<RpcRow>({
       supabase,
@@ -993,14 +1033,17 @@ export async function lookupCharges({
  * Used when code-based search returns zero results.
  * Calls the search_charges_by_description() RPC.
  */
-export async function lookupChargesByDescription({
-  searchTerms,
-  lat,
-  lng,
-  radiusMiles = 25,
-  limit = DESCRIPTION_LOOKUP_LIMIT,
-  providerLimit = PROVIDER_LIMIT,
-}: FallbackLookupParams, context: RpcExecutionContext = {}): Promise<ChargeResult[]> {
+export async function lookupChargesByDescription(
+  {
+    searchTerms,
+    lat,
+    lng,
+    radiusMiles = 25,
+    limit = DESCRIPTION_LOOKUP_LIMIT,
+    providerLimit = PROVIDER_LIMIT,
+  }: FallbackLookupParams,
+  context: RpcExecutionContext = {}
+): Promise<ChargeResult[]> {
   if (!searchTerms.trim()) return [];
   const supabase = await createClient();
   const radiusKm = milesToKm(radiusMiles);
@@ -1009,11 +1052,11 @@ export async function lookupChargesByDescription({
     supabase,
     rpcName: "search_charges_by_description",
     rpcParams: {
-    p_search_terms: searchTerms,
-    p_lat: lat,
-    p_lng: lng,
-    p_radius_km: radiusKm,
-    p_limit: limit,
+      p_search_terms: searchTerms,
+      p_lat: lat,
+      p_lng: lng,
+      p_radius_km: radiusKm,
+      p_limit: limit,
       p_provider_limit: providerLimit,
     },
     diagnostics: context.diagnostics,
@@ -1103,7 +1146,8 @@ interface RpcRow {
 function mapRows(rows: RpcRow[]): ChargeResult[] {
   return rows.map((row) => {
     const distanceKm = row.distance_km ?? undefined;
-    const distanceMiles = distanceKm !== undefined ? kmToMiles(distanceKm) : undefined;
+    const distanceMiles =
+      distanceKm !== undefined ? kmToMiles(distanceKm) : undefined;
 
     return {
       id: row.id,

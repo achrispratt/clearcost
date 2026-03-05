@@ -28,7 +28,10 @@ const CODES_PATH = resolve(PROJECT_ROOT, "lib/data/final-codes.json");
 
 // Resolve output paths BEFORE chdir (or they resolve relative to mrf_lake/)
 const AUDIT_JSON_PATH = resolve(PROJECT_ROOT, "lib/data/inpatient-audit.json");
-const REMOVED_MD_PATH = resolve(PROJECT_ROOT, "docs/inpatient-codes-removed.md");
+const REMOVED_MD_PATH = resolve(
+  PROJECT_ROOT,
+  "docs/inpatient-codes-removed.md"
+);
 
 // ---------------------------------------------------------------------------
 // Known inpatient families — force REMOVE regardless of data
@@ -88,7 +91,10 @@ interface AuditEntry {
 // Classification logic
 // ---------------------------------------------------------------------------
 
-function classify(row: CodeAuditRow, msDrgCodes: Set<string>): { classification: Classification; reason: string } {
+function classify(
+  row: CodeAuditRow,
+  msDrgCodes: Set<string>
+): { classification: Classification; reason: string } {
   const code = row.code;
   const total = Number(row.total_rows);
   const inpatient = Number(row.inpatient_count);
@@ -100,37 +106,58 @@ function classify(row: CodeAuditRow, msDrgCodes: Set<string>): { classification:
 
   // Priority 1: Known inpatient families
   if (code in KNOWN_INPATIENT_FAMILIES) {
-    return { classification: "REMOVE", reason: `Known inpatient: ${KNOWN_INPATIENT_FAMILIES[code]}` };
+    return {
+      classification: "REMOVE",
+      reason: `Known inpatient: ${KNOWN_INPATIENT_FAMILIES[code]}`,
+    };
   }
 
   // Priority 2: >90% inpatient
   if (inpatientPct > 90) {
-    return { classification: "REMOVE", reason: `${inpatientPct.toFixed(1)}% inpatient` };
+    return {
+      classification: "REMOVE",
+      reason: `${inpatientPct.toFixed(1)}% inpatient`,
+    };
   }
 
   // Priority 3: Has MS-DRG AND >50% inpatient
   if ((hasMsDrg > 0 || msDrgCodes.has(code)) && inpatientPct > 50) {
-    return { classification: "REMOVE", reason: `MS-DRG associated + ${inpatientPct.toFixed(1)}% inpatient` };
+    return {
+      classification: "REMOVE",
+      reason: `MS-DRG associated + ${inpatientPct.toFixed(1)}% inpatient`,
+    };
   }
 
   // Priority 4: 100% cash null AND >50% inpatient
   if (cashNullPct === 100 && inpatientPct > 50) {
-    return { classification: "REMOVE", reason: `100% cash-null + ${inpatientPct.toFixed(1)}% inpatient` };
+    return {
+      classification: "REMOVE",
+      reason: `100% cash-null + ${inpatientPct.toFixed(1)}% inpatient`,
+    };
   }
 
   // Priority 5: >70% inpatient → REVIEW
   if (inpatientPct > 70) {
-    return { classification: "REVIEW", reason: `${inpatientPct.toFixed(1)}% inpatient (borderline)` };
+    return {
+      classification: "REVIEW",
+      reason: `${inpatientPct.toFixed(1)}% inpatient (borderline)`,
+    };
   }
 
   // Priority 6: >95% cash null with sufficient data → REVIEW
   if (cashNullPct > 95 && total > 100) {
-    return { classification: "REVIEW", reason: `${cashNullPct.toFixed(1)}% cash-null (${total} rows)` };
+    return {
+      classification: "REVIEW",
+      reason: `${cashNullPct.toFixed(1)}% cash-null (${total} rows)`,
+    };
   }
 
   // Priority 7: Too little data to judge
   if (total < 10) {
-    return { classification: "LOW_DATA", reason: `Only ${total} rows — insufficient data` };
+    return {
+      classification: "LOW_DATA",
+      reason: `Only ${total} rows — insufficient data`,
+    };
   }
 
   return { classification: "KEEP", reason: "Primarily outpatient/both" };
@@ -160,7 +187,9 @@ function printTable(entries: AuditEntry[], title: string) {
     const desc = (e.description || "—").slice(0, 43);
     console.log(
       `  ${pad(e.code, 7)} ${pad(desc, 45)} ${padLeft(e.totalRows.toLocaleString(), 8)} ${padLeft(e.inpatientPct.toFixed(1) + "%", 7)} ${padLeft(
-        (e.totalRows > 0 ? ((e.outpatientCount / e.totalRows) * 100).toFixed(1) : "0.0") + "%",
+        (e.totalRows > 0
+          ? ((e.outpatientCount / e.totalRows) * 100).toFixed(1)
+          : "0.0") + "%",
         7
       )} ${padLeft(e.cashNullPct.toFixed(1) + "%", 7)} ${e.reason}`
     );
@@ -241,7 +270,9 @@ async function main() {
   `)) as unknown as MsDrgRow[];
 
   const q2Elapsed = ((Date.now() - startQ2) / 1000).toFixed(1);
-  console.log(`  Found ${msDrgRows.length} codes used as MS-DRG (${q2Elapsed}s)`);
+  console.log(
+    `  Found ${msDrgRows.length} codes used as MS-DRG (${q2Elapsed}s)`
+  );
 
   const msDrgCodes = new Set(msDrgRows.map((r) => r.ms_drg));
 
@@ -313,20 +344,29 @@ async function main() {
   console.log("  INPATIENT CODE AUDIT RESULTS");
   console.log("▓".repeat(110));
 
-  printTable(remove, "REMOVE — Inpatient-only codes to remove from curated list");
+  printTable(
+    remove,
+    "REMOVE — Inpatient-only codes to remove from curated list"
+  );
   printTable(review, "REVIEW — Borderline codes needing manual review");
 
   if (lowData.length > 0) {
     console.log(`\n${"═".repeat(110)}`);
-    console.log(`  LOW_DATA — ${lowData.length} codes with <10 rows (keeping by default)`);
+    console.log(
+      `  LOW_DATA — ${lowData.length} codes with <10 rows (keeping by default)`
+    );
     console.log(`${"═".repeat(110)}`);
     for (const e of lowData) {
-      console.log(`    ${e.code}  ${e.description.slice(0, 50)}  (${e.totalRows} rows)`);
+      console.log(
+        `    ${e.code}  ${e.description.slice(0, 50)}  (${e.totalRows} rows)`
+      );
     }
   }
 
   console.log(`\n${"═".repeat(110)}`);
-  console.log(`  KEEP — ${keep.length} codes are primarily outpatient (suppressed)`);
+  console.log(
+    `  KEEP — ${keep.length} codes are primarily outpatient (suppressed)`
+  );
   console.log(`${"═".repeat(110)}`);
 
   console.log(`\n${"─".repeat(60)}`);
@@ -369,56 +409,88 @@ async function main() {
   md.push(``);
   md.push(`## Methodology`);
   md.push(``);
-  md.push(`Queried the Trilliant Oria DuckDB warehouse (~81GB Parquet) for the setting distribution`);
-  md.push(`of all ${codes.length.toLocaleString()} curated codes in \`final-codes.json\`. Each code was classified as:`);
+  md.push(
+    `Queried the Trilliant Oria DuckDB warehouse (~81GB Parquet) for the setting distribution`
+  );
+  md.push(
+    `of all ${codes.length.toLocaleString()} curated codes in \`final-codes.json\`. Each code was classified as:`
+  );
   md.push(``);
   md.push(`| Classification | Rule | Action |`);
   md.push(`|---------------|------|--------|`);
-  md.push(`| **REMOVE** | Known inpatient family, OR >90% inpatient, OR MS-DRG + >50% inpatient, OR 100% cash-null + >50% inpatient | Removed from final-codes.json |`);
-  md.push(`| **REVIEW** | >70% inpatient, OR >95% cash-null (100+ rows) | Manually reviewed, then removed or kept |`);
-  md.push(`| **LOW_DATA** | <10 rows in warehouse | Kept (insufficient data to judge) |`);
+  md.push(
+    `| **REMOVE** | Known inpatient family, OR >90% inpatient, OR MS-DRG + >50% inpatient, OR 100% cash-null + >50% inpatient | Removed from final-codes.json |`
+  );
+  md.push(
+    `| **REVIEW** | >70% inpatient, OR >95% cash-null (100+ rows) | Manually reviewed, then removed or kept |`
+  );
+  md.push(
+    `| **LOW_DATA** | <10 rows in warehouse | Kept (insufficient data to judge) |`
+  );
   md.push(`| **KEEP** | Everything else | No change |`);
   md.push(``);
   md.push(`## Root Cause`);
   md.push(``);
-  md.push(`The import filter used \`LOWER(setting) != 'inpatient'\` which missed values like \`'InPatient '\``);
-  md.push(`(trailing space). Fixed in this PR by adding \`TRIM()\` to both \`import-trilliant.ts\` and \`generate-snapshot.ts\`.`);
+  md.push(
+    `The import filter used \`LOWER(setting) != 'inpatient'\` which missed values like \`'InPatient '\``
+  );
+  md.push(
+    `(trailing space). Fixed in this PR by adding \`TRIM()\` to both \`import-trilliant.ts\` and \`generate-snapshot.ts\`.`
+  );
   md.push(``);
   md.push(`## Codes Removed (${remove.length})`);
   md.push(``);
   md.push(`| Code | Description | Total Rows | Inpatient % | Reason |`);
   md.push(`|------|-------------|----------:|------------:|--------|`);
   for (const e of remove) {
-    const desc = (e.description || "—").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
-    md.push(`| ${e.code} | ${desc} | ${e.totalRows.toLocaleString()} | ${e.inpatientPct.toFixed(1)}% | ${e.reason} |`);
+    const desc = (e.description || "—")
+      .replace(/\|/g, "\\|")
+      .replace(/\r?\n/g, " ");
+    md.push(
+      `| ${e.code} | ${desc} | ${e.totalRows.toLocaleString()} | ${e.inpatientPct.toFixed(1)}% | ${e.reason} |`
+    );
   }
   md.push(``);
 
   if (review.length > 0) {
     md.push(`## Codes Reviewed (${review.length})`);
     md.push(``);
-    md.push(`These codes were flagged for manual review. Disposition noted in the Reason column.`);
+    md.push(
+      `These codes were flagged for manual review. Disposition noted in the Reason column.`
+    );
     md.push(``);
     md.push(`| Code | Description | Total Rows | Inpatient % | Reason |`);
     md.push(`|------|-------------|----------:|------------:|--------|`);
     for (const e of review) {
-      const desc = (e.description || "—").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
-      md.push(`| ${e.code} | ${desc} | ${e.totalRows.toLocaleString()} | ${e.inpatientPct.toFixed(1)}% | ${e.reason} |`);
+      const desc = (e.description || "—")
+        .replace(/\|/g, "\\|")
+        .replace(/\r?\n/g, " ");
+      md.push(
+        `| ${e.code} | ${desc} | ${e.totalRows.toLocaleString()} | ${e.inpatientPct.toFixed(1)}% | ${e.reason} |`
+      );
     }
     md.push(``);
   }
 
   md.push(`## Impact`);
   md.push(``);
-  md.push(`- **Codes removed**: ${remove.length} (from ${entries.length} → ${entries.length - remove.length})`);
-  md.push(`- **Database**: No changes needed — only affects curated code list and future imports`);
-  md.push(`- **Search quality**: Consumers will no longer see inpatient-only procedures in results`);
+  md.push(
+    `- **Codes removed**: ${remove.length} (from ${entries.length} → ${entries.length - remove.length})`
+  );
+  md.push(
+    `- **Database**: No changes needed — only affects curated code list and future imports`
+  );
+  md.push(
+    `- **Search quality**: Consumers will no longer see inpatient-only procedures in results`
+  );
   md.push(``);
 
   writeFileSync(REMOVED_MD_PATH, md.join("\n"), "utf8");
   console.log(`Wrote ${REMOVED_MD_PATH}`);
 
-  console.log("\nDone! Review the REMOVE and REVIEW lists, then edit final-codes.json.");
+  console.log(
+    "\nDone! Review the REMOVE and REVIEW lists, then edit final-codes.json."
+  );
 }
 
 main().catch((err) => {

@@ -6,7 +6,9 @@
 import { Database } from "duckdb-async";
 
 async function main() {
-  const db = await Database.create("mrf_lake.duckdb", { access_mode: "READ_ONLY" });
+  const db = await Database.create("mrf_lake.duckdb", {
+    access_mode: "READ_ONLY",
+  });
   await db.run("SET memory_limit = '2GB'");
   await db.run("SET threads = 2");
 
@@ -55,17 +57,23 @@ async function main() {
     console.log(`  description: ${r.description}`);
     console.log(`  cpt: ${r.cpt} | hcpcs: ${r.hcpcs}`);
     console.log(`  setting: ${r.setting} | billing_class: ${r.billing_class}`);
-    console.log(`  gross_charge: ${r.gross_charge} | discounted_cash: ${r.discounted_cash}`);
+    console.log(
+      `  gross_charge: ${r.gross_charge} | discounted_cash: ${r.discounted_cash}`
+    );
     console.log(`  minimum: ${r.minimum} | maximum: ${r.maximum}`);
     console.log(`  avg_negotiated_rate: ${r.avg_negotiated_rate}`);
     console.log(`  min_negotiated_rate: ${r.min_negotiated_rate}`);
     console.log(`  max_negotiated_rate: ${r.max_negotiated_rate}`);
-    console.log(`  payer_count: ${r.payer_count} | distinct_payer_count: ${r.distinct_payer_count}`);
+    console.log(
+      `  payer_count: ${r.payer_count} | distinct_payer_count: ${r.distinct_payer_count}`
+    );
     console.log(`  negotiated_rate_stddev: ${r.negotiated_rate_stddev}`);
     console.log(`  modifiers: ${r.modifiers}`);
     console.log(`  additional_generic_notes: ${r.additional_generic_notes}`);
     console.log(`  drug_unit: ${r.drug_unit} | drug_type: ${r.drug_type}`);
-    console.log(`  rc: ${r.rc} | cdm: ${r.cdm} | ndc: ${r.ndc} | icd: ${r.icd}`);
+    console.log(
+      `  rc: ${r.rc} | cdm: ${r.cdm} | ndc: ${r.ndc} | icd: ${r.icd}`
+    );
     console.log(`  other_code1: ${r.other_code1} (${r.other_code1_type})`);
     console.log(`  other_code2: ${r.other_code2} (${r.other_code2_type})`);
     console.log(`  all_codes: ${r.all_codes}`);
@@ -105,7 +113,9 @@ async function main() {
   `);
   if (kindred.length > 0) {
     const kid = (kindred[0] as any).hospital_id;
-    console.log(`Hospital: ${(kindred[0] as any).hospital_name}, ${(kindred[0] as any).cnt} rows\n`);
+    console.log(
+      `Hospital: ${(kindred[0] as any).hospital_name}, ${(kindred[0] as any).cnt} rows\n`
+    );
 
     const krows = await db.all(`
       SELECT * FROM standard_charges
@@ -121,8 +131,12 @@ async function main() {
       console.log(`  charge_seq: ${r.charge_seq}`);
       console.log(`  description: ${r.description}`);
       console.log(`  cpt: ${r.cpt} | hcpcs: ${r.hcpcs}`);
-      console.log(`  setting: ${r.setting} | billing_class: ${r.billing_class}`);
-      console.log(`  gross_charge: ${r.gross_charge} | discounted_cash: ${r.discounted_cash}`);
+      console.log(
+        `  setting: ${r.setting} | billing_class: ${r.billing_class}`
+      );
+      console.log(
+        `  gross_charge: ${r.gross_charge} | discounted_cash: ${r.discounted_cash}`
+      );
       console.log(`  avg_negotiated_rate: ${r.avg_negotiated_rate}`);
       console.log(`  payer_count: ${r.payer_count}`);
       console.log(`  additional_generic_notes: ${r.additional_generic_notes}`);
@@ -141,7 +155,9 @@ async function main() {
     `);
     console.log("Column variance:");
     for (const col of allKCols) {
-      const distinctVals = new Set(allKRows.map((r: any) => JSON.stringify(r[col])));
+      const distinctVals = new Set(
+        allKRows.map((r: any) => JSON.stringify(r[col]))
+      );
       if (distinctVals.size > 1) {
         console.log(`  ${col}: ${distinctVals.size} distinct values`);
         const vals = [...distinctVals].slice(0, 3);

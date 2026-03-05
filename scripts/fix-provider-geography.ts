@@ -236,7 +236,11 @@ async function geocodeCascade(
   if (apiKey) {
     // Build a query from available data
     const parts: string[] = [];
-    if (provider.address && provider.address.length > 5 && /[a-zA-Z]/.test(provider.address)) {
+    if (
+      provider.address &&
+      provider.address.length > 5 &&
+      /[a-zA-Z]/.test(provider.address)
+    ) {
       parts.push(provider.address);
     }
     if (provider.city) parts.push(provider.city);
@@ -312,7 +316,9 @@ async function triage(
     offset += pageSize;
   }
 
-  console.log(`  Fetched ${allProviders.length.toLocaleString()} total providers`);
+  console.log(
+    `  Fetched ${allProviders.length.toLocaleString()} total providers`
+  );
 
   // Identify affected providers
   const affected: TriagedProvider[] = [];
@@ -362,14 +368,19 @@ async function triage(
   const wrongZip = affected.filter((p) => p.issue === "wrong_zip");
   const missingGeo = affected.filter((p) => p.issue === "missing_geo");
   const withCharges = affected.filter((p) => p.charge_count > 0);
-  const totalChargesAtRisk = affected.reduce((sum, p) => sum + p.charge_count, 0);
+  const totalChargesAtRisk = affected.reduce(
+    (sum, p) => sum + p.charge_count,
+    0
+  );
 
   console.log(`\n  Triage Results:`);
   console.log(`    Wrong ZIP (state mismatch):  ${wrongZip.length}`);
   console.log(`    Missing all geo data:        ${missingGeo.length}`);
   console.log(`    Total affected:              ${affected.length}`);
   console.log(`    Providers with charges:      ${withCharges.length}`);
-  console.log(`    Total charge rows at risk:   ${totalChargesAtRisk.toLocaleString()}`);
+  console.log(
+    `    Total charge rows at risk:   ${totalChargesAtRisk.toLocaleString()}`
+  );
 
   return affected;
 }
@@ -385,7 +396,9 @@ async function fixProviders(
   const wrongZip = affected.filter((p) => p.issue === "wrong_zip");
   const missingGeo = affected.filter((p) => p.issue === "missing_geo");
 
-  console.log(`\n=== Phase 1: Fix wrong-ZIP providers (${wrongZip.length}) ===\n`);
+  console.log(
+    `\n=== Phase 1: Fix wrong-ZIP providers (${wrongZip.length}) ===\n`
+  );
 
   const stats = { extractZipV2: 0, lookupByName: 0, google_maps: 0 };
   const fixes: GeoFix[] = [];
@@ -401,14 +414,22 @@ async function fixProviders(
     }
 
     if ((i + 1) % 50 === 0) {
-      console.log(`  Processed ${i + 1}/${wrongZip.length} wrong-ZIP providers...`);
+      console.log(
+        `  Processed ${i + 1}/${wrongZip.length} wrong-ZIP providers...`
+      );
     }
   }
 
-  console.log(`  Wrong-ZIP results: ${fixes.length} fixed, ${unfixable.length} unfixable`);
-  console.log(`  Methods: extractZipV2=${stats.extractZipV2}, lookupByName=${stats.lookupByName}, google=${stats.google_maps}`);
+  console.log(
+    `  Wrong-ZIP results: ${fixes.length} fixed, ${unfixable.length} unfixable`
+  );
+  console.log(
+    `  Methods: extractZipV2=${stats.extractZipV2}, lookupByName=${stats.lookupByName}, google=${stats.google_maps}`
+  );
 
-  console.log(`\n=== Phase 2: Fix missing-geo providers (${missingGeo.length}) ===\n`);
+  console.log(
+    `\n=== Phase 2: Fix missing-geo providers (${missingGeo.length}) ===\n`
+  );
 
   const stats2 = { extractZipV2: 0, lookupByName: 0, google_maps: 0 };
 
@@ -436,7 +457,9 @@ async function fixProviders(
     }
 
     if ((i + 1) % 50 === 0) {
-      console.log(`  Processed ${i + 1}/${parseable.length} parseable missing-geo providers...`);
+      console.log(
+        `  Processed ${i + 1}/${parseable.length} parseable missing-geo providers...`
+      );
     }
   }
 
@@ -485,9 +508,14 @@ async function fixProviders(
     unfixable.push(p);
   }
 
-  const missingFixed = fixes.length - wrongZip.length + unfixable.filter((u) => u.issue === "wrong_zip").length;
+  const missingFixed =
+    fixes.length -
+    wrongZip.length +
+    unfixable.filter((u) => u.issue === "wrong_zip").length;
   console.log(`  Missing-geo fixed: ${missingFixed}`);
-  console.log(`  Methods: extractZipV2=${stats2.extractZipV2}, lookupByName=${stats2.lookupByName}, google=${stats2.google_maps}`);
+  console.log(
+    `  Methods: extractZipV2=${stats2.extractZipV2}, lookupByName=${stats2.lookupByName}, google=${stats2.google_maps}`
+  );
 
   return { fixes, unfixable };
 }
@@ -496,10 +524,7 @@ async function fixProviders(
 // Phase 3: Apply fixes
 // ---------------------------------------------------------------------------
 
-async function applyFixes(
-  fixes: GeoFix[],
-  pgPool: PgPool
-): Promise<void> {
+async function applyFixes(fixes: GeoFix[], pgPool: PgPool): Promise<void> {
   console.log(`\n=== Phase 3: Apply Fixes (${fixes.length} providers) ===\n`);
 
   if (DRY_RUN) {
@@ -507,21 +532,25 @@ async function applyFixes(
   }
 
   // Print pre-update snapshot for rollback reference
-  console.log("  Pre-update snapshot (id | old_zip | old_lat | old_lng -> new_zip | new_lat | new_lng | method):");
+  console.log(
+    "  Pre-update snapshot (id | old_zip | old_lat | old_lng -> new_zip | new_lat | new_lng | method):"
+  );
   console.log("  " + "-".repeat(120));
   for (const fix of fixes) {
     const oldLat = fix.old_lat != null ? fix.old_lat.toFixed(4) : "NULL";
     const oldLng = fix.old_lng != null ? fix.old_lng.toFixed(4) : "NULL";
     console.log(
       `  ${fix.id} | ${(fix.old_zip ?? "NULL").padEnd(7)} | ` +
-      `${oldLat.padStart(9)} | ${oldLng.padStart(10)} -> ` +
-      `${fix.new_zip.padEnd(7)} | ${fix.new_lat.toFixed(4).padStart(9)} | ${fix.new_lng.toFixed(4).padStart(10)} | ${fix.method}`
+        `${oldLat.padStart(9)} | ${oldLng.padStart(10)} -> ` +
+        `${fix.new_zip.padEnd(7)} | ${fix.new_lat.toFixed(4).padStart(9)} | ${fix.new_lng.toFixed(4).padStart(10)} | ${fix.method}`
     );
   }
   console.log("  " + "-".repeat(120));
 
   if (DRY_RUN) {
-    console.log("\n  DRY RUN complete. Re-run without --dry-run to apply changes.");
+    console.log(
+      "\n  DRY RUN complete. Re-run without --dry-run to apply changes."
+    );
     return;
   }
 
@@ -538,7 +567,9 @@ async function applyFixes(
     for (let j = 0; j < batch.length; j++) {
       const fix = batch[j];
       const offset = j * 4;
-      valueClauses.push(`($${offset + 1}::uuid, $${offset + 2}::text, $${offset + 3}::double precision, $${offset + 4}::double precision)`);
+      valueClauses.push(
+        `($${offset + 1}::uuid, $${offset + 2}::text, $${offset + 3}::double precision, $${offset + 4}::double precision)`
+      );
       values.push(fix.id, fix.new_zip, fix.new_lat, fix.new_lng);
     }
 
@@ -577,31 +608,55 @@ function printReport(
     .filter((p) => fixedIds.has(p.id))
     .reduce((sum, p) => sum + p.charge_count, 0);
 
-  const chargesStillMissing = unfixable.reduce((sum, p) => sum + p.charge_count, 0);
+  const chargesStillMissing = unfixable.reduce(
+    (sum, p) => sum + p.charge_count,
+    0
+  );
 
-  console.log("\n======================================================================");
-  console.log("       Provider Geography Remediation Report                          ");
-  console.log("======================================================================");
+  console.log(
+    "\n======================================================================"
+  );
+  console.log(
+    "       Provider Geography Remediation Report                          "
+  );
+  console.log(
+    "======================================================================"
+  );
   console.log(`  Total affected:              ${affected.length}`);
   console.log(`  Fixed:                       ${fixes.length}`);
   console.log(`  Unfixable:                   ${unfixable.length}`);
-  console.log("----------------------------------------------------------------------");
+  console.log(
+    "----------------------------------------------------------------------"
+  );
   console.log("  Fix Methods:");
   console.log(`    extractZipV2 (ZIP regex):  ${byMethod.extractZipV2}`);
   console.log(`    lookupByName (city/state): ${byMethod.lookupByName}`);
   console.log(`    Google Maps API:           ${byMethod.google_maps}`);
-  console.log("----------------------------------------------------------------------");
-  console.log(`  Charges rescued:             ${chargesRescued.toLocaleString()}`);
-  console.log(`  Charges still invisible:     ${chargesStillMissing.toLocaleString()}`);
-  console.log("======================================================================");
+  console.log(
+    "----------------------------------------------------------------------"
+  );
+  console.log(
+    `  Charges rescued:             ${chargesRescued.toLocaleString()}`
+  );
+  console.log(
+    `  Charges still invisible:     ${chargesStillMissing.toLocaleString()}`
+  );
+  console.log(
+    "======================================================================"
+  );
 
   if (unfixable.length > 0) {
     console.log("\n  Unfixable providers:");
     console.log("  " + "-".repeat(90));
     for (const p of unfixable.slice(0, 50)) {
-      const charges = p.charge_count > 0 ? ` (${p.charge_count.toLocaleString()} charges)` : "";
+      const charges =
+        p.charge_count > 0
+          ? ` (${p.charge_count.toLocaleString()} charges)`
+          : "";
       const addr = (p.address ?? "NULL").slice(0, 50);
-      console.log(`  ${p.issue.padEnd(12)} | ${p.state ?? "??"} | ${addr.padEnd(52)} | ${p.name.slice(0, 40)}${charges}`);
+      console.log(
+        `  ${p.issue.padEnd(12)} | ${p.state ?? "??"} | ${addr.padEnd(52)} | ${p.name.slice(0, 40)}${charges}`
+      );
     }
     if (unfixable.length > 50) {
       console.log(`  ... and ${unfixable.length - 50} more`);
@@ -627,7 +682,9 @@ async function main(): Promise<void> {
   const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    console.error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+    );
     process.exit(1);
   }
   if (!dbUrl) {
@@ -638,7 +695,9 @@ async function main(): Promise<void> {
   if (googleApiKey) {
     console.log("  Google Maps API key: found (Tier 3 geocoding enabled)");
   } else {
-    console.log("  Google Maps API key: NOT found (Tier 3 disabled — Tiers 1 & 2 only)");
+    console.log(
+      "  Google Maps API key: NOT found (Tier 3 disabled — Tiers 1 & 2 only)"
+    );
   }
 
   // Connect to Postgres via pooler (port 6543)

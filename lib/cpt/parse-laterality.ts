@@ -42,7 +42,8 @@ export function parseLaterality(
     if (/\bRT\b/.test(desc)) return "right";
 
     // Priority 3: Full words
-    if (/\bBILATERAL\b/.test(desc) || /\bBILAT\b/.test(desc)) return "bilateral";
+    if (/\bBILATERAL\b/.test(desc) || /\bBILAT\b/.test(desc))
+      return "bilateral";
     if (/\bLEFT\b/.test(desc)) return "left";
     if (/\bRIGHT\b/.test(desc)) return "right";
   }

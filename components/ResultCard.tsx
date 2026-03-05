@@ -1,6 +1,11 @@
 "use client";
 
-import { formatPrice, formatDistance, formatDate, formatBillingCode } from "@/lib/format";
+import {
+  formatPrice,
+  formatDistance,
+  formatDate,
+  formatBillingCode,
+} from "@/lib/format";
 import type { ChargeResult } from "@/types";
 
 interface ResultCardProps {
@@ -10,8 +15,14 @@ interface ResultCardProps {
   codeDescriptionMap?: Record<string, string>;
 }
 
-function formatAdderPriceRange(result: NonNullable<ChargeResult["optionalAdders"]>[number]): string {
-  if (result.minPrice != null && result.maxPrice != null && result.minPrice !== result.maxPrice) {
+function formatAdderPriceRange(
+  result: NonNullable<ChargeResult["optionalAdders"]>[number]
+): string {
+  if (
+    result.minPrice != null &&
+    result.maxPrice != null &&
+    result.minPrice !== result.maxPrice
+  ) {
     return `${formatPrice(result.minPrice)} - ${formatPrice(result.maxPrice)}`;
   }
 
@@ -22,16 +33,26 @@ function formatAdderPriceRange(result: NonNullable<ChargeResult["optionalAdders"
   return "N/A";
 }
 
-export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: ResultCardProps) {
+export function ResultCard({
+  result,
+  rank,
+  isSelected,
+  codeDescriptionMap,
+}: ResultCardProps) {
   const billingCode = formatBillingCode(result);
   const distance = formatDistance(result.distanceMiles);
   const lastUpdated = formatDate(result.lastUpdated);
-  const priceLabel = result.baseLabel || (result.pricingMode === "encounter_first" ? "Base estimate" : "Cash price");
+  const priceLabel =
+    result.baseLabel ||
+    (result.pricingMode === "encounter_first" ? "Base estimate" : "Cash price");
 
   const resultCode = result.cpt || result.hcpcs || result.msDrg;
-  const canonicalDescription = resultCode ? codeDescriptionMap?.[resultCode] : undefined;
+  const canonicalDescription = resultCode
+    ? codeDescriptionMap?.[resultCode]
+    : undefined;
   const displayDescription = canonicalDescription || result.description;
-  const rawTooltip = canonicalDescription && result.description ? result.description : undefined;
+  const rawTooltip =
+    canonicalDescription && result.description ? result.description : undefined;
   const address = [
     result.provider.address,
     result.provider.city,
@@ -42,8 +63,10 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
 
   const billingClassCallout = (() => {
     const bc = result.billingClass?.toLowerCase();
-    if (bc === "facility") return "Facility fee only — professional fees may apply separately";
-    if (bc === "professional") return "Professional fee only — facility charges may apply separately";
+    if (bc === "facility")
+      return "Facility fee only — professional fees may apply separately";
+    if (bc === "professional")
+      return "Professional fee only — facility charges may apply separately";
     return null;
   })();
 
@@ -52,7 +75,9 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
       data-result-id={result.id}
       className="card-hover rounded-xl border overflow-hidden transition-all duration-300"
       style={{
-        background: isSelected ? "var(--cc-primary-light)" : "var(--cc-surface)",
+        background: isSelected
+          ? "var(--cc-primary-light)"
+          : "var(--cc-surface)",
         borderColor: isSelected ? "var(--cc-primary)" : "var(--cc-border)",
         boxShadow: isSelected ? "0 0 0 2px var(--cc-primary)" : undefined,
       }}
@@ -62,9 +87,8 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
         <div
           className="w-1 shrink-0"
           style={{
-            background: rank <= 3
-              ? "var(--cc-primary)"
-              : "var(--cc-border-strong)",
+            background:
+              rank <= 3 ? "var(--cc-primary)" : "var(--cc-border-strong)",
           }}
         />
 
@@ -77,8 +101,14 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
                 <span
                   className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-semibold shrink-0"
                   style={{
-                    background: rank <= 3 ? "var(--cc-primary-light)" : "var(--cc-surface-alt)",
-                    color: rank <= 3 ? "var(--cc-primary)" : "var(--cc-text-tertiary)",
+                    background:
+                      rank <= 3
+                        ? "var(--cc-primary-light)"
+                        : "var(--cc-surface-alt)",
+                    color:
+                      rank <= 3
+                        ? "var(--cc-primary)"
+                        : "var(--cc-text-tertiary)",
                   }}
                 >
                   {rank}
@@ -139,14 +169,15 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
             <div className="text-right shrink-0">
               {result.cashPrice != null ? (
                 <>
-                  {result.grossCharge != null && result.grossCharge > (result.cashPrice || 0) && (
-                    <p
-                      className="text-xs line-through"
-                      style={{ color: "var(--cc-text-tertiary)" }}
-                    >
-                      {formatPrice(result.grossCharge)}
-                    </p>
-                  )}
+                  {result.grossCharge != null &&
+                    result.grossCharge > (result.cashPrice || 0) && (
+                      <p
+                        className="text-xs line-through"
+                        style={{ color: "var(--cc-text-tertiary)" }}
+                      >
+                        {formatPrice(result.grossCharge)}
+                      </p>
+                    )}
                   <p
                     className="text-2xl font-bold"
                     style={{ color: "var(--cc-primary)" }}
@@ -182,11 +213,15 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
                   className="text-xs mt-0.5"
                   style={{ color: "var(--cc-text-tertiary)" }}
                 >
-                  {formatPrice(result.minPrice)} &ndash; {formatPrice(result.maxPrice)}
+                  {formatPrice(result.minPrice)} &ndash;{" "}
+                  {formatPrice(result.maxPrice)}
                 </p>
               )}
               {result.estimatedTotalMedian != null && (
-                <p className="text-xs mt-1.5" style={{ color: "var(--cc-text-secondary)" }}>
+                <p
+                  className="text-xs mt-1.5"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
                   Est. total: {formatPrice(result.estimatedTotalMedian)}
                 </p>
               )}
@@ -212,9 +247,7 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
                 <path d="M12 16v-4" />
                 <path d="M12 8h.01" />
               </svg>
-              <span className="text-xs">
-                {billingClassCallout}
-              </span>
+              <span className="text-xs">{billingClassCallout}</span>
             </div>
           )}
 
@@ -243,7 +276,8 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
                       className="text-xs"
                       style={{ color: "var(--cc-text-tertiary)" }}
                     >
-                      ({result.payerCount} payer{result.payerCount !== 1 ? "s" : ""})
+                      ({result.payerCount} payer
+                      {result.payerCount !== 1 ? "s" : ""})
                     </span>
                   )}
                 </div>
@@ -291,31 +325,54 @@ export function ResultCard({ result, rank, isSelected, codeDescriptionMap }: Res
                 borderColor: "var(--cc-border)",
               }}
             >
-              <p className="text-xs font-semibold" style={{ color: "var(--cc-text-secondary)" }}>
+              <p
+                className="text-xs font-semibold"
+                style={{ color: "var(--cc-text-secondary)" }}
+              >
                 Possible additional costs (only if ordered during visit)
               </p>
               <div className="mt-2 space-y-1.5">
                 {result.optionalAdders.map((adder) => (
-                  <div key={`${adder.id || adder.type}-${adder.label}`} className="flex items-center justify-between gap-2">
+                  <div
+                    key={`${adder.id || adder.type}-${adder.label}`}
+                    className="flex items-center justify-between gap-2"
+                  >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-xs font-medium" style={{ color: "var(--cc-text)" }}>
+                      <span
+                        className="text-xs font-medium"
+                        style={{ color: "var(--cc-text)" }}
+                      >
                         {adder.label}
                       </span>
-                      <span className="text-[11px]" style={{ color: "var(--cc-text-tertiary)" }}>
-                        {adder.source === "facility" ? "this facility" : "local estimate"}
+                      <span
+                        className="text-[11px]"
+                        style={{ color: "var(--cc-text-tertiary)" }}
+                      >
+                        {adder.source === "facility"
+                          ? "this facility"
+                          : "local estimate"}
                       </span>
                     </div>
-                    <span className="text-xs font-semibold shrink-0" style={{ color: "var(--cc-primary)" }}>
+                    <span
+                      className="text-xs font-semibold shrink-0"
+                      style={{ color: "var(--cc-primary)" }}
+                    >
                       {formatAdderPriceRange(adder)}
                     </span>
                   </div>
                 ))}
               </div>
-              <p className="text-[11px] mt-2" style={{ color: "var(--cc-text-tertiary)" }}>
+              <p
+                className="text-[11px] mt-2"
+                style={{ color: "var(--cc-text-tertiary)" }}
+              >
                 Adders are separate from the base visit estimate.
               </p>
               {result.proxyLabel && (
-                <p className="text-[11px] mt-1" style={{ color: "var(--cc-text-tertiary)" }}>
+                <p
+                  className="text-[11px] mt-1"
+                  style={{ color: "var(--cc-text-tertiary)" }}
+                >
                   {result.proxyLabel}
                 </p>
               )}

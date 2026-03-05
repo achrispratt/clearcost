@@ -43,6 +43,7 @@ Massive productivity day across multiple workstreams (Claude Code + Codex). 17 c
 **Commits:** `3b7be0f` through `2bd86e0` (7 commits)
 
 Foundation cleanup across the entire codebase:
+
 - **Shared utilities**: Foundation utility modules for codebase cleanup
 - **API route dedup**: Consolidated API route duplication with shared helpers
 - **Supabase config**: Deduplicated Supabase config, extracted `translate.ts` code
@@ -86,16 +87,16 @@ Fixed regressions introduced by earlier changes — relevance scoring and locati
 
 ## Key Files Modified Today
 
-| Area | Files |
-|------|-------|
-| Search pipeline | `lib/cpt/lookup.ts`, `lib/cpt/translate.ts`, API routes |
-| Pricing | `lib/cpt/pricing-plan.ts` |
-| Results UI | `app/results/page.tsx`, `components/FilterBar.tsx`, `components/MapView.tsx`, `components/ResultCard.tsx` |
-| Search bar | `components/SearchBar.tsx`, `components/LocationInput.tsx` |
-| Homepage | `app/page.tsx` |
-| Data import | `lib/data/import-trilliant.ts` |
-| Database | Postgres RPC migration for cross-column lookup |
-| Config | `.claude/launch.json`, `.gitignore` |
+| Area            | Files                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------- |
+| Search pipeline | `lib/cpt/lookup.ts`, `lib/cpt/translate.ts`, API routes                                                   |
+| Pricing         | `lib/cpt/pricing-plan.ts`                                                                                 |
+| Results UI      | `app/results/page.tsx`, `components/FilterBar.tsx`, `components/MapView.tsx`, `components/ResultCard.tsx` |
+| Search bar      | `components/SearchBar.tsx`, `components/LocationInput.tsx`                                                |
+| Homepage        | `app/page.tsx`                                                                                            |
+| Data import     | `lib/data/import-trilliant.ts`                                                                            |
+| Database        | Postgres RPC migration for cross-column lookup                                                            |
+| Config          | `.claude/launch.json`, `.gitignore`                                                                       |
 
 ## Current State
 

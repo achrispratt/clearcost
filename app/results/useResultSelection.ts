@@ -16,7 +16,10 @@ export function useResultSelection() {
     });
 
     if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
-    selectionTimerRef.current = setTimeout(() => setSelectedResultId(null), 3000);
+    selectionTimerRef.current = setTimeout(
+      () => setSelectedResultId(null),
+      3000
+    );
   }, []);
 
   return { selectedResultId, handleMarkerClick };

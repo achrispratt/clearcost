@@ -42,7 +42,12 @@ function parseArgs(argv: string[]): ParsedArgs {
   const radius = Number(args.get("radius") || "25");
   const baseUrl = args.get("base-url") || "http://localhost:3000";
 
-  if (!query || !Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(runs)) {
+  if (
+    !query ||
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    !Number.isFinite(runs)
+  ) {
     throw new Error(
       "Missing required args. Expected: --query <text> --lat <num> --lng <num> [--runs <num>] [--radius <num>] [--base-url <url>]"
     );
@@ -86,7 +91,9 @@ async function run(): Promise<void> {
   const signatures = new Set<string>();
 
   console.log(`Running stability smoke: ${args.runs} runs`);
-  console.log(`Query: "${args.query}" @ (${args.lat}, ${args.lng}), radius=${args.radius} miles`);
+  console.log(
+    `Query: "${args.query}" @ (${args.lat}, ${args.lng}), radius=${args.radius} miles`
+  );
   console.log(`Endpoint: ${endpoint}`);
   console.log("");
 
@@ -114,7 +121,10 @@ async function run(): Promise<void> {
         payload = null;
       }
 
-      const parsed = payload as { totalResults?: unknown; results?: unknown[] } | null;
+      const parsed = payload as {
+        totalResults?: unknown;
+        results?: unknown[];
+      } | null;
       const totalResults =
         typeof parsed?.totalResults === "number"
           ? parsed.totalResults

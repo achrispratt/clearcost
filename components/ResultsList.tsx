@@ -12,7 +12,14 @@ interface ResultsListProps {
   onExpandRadius?: () => void;
 }
 
-export function ResultsList({ results, loading, selectedResultId, codeDescriptionMap, locationDisplay, onExpandRadius }: ResultsListProps) {
+export function ResultsList({
+  results,
+  loading,
+  selectedResultId,
+  codeDescriptionMap,
+  locationDisplay,
+  onExpandRadius,
+}: ResultsListProps) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -88,10 +95,16 @@ export function ResultsList({ results, loading, selectedResultId, codeDescriptio
           <path d="m21 21-4.3-4.3" />
           <path d="M8 11h6" />
         </svg>
-        <p className="font-medium" style={{ color: "var(--cc-text-secondary)" }}>
+        <p
+          className="font-medium"
+          style={{ color: "var(--cc-text-secondary)" }}
+        >
           No results found{locationDisplay ? ` near ${locationDisplay}` : ""}
         </p>
-        <p className="text-sm mt-1" style={{ color: "var(--cc-text-tertiary)" }}>
+        <p
+          className="text-sm mt-1"
+          style={{ color: "var(--cc-text-tertiary)" }}
+        >
           Try a larger search radius or a different location.
         </p>
         {onExpandRadius && (
@@ -151,7 +164,12 @@ export function ResultsList({ results, loading, selectedResultId, codeDescriptio
           className="animate-fade-up"
           style={{ animationDelay: `${i * 0.06}s` }}
         >
-          <ResultCard result={result} rank={i + 1} isSelected={result.id === selectedResultId} codeDescriptionMap={codeDescriptionMap} />
+          <ResultCard
+            result={result}
+            rank={i + 1}
+            isSelected={result.id === selectedResultId}
+            codeDescriptionMap={codeDescriptionMap}
+          />
         </div>
       ))}
     </div>

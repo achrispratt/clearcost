@@ -7,7 +7,10 @@ import { Pool as PgPool } from "pg";
 
 async function main() {
   const dbUrl = process.env.SUPABASE_DB_URL;
-  if (!dbUrl) { console.error("No SUPABASE_DB_URL"); process.exit(1); }
+  if (!dbUrl) {
+    console.error("No SUPABASE_DB_URL");
+    process.exit(1);
+  }
   const poolerUrl = dbUrl.replace(/:5432\//, ":6543/");
   const pgPool = new PgPool({
     connectionString: poolerUrl,
@@ -32,7 +35,9 @@ async function main() {
   const pid = providers[0].id;
 
   // Count total and distinct descriptions for 86003
-  const { rows: [stats] } = await pgPool.query(
+  const {
+    rows: [stats],
+  } = await pgPool.query(
     `SELECT COUNT(*)::int as total,
             COUNT(DISTINCT description)::int as distinct_desc,
             COUNT(DISTINCT cash_price)::int as distinct_prices,
@@ -65,7 +70,14 @@ async function main() {
   );
   console.log("\nTop description + price groups:");
   for (const d of descs) {
-    console.log("  x" + d.cnt + " | $" + d.cash_price + " | " + (d.description || "NULL").slice(0, 65));
+    console.log(
+      "  x" +
+        d.cnt +
+        " | $" +
+        d.cash_price +
+        " | " +
+        (d.description || "NULL").slice(0, 65)
+    );
   }
 
   // True all-column duplicates
@@ -82,18 +94,31 @@ async function main() {
      LIMIT 10`,
     [pid]
   );
-  console.log("\nTrue all-column duplicate groups (groups where EVERY column matches):");
+  console.log(
+    "\nTrue all-column duplicate groups (groups where EVERY column matches):"
+  );
   if (dupCheck.length === 0) {
-    console.log("  NONE — no true all-column duplicates for this provider+code");
+    console.log(
+      "  NONE — no true all-column duplicates for this provider+code"
+    );
   } else {
     for (const d of dupCheck) {
-      console.log("  x" + d.cnt + " | $" + d.cash_price + " | " + (d.description || "NULL").slice(0, 65));
+      console.log(
+        "  x" +
+          d.cnt +
+          " | $" +
+          d.cash_price +
+          " | " +
+          (d.description || "NULL").slice(0, 65)
+      );
     }
   }
 
   // Broader check: pick any TX provider with known all-column dupes
   // Use the same query our investigation used
-  console.log("\n\n=== Spot-check: a TX provider with known all-column dupes ===");
+  console.log(
+    "\n\n=== Spot-check: a TX provider with known all-column dupes ==="
+  );
   const { rows: txDups } = await pgPool.query(`
     SELECT c.provider_id, p.name, c.hcpcs, c.cpt, c.description,
            c.cash_price, c.billing_class, c.setting, COUNT(*)::int as cnt
@@ -110,14 +135,30 @@ async function main() {
     LIMIT 5
   `);
   for (const d of txDups) {
-    console.log("  x" + d.cnt + " | " + d.name.slice(0, 40) + " | " + (d.cpt || d.hcpcs) + " | " + (d.description || "").slice(0, 50) + " | billing=" + d.billing_class + " | setting=" + d.setting + " | $" + d.cash_price);
+    console.log(
+      "  x" +
+        d.cnt +
+        " | " +
+        d.name.slice(0, 40) +
+        " | " +
+        (d.cpt || d.hcpcs) +
+        " | " +
+        (d.description || "").slice(0, 50) +
+        " | billing=" +
+        d.billing_class +
+        " | setting=" +
+        d.setting +
+        " | $" +
+        d.cash_price
+    );
   }
 
   // For the top dup group, show created_at timestamps
   if (txDups.length > 0) {
     const top = txDups[0];
     console.log("\n--- Created_at timestamps for top dup group ---");
-    const { rows: timestamps } = await pgPool.query(`
+    const { rows: timestamps } = await pgPool.query(
+      `
       SELECT created_at, COUNT(*)::int as cnt
       FROM charges
       WHERE provider_id = $1
@@ -127,7 +168,15 @@ async function main() {
         AND cash_price = $5
       GROUP BY created_at
       ORDER BY created_at
-    `, [top.provider_id, top.cpt || '', top.hcpcs || '', top.description, top.cash_price]);
+    `,
+      [
+        top.provider_id,
+        top.cpt || "",
+        top.hcpcs || "",
+        top.description,
+        top.cash_price,
+      ]
+    );
     for (const t of timestamps) {
       console.log("  " + t.created_at.toISOString() + " (" + t.cnt + " rows)");
     }

@@ -30,11 +30,26 @@ const BATCH_SIZE = 500;
 
 // Column order for INSERT INTO charges — must match import-trilliant.ts
 const CHARGE_COLUMNS = [
-  "provider_id", "description", "setting", "billing_class",
-  "cpt", "hcpcs", "ms_drg", "revenue_code", "ndc", "icd", "modifiers",
-  "gross_charge", "cash_price", "min_price", "max_price",
-  "avg_negotiated_rate", "min_negotiated_rate", "max_negotiated_rate",
-  "payer_count", "source",
+  "provider_id",
+  "description",
+  "setting",
+  "billing_class",
+  "cpt",
+  "hcpcs",
+  "ms_drg",
+  "revenue_code",
+  "ndc",
+  "icd",
+  "modifiers",
+  "gross_charge",
+  "cash_price",
+  "min_price",
+  "max_price",
+  "avg_negotiated_rate",
+  "min_negotiated_rate",
+  "max_negotiated_rate",
+  "payer_count",
+  "source",
 ] as const;
 
 const NUM_COLS = CHARGE_COLUMNS.length;
@@ -103,10 +118,14 @@ async function flushOneBatch(
       const msg = err instanceof Error ? err.message : String(err);
       if (attempt < 3) {
         const wait = attempt * 5000;
-        console.warn(`  ${label}: attempt ${attempt} failed, retrying in ${wait / 1000}s... (${msg})`);
+        console.warn(
+          `  ${label}: attempt ${attempt} failed, retrying in ${wait / 1000}s... (${msg})`
+        );
         await new Promise((r) => setTimeout(r, wait));
       } else {
-        console.error(`  ${label}: FAILED after 3 attempts: ${msg} (${rows.length} rows lost)`);
+        console.error(
+          `  ${label}: FAILED after 3 attempts: ${msg} (${rows.length} rows lost)`
+        );
       }
     }
   }
@@ -133,11 +152,15 @@ async function main() {
   const dbUrl = process.env.SUPABASE_DB_URL;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error("\nMissing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\nRun with: npx tsx --env-file=.env.local lib/data/backfill-inpatient.ts");
+    console.error(
+      "\nMissing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\nRun with: npx tsx --env-file=.env.local lib/data/backfill-inpatient.ts"
+    );
     process.exit(1);
   }
   if (!dbUrl) {
-    console.error("\nMissing SUPABASE_DB_URL.\nAdd to .env.local (get from Supabase Dashboard → Settings → Database → Connection string).");
+    console.error(
+      "\nMissing SUPABASE_DB_URL.\nAdd to .env.local (get from Supabase Dashboard → Settings → Database → Connection string)."
+    );
     process.exit(1);
   }
 
@@ -205,11 +228,13 @@ async function main() {
       AND TRIM(LOWER(sc.setting)) = 'inpatient'
   `);
   const totalAvailable = Number((countRows[0] as { cnt: bigint }).cnt);
-  console.log(`\n  Inpatient rows available: ${totalAvailable.toLocaleString()}`);
+  console.log(
+    `\n  Inpatient rows available: ${totalAvailable.toLocaleString()}`
+  );
 
   if (dryRun) {
     // Show per-state breakdown
-    const stateBreakdown = await db.all(`
+    const stateBreakdown = (await db.all(`
       SELECT h.hospital_state as state, COUNT(*) as cnt
       FROM standard_charges sc
       JOIN hospitals h ON sc.hospital_id = h.hospital_id
@@ -218,7 +243,7 @@ async function main() {
         AND TRIM(LOWER(sc.setting)) = 'inpatient'
       GROUP BY h.hospital_state
       ORDER BY cnt DESC
-    `) as { state: string; cnt: bigint }[];
+    `)) as { state: string; cnt: bigint }[];
 
     console.log("\n  Per-state breakdown:");
     for (const row of stateBreakdown) {
@@ -232,16 +257,16 @@ async function main() {
   }
 
   // Query all inpatient rows — state by state to keep DuckDB memory manageable
-  const stateRows = await db.all(
+  const stateRows = (await db.all(
     `SELECT DISTINCT h.hospital_state FROM hospitals h WHERE h.status = 'completed' ORDER BY h.hospital_state`
-  ) as { hospital_state: string }[];
+  )) as { hospital_state: string }[];
 
   let totalInserted = 0;
   let totalSkipped = 0;
   const startTime = Date.now();
 
   for (const { hospital_state: state } of stateRows) {
-    const rows = await db.all(`
+    const rows = (await db.all(`
       SELECT charge_id, hospital_id, description, gross_charge, discounted_cash,
              minimum, maximum, setting, billing_class, modifiers,
              cpt, hcpcs, ms_drg, rc, ndc, icd,
@@ -251,7 +276,7 @@ async function main() {
         AND (cpt IN (${codeList}) OR hcpcs IN (${codeList}))
         AND TRIM(LOWER(setting)) = 'inpatient'
       ${limit > 0 ? `LIMIT ${limit - totalInserted}` : ""}
-    `) as unknown as OraStandardCharge[];
+    `)) as unknown as OraStandardCharge[];
 
     if (rows.length === 0) continue;
 
@@ -278,14 +303,28 @@ async function main() {
         ndc: charge.ndc || null,
         icd: charge.icd || null,
         modifiers: charge.modifiers || null,
-        gross_charge: charge.gross_charge != null ? Number(charge.gross_charge) : null,
-        cash_price: charge.discounted_cash != null ? Number(charge.discounted_cash) : null,
+        gross_charge:
+          charge.gross_charge != null ? Number(charge.gross_charge) : null,
+        cash_price:
+          charge.discounted_cash != null
+            ? Number(charge.discounted_cash)
+            : null,
         min_price: charge.minimum != null ? Number(charge.minimum) : null,
         max_price: charge.maximum != null ? Number(charge.maximum) : null,
-        avg_negotiated_rate: charge.avg_negotiated_rate != null ? Number(charge.avg_negotiated_rate) : null,
-        min_negotiated_rate: charge.min_negotiated_rate != null ? Number(charge.min_negotiated_rate) : null,
-        max_negotiated_rate: charge.max_negotiated_rate != null ? Number(charge.max_negotiated_rate) : null,
-        payer_count: charge.payer_count != null ? Number(charge.payer_count) : null,
+        avg_negotiated_rate:
+          charge.avg_negotiated_rate != null
+            ? Number(charge.avg_negotiated_rate)
+            : null,
+        min_negotiated_rate:
+          charge.min_negotiated_rate != null
+            ? Number(charge.min_negotiated_rate)
+            : null,
+        max_negotiated_rate:
+          charge.max_negotiated_rate != null
+            ? Number(charge.max_negotiated_rate)
+            : null,
+        payer_count:
+          charge.payer_count != null ? Number(charge.payer_count) : null,
         source: "trilliant_oria",
       });
     }
@@ -295,12 +334,18 @@ async function main() {
     // Insert in batches
     for (let i = 0; i < batch.length; i += BATCH_SIZE) {
       const chunk = batch.slice(i, i + BATCH_SIZE);
-      const inserted = await flushOneBatch(pgPool, chunk, `backfill [${state}]`);
+      const inserted = await flushOneBatch(
+        pgPool,
+        chunk,
+        `backfill [${state}]`
+      );
       totalInserted += inserted;
     }
 
     if (batch.length > 0) {
-      console.log(`  ${state}: +${batch.length} rows${skipped > 0 ? ` (${skipped} skipped — no provider)` : ""}`);
+      console.log(
+        `  ${state}: +${batch.length} rows${skipped > 0 ? ` (${skipped} skipped — no provider)` : ""}`
+      );
     }
 
     // Respect --limit
@@ -313,7 +358,7 @@ async function main() {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(
     `\n  Backfill complete: ${totalInserted.toLocaleString()} inserted, ` +
-    `${totalSkipped.toLocaleString()} skipped (${duration}s)`
+      `${totalSkipped.toLocaleString()} skipped (${duration}s)`
   );
 
   await db.close();
