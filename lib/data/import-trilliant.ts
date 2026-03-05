@@ -650,54 +650,45 @@ async function importCharges(
   }
   console.log(`  Processing ${states.length} states: ${states.join(", ")}`);
 
-  // Auto-resume: two-tier check
-  // 1. Progress file (authoritative for states completed after this feature was added)
-  // 2. Supabase row count (fallback for states imported before progress tracking)
-  // Explicit --state flag bypasses progress check (user said "import this state")
+  // Auto-resume via progress file
+  // States in the file completed successfully → skip them.
+  // States NOT in the file get DELETE + reimport (cleans up partial data from crashes).
+  // Explicit --state flag bypasses progress check (user said "import this state").
   let completedStates = new Set<string>();
   if (!config.fresh && !config.state) {
-    // Tier 1: Check progress file
     const progress = loadProgress();
     const progressStates = Object.keys(progress.trilliant_oria);
     for (const st of progressStates) {
       completedStates.add(st);
     }
-    if (progressStates.length > 0) {
-      console.log(
-        `  Progress file: ${progressStates.length} states completed: ${progressStates.sort().join(", ")}`
-      );
-    }
 
-    // Tier 2: Check Supabase for states not in progress file (backward compat)
-    const remainingStates = states.filter((s) => !completedStates.has(s));
-    if (remainingStates.length > 0) {
+    // Bootstrap: if no progress file exists but DB has data, seed the progress file
+    // from Supabase row counts (one-time migration for pre-tracking imports)
+    if (progressStates.length === 0) {
       const existingRes = await pgPool.query(`
         SELECT p.state, COUNT(*) as cnt
         FROM charges c JOIN providers p ON c.provider_id = p.id
         WHERE c.source = 'trilliant_oria'
         GROUP BY p.state
       `);
-      let dbResumeCount = 0;
+      let bootstrapped = 0;
       for (const row of existingRes.rows) {
-        if (
-          row.state &&
-          parseInt(row.cnt, 10) > 0 &&
-          !completedStates.has(row.state)
-        ) {
+        if (row.state && parseInt(row.cnt, 10) > 0) {
           completedStates.add(row.state);
-          dbResumeCount++;
+          saveStateProgress(row.state, parseInt(row.cnt, 10));
+          bootstrapped++;
         }
       }
-      if (dbResumeCount > 0) {
+      if (bootstrapped > 0) {
         console.log(
-          `  DB fallback: ${dbResumeCount} additional states have data (pre-progress-tracking imports)`
+          `  Bootstrapped progress file from DB: ${bootstrapped} states recorded`
         );
       }
     }
 
     if (completedStates.size > 0) {
       console.log(
-        `  Auto-resume: ${completedStates.size} total states skipped: ${[...completedStates].sort().join(", ")}`
+        `  Auto-resume: ${completedStates.size} states completed: ${[...completedStates].sort().join(", ")}`
       );
     }
   }
@@ -745,6 +736,25 @@ async function importCharges(
     }
 
     const stateStart = Date.now();
+
+    // Clean up any partial data from a previous interrupted import.
+    // This runs for every non-skipped state — if the state was complete, it was
+    // already skipped above. If we're here, the state needs a fresh import.
+    const deleteRes = await pgPool.query(
+      `DELETE FROM charges c
+       USING providers p
+       WHERE c.provider_id = p.id
+         AND UPPER(TRIM(p.state)) = $1
+         AND c.source = 'trilliant_oria'`,
+      [state]
+    );
+    const deletedCount = parseInt(deleteRes.rowCount?.toString() || "0", 10);
+    if (deletedCount > 0) {
+      console.log(
+        `  ${state}: deleted ${deletedCount.toLocaleString()} existing charges (partial/stale data)`
+      );
+    }
+
     let stateInserted = 0;
     let stateSkipped = 0;
     let consecutiveFailures = 0;

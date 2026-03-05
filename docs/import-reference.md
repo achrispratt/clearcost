@@ -47,13 +47,14 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 Successful state completions are recorded in `lib/data/import-progress.json` (gitignored). The auto-resume logic:
 
-1. **Progress file** (primary): States listed in the file are skipped
-2. **Supabase row count** (fallback): For states imported before progress tracking existed
-3. **`--state WY`** bypasses both checks — explicit state always runs
-4. **`--fresh`** deletes the progress file + truncates the table
-5. **`--limit N`** runs do NOT record progress — safe for testing
+1. **Progress file** (authority): States listed → skip entirely
+2. **Bootstrap**: First run after upgrade seeds progress file from Supabase row counts (one-time migration)
+3. **DELETE + reimport**: Any state NOT in progress file gets its charges deleted before reimport — cleans up partial data from crashes automatically
+4. **`--state WY`** bypasses progress check — explicit state always runs (DELETE + reimport)
+5. **`--fresh`** deletes the progress file + truncates the table
+6. **`--limit N`** runs do NOT record progress — safe for testing
 
-If the circuit breaker trips mid-state, that state is NOT recorded as complete → auto-resume will retry it.
+**Self-healing on crash:** If the pipeline crashes mid-state, that state is NOT in the progress file → next run deletes the partial data and reimports from scratch. No manual intervention needed.
 
 ## Gotchas
 
