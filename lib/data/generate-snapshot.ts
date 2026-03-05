@@ -794,7 +794,7 @@ async function main() {
     `│  │  Phase 1-5 (LIVE)                                       │    │`
   );
   lines.push(
-    `│  │  Outpatient + ${codes.length.toLocaleString()} curated codes + completed hospitals  │    │`
+    `│  │  All settings + ${codes.length.toLocaleString()} curated codes + completed hospitals  │    │`
   );
   lines.push(
     `│  │  ${totalDuckDbFilteredCharges.toLocaleString().padStart(14)} rows   (${pctUsed.padStart(5)}% of total)            │    │`
