@@ -97,11 +97,11 @@ The guided search is an AI-driven diagnostic conversation that helps users narro
 
 Three client types — using the wrong one causes auth/cookie bugs:
 
-| Client | File | Context | Creation |
-|--------|------|---------|----------|
-| **Browser** | `lib/supabase/client.ts` | Client components, UI | `createBrowserClient(url, anonKey)` — sync |
-| **Server** | `lib/supabase/server.ts` | Server Components, API routes | `await createClient()` — async, reads cookies |
-| **Middleware** | `lib/supabase/middleware.ts` | `middleware.ts` only | Refreshes auth tokens on every request |
+| Client         | File                         | Context                       | Creation                                      |
+| -------------- | ---------------------------- | ----------------------------- | --------------------------------------------- |
+| **Browser**    | `lib/supabase/client.ts`     | Client components, UI         | `createBrowserClient(url, anonKey)` — sync    |
+| **Server**     | `lib/supabase/server.ts`     | Server Components, API routes | `await createClient()` — async, reads cookies |
+| **Middleware** | `lib/supabase/middleware.ts` | `middleware.ts` only          | Refreshes auth tokens on every request        |
 
 ## Architecture: Auth Flow
 
@@ -154,6 +154,7 @@ supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, 
 5 tables: `providers`, `charges`, `payer_rates`, `payers`, `saved_searches`
 
 2 RPC functions:
+
 - `search_charges_nearby(code_type, codes[], lat, lng, radius_km)` — primary code-based search
 - `search_charges_by_description(search_terms, lat, lng, radius_km, limit)` — full-text fallback
 
@@ -161,6 +162,7 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 
 ## Key Concepts
 
+- **Billing code reference**: See `docs/billing-code-guide.md` for code structure, charge anatomy, and data interpretation rules
 - **billing_class**: "facility", "professional", "Both", or null — determines what cost component a charge represents
 - **All-in cost problem**: Hospital charges often represent only facility fees (~70-80% of total). Professional fees (radiologist, anesthesiologist) billed separately. MVP shows available price with smart contextual callouts.
 - **Hybrid AI approach**: Claude interprets plain English → verified code lookup confirms codes → PostGIS queries prices by location
@@ -193,13 +195,13 @@ Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler p
 
 See `.env.local.example` for required keys:
 
-| Variable | Purpose |
-|----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public/anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase admin access |
-| `ANTHROPIC_API_KEY` | Claude API for billing code translation |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view) |
+| Variable                          | Purpose                                 |
+| --------------------------------- | --------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL                    |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Supabase public/anon key                |
+| `SUPABASE_SERVICE_ROLE_KEY`       | Server-side Supabase admin access       |
+| `ANTHROPIC_API_KEY`               | Claude API for billing code translation |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view)      |
 
 ## Data Architecture Principles
 
@@ -220,6 +222,7 @@ This is a solo-developer project. Workflow should be simple and low-friction, bu
 
 **Issue-Driven Workflow:**
 All work is tracked via GitHub Issues on the [ClearCost MVP project board](https://github.com/users/achrispratt/projects/2). The standard flow:
+
 1. Pick an issue (user says "work on #7" or similar)
 2. Read the issue with `gh issue view <number>`
 3. Create a feature branch: `git checkout -b <type>/<short-description>` (e.g., `data/import-nj-charges`, `fix/payer-filter-removal`, `feat/loading-skeletons`)
@@ -229,6 +232,7 @@ All work is tracked via GitHub Issues on the [ClearCost MVP project board](https
 
 **Creating New Issues:**
 When creating GitHub issues, always:
+
 1. Assign to the **ClearCost MVP project** (`--project "ClearCost MVP"`)
 2. Set the appropriate **milestone**: `MVP Data Complete`, `MVP App Ready`, `Launch`, or `Growth`
 3. Add relevant **labels**: type (`enhancement`, `bug`), area (`data`), priority (`high`, `medium`)
@@ -241,6 +245,7 @@ gh issue create --title "..." --body "..." \
 ```
 
 **Branch Naming:**
+
 - `data/` — data pipeline, import, quality work
 - `feat/` — new features, UI additions
 - `fix/` — bug fixes
@@ -248,24 +253,29 @@ gh issue create --title "..." --body "..." \
 - `refactor/` — code cleanup, no behavior change
 
 **Branching Rules:**
+
 - **Always use feature branches + PRs** for issue-tracked work. This keeps `main` clean and creates an audit trail.
 - **Commit directly to `main` only for** trivial fixes (typos, comment updates, CLAUDE.md changes) that don't warrant a PR.
 - Keep branches short-lived (merge within 1-2 sessions). Stale branches create confusion.
 
 **Commits:**
+
 - Commit frequently with clear messages. Small, focused commits are easier to review and revert.
 - Don't batch up many unrelated changes into one commit.
 
 **Merging:**
+
 - Merging a behind branch into `main` is safe — Git combines histories, it doesn't overwrite. The only dangerous operation is `git push --force`.
 - When in doubt about branch state: `git log --oneline main..branch-name` shows what the branch adds.
 
 **Planning & Docs:**
+
 - Planning documents (`docs/sprint-plan.md`, etc.) go directly on `main`. They don't need branch isolation.
 - This file (`CLAUDE.md`) is the primary source of institutional knowledge across sessions. Update it when decisions are made, patterns are established, or the project state changes.
 - Claude Code has **no memory across sessions** — anything not in repo files is lost. Keep CLAUDE.md current.
 
 **Sprint planning:**
+
 - GitHub Issues are the source of truth for work tracking. Issue # = priority order.
 - Sprint plan (`docs/sprint-plan.md`) is archived — all details rationalized into issues.
 - Priorities shift frequently in a solo project. Reorder issues when priorities change.
@@ -281,20 +291,21 @@ gh issue create --title "..." --body "..." \
 
 ## Product Roadmap
 
-| Phase | What | Status |
-|-------|------|--------|
-| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,002 codes | Complete |
-| **Phase 5.5** | Guided Search — AI diagnostic clarification flow + UX polish | Complete |
-| **Phase 5.6** | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete |
-| **Data Quality** | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12) | In Progress |
-| **Frontend Polish** | Skeletons, billing callouts, distance filter, mobile UX (#13-#19) | Planned |
-| **Pre-Launch** | Security headers, rate limiting, verification checklist (#20-#23) | Planned |
-| **Phase 6** | Independent MRF crawler (replace Trilliant dependency) | Deferred |
-| **Phase 7** | Plan-level insurance pricing from hospital MRFs | Future |
-| **Phase 8** | Payer Transparency in Coverage data — all provider types | Future |
-| **Phase 9** | Non-hospital cash prices (crowdsourced/partnerships/state data) | Future |
+| Phase                | What                                                                                      | Status      |
+| -------------------- | ----------------------------------------------------------------------------------------- | ----------- |
+| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,002 codes                         | Complete    |
+| **Phase 5.5**        | Guided Search — AI diagnostic clarification flow + UX polish                              | Complete    |
+| **Phase 5.6**        | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete    |
+| **Data Quality**     | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12)             | In Progress |
+| **Frontend Polish**  | Skeletons, billing callouts, distance filter, mobile UX (#13-#19)                         | Planned     |
+| **Pre-Launch**       | Security headers, rate limiting, verification checklist (#20-#23)                         | Planned     |
+| **Phase 6**          | Independent MRF crawler (replace Trilliant dependency)                                    | Deferred    |
+| **Phase 7**          | Plan-level insurance pricing from hospital MRFs                                           | Future      |
+| **Phase 8**          | Payer Transparency in Coverage data — all provider types                                  | Future      |
+| **Phase 9**          | Non-hospital cash prices (crowdsourced/partnerships/state data)                           | Future      |
 
 **Future UX enhancements** (tracked as backlog issues #32-#37):
+
 - Smart typeahead/suggestions in search bar (#32)
 - Conversational follow-up for deeply ambiguous queries
 - Results grouped by procedure type when query isn't fully resolved
