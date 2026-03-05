@@ -27,13 +27,13 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Flags
 
-| Flag                      | Purpose                                                |
-| ------------------------- | ------------------------------------------------------ |
-| `--skip-providers`        | Providers already loaded, skip re-import               |
-| `--skip-states AK,CA,...` | Skip these states (preserves existing data, no DELETE) |
+| Flag                      | Purpose                                                      |
+| ------------------------- | ------------------------------------------------------------ |
+| `--skip-providers`        | Providers already loaded, skip re-import                     |
+| `--skip-states AK,CA,...` | Skip these states (preserves existing data, no DELETE)       |
 | `--state NY`              | Only import one state (bypasses progress file — always runs) |
-| `--limit 1000`            | Stop after N charges (for testing)                     |
-| `--batch-size 2000`       | Rows per Supabase insert (default: 2000)               |
+| `--limit 1000`            | Stop after N charges (for testing)                           |
+| `--batch-size 2000`       | Rows per Supabase insert (default: 2000)                     |
 
 ## DuckDB Technical Notes
 
