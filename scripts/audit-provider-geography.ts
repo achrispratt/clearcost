@@ -59,7 +59,20 @@ function exportZipReferenceCsv(): string {
   const csvPath = join(tmpdir(), `clearcost-zip-ref-${Date.now()}.csv`);
   const lines: string[] = ["zip,state,city,lat,lng"];
 
-  const allCodes = (zipcodes as unknown as { codes: Record<string, { zip: string; state: string; city: string; latitude: number; longitude: number }> }).codes;
+  const allCodes = (
+    zipcodes as unknown as {
+      codes: Record<
+        string,
+        {
+          zip: string;
+          state: string;
+          city: string;
+          latitude: number;
+          longitude: number;
+        }
+      >;
+    }
+  ).codes;
 
   for (const [, info] of Object.entries(allCodes)) {
     if (!info || !info.state) continue;
@@ -174,16 +187,22 @@ function parseSections(output: string): Map<string, string> {
   return sections;
 }
 
-function parseRows(output: string, columns: string[]): Record<string, string>[] {
+function parseRows(
+  output: string,
+  columns: string[]
+): Record<string, string>[] {
   if (!output) return [];
-  return output.split("\n").filter(Boolean).map((line) => {
-    const values = line.split("\t");
-    const row: Record<string, string> = {};
-    columns.forEach((col, i) => {
-      row[col] = values[i] ?? "";
+  return output
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const values = line.split("\t");
+      const row: Record<string, string> = {};
+      columns.forEach((col, i) => {
+        row[col] = values[i] ?? "";
+      });
+      return row;
     });
-    return row;
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -208,7 +227,9 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check stderr for errors (psql reports \COPY errors there)
   if (result.stderr) {
-    const errorLines = result.stderr.split("\n").filter((l) => l.startsWith("ERROR:"));
+    const errorLines = result.stderr
+      .split("\n")
+      .filter((l) => l.startsWith("ERROR:"));
     if (errorLines.length > 0) {
       console.error("[psql] Errors detected:");
       for (const line of errorLines) console.error(`  ${line}`);
@@ -225,7 +246,12 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check 1: ZIP↔state mismatch
   const check1Rows = parseRows(sections.get("check1") ?? "", [
-    "id", "name", "stored_state", "zip_state", "zip", "address",
+    "id",
+    "name",
+    "stored_state",
+    "zip_state",
+    "zip",
+    "address",
   ]);
   results.push({
     check: "ZIP↔state mismatch",
@@ -236,7 +262,11 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check 2: Invalid ZIPs
   const check2Rows = parseRows(sections.get("check2") ?? "", [
-    "id", "name", "zip", "state", "address",
+    "id",
+    "name",
+    "zip",
+    "state",
+    "address",
   ]);
   results.push({
     check: "Invalid/unresolvable ZIP codes",
@@ -247,9 +277,19 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check 3: Coordinate drift
   const check3Rows = parseRows(sections.get("check3") ?? "", [
-    "id", "name", "zip", "state", "p_lat", "p_lng", "z_lat", "z_lng", "drift_miles",
+    "id",
+    "name",
+    "zip",
+    "state",
+    "p_lat",
+    "p_lng",
+    "z_lat",
+    "z_lng",
+    "drift_miles",
   ]);
-  const criticalDrift = check3Rows.filter((r) => parseFloat(r.drift_miles) > DRIFT_CRITICAL_MILES);
+  const criticalDrift = check3Rows.filter(
+    (r) => parseFloat(r.drift_miles) > DRIFT_CRITICAL_MILES
+  );
   const warningDrift = check3Rows.filter((r) => {
     const d = parseFloat(r.drift_miles);
     return d > DRIFT_WARNING_MILES && d <= DRIFT_CRITICAL_MILES;
@@ -282,7 +322,10 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check 4a: Missing ALL geo data
   const check4aRows = parseRows(sections.get("check4a") ?? "", [
-    "id", "name", "state", "address",
+    "id",
+    "name",
+    "state",
+    "address",
   ]);
   results.push({
     check: "Missing ALL geo data (no ZIP + no coordinates)",
@@ -293,7 +336,10 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check 4b: Has ZIP, missing coordinates
   const check4bRows = parseRows(sections.get("check4b") ?? "", [
-    "id", "name", "state", "zip",
+    "id",
+    "name",
+    "state",
+    "zip",
   ]);
   results.push({
     check: "Has ZIP but missing coordinates",
@@ -304,7 +350,11 @@ function runAudit(csvPath: string): AuditResult[] {
 
   // Check 5: City↔state mismatch
   const check5Rows = parseRows(sections.get("check5") ?? "", [
-    "id", "name", "city", "state", "zip",
+    "id",
+    "name",
+    "city",
+    "state",
+    "zip",
   ]);
   results.push({
     check: "City not found in state (city↔state mismatch)",
@@ -321,32 +371,57 @@ function runAudit(csvPath: string): AuditResult[] {
 // ---------------------------------------------------------------------------
 
 function printReport(results: AuditResult[]): void {
-  console.log("\n╔══════════════════════════════════════════════════════════════╗");
+  console.log(
+    "\n╔══════════════════════════════════════════════════════════════╗"
+  );
   console.log("║         ClearCost Provider Geography Audit Report          ║");
-  console.log("╠══════════════════════════════════════════════════════════════╣");
+  console.log(
+    "╠══════════════════════════════════════════════════════════════╣"
+  );
   console.log(`║  Generated: ${new Date().toISOString()}              ║`);
-  console.log("╚══════════════════════════════════════════════════════════════╝");
+  console.log(
+    "╚══════════════════════════════════════════════════════════════╝"
+  );
 
-  const severityOrder: Record<Severity, number> = { CRITICAL: 3, WARNING: 2, INFO: 1 };
-  const sorted = [...results].sort((a, b) => severityOrder[b.severity] - severityOrder[a.severity]);
+  const severityOrder: Record<Severity, number> = {
+    CRITICAL: 3,
+    WARNING: 2,
+    INFO: 1,
+  };
+  const sorted = [...results].sort(
+    (a, b) => severityOrder[b.severity] - severityOrder[a.severity]
+  );
 
   // Summary table
-  console.log("\n┌─────────┬──────────────────────────────────────────────────┬───────┐");
-  console.log("│ Severity│ Check                                            │ Count │");
-  console.log("├─────────┼──────────────────────────────────────────────────┼───────┤");
+  console.log(
+    "\n┌─────────┬──────────────────────────────────────────────────┬───────┐"
+  );
+  console.log(
+    "│ Severity│ Check                                            │ Count │"
+  );
+  console.log(
+    "├─────────┼──────────────────────────────────────────────────┼───────┤"
+  );
   for (const r of sorted) {
     const sev = r.severity.padEnd(8);
     const check = r.check.padEnd(50).slice(0, 50);
     const count = String(r.count).padStart(5);
     console.log(`│ ${sev}│ ${check}│${count} │`);
   }
-  console.log("└─────────┴──────────────────────────────────────────────────┴───────┘");
+  console.log(
+    "└─────────┴──────────────────────────────────────────────────┴───────┘"
+  );
 
   // Detail sections for non-empty results
   for (const r of sorted) {
     if (r.count === 0) continue;
 
-    const icon = r.severity === "CRITICAL" ? "!!!" : r.severity === "WARNING" ? " ! " : " i ";
+    const icon =
+      r.severity === "CRITICAL"
+        ? "!!!"
+        : r.severity === "WARNING"
+          ? " ! "
+          : " i ";
     console.log(`\n[${icon}] ${r.severity}: ${r.check} (${r.count} rows)`);
     console.log("─".repeat(70));
 
@@ -363,19 +438,31 @@ function printReport(results: AuditResult[]): void {
   }
 
   // Final verdict
-  const criticalCount = sorted.filter((r) => r.severity === "CRITICAL" && r.count > 0).length;
-  const warningCount = sorted.filter((r) => r.severity === "WARNING" && r.count > 0).length;
+  const criticalCount = sorted.filter(
+    (r) => r.severity === "CRITICAL" && r.count > 0
+  ).length;
+  const warningCount = sorted.filter(
+    (r) => r.severity === "WARNING" && r.count > 0
+  ).length;
 
-  console.log("\n══════════════════════════════════════════════════════════════");
+  console.log(
+    "\n══════════════════════════════════════════════════════════════"
+  );
   if (criticalCount === 0 && warningCount === 0) {
     console.log("RESULT: All checks passed. Provider geography data is clean.");
   } else {
-    console.log(`RESULT: ${criticalCount} CRITICAL, ${warningCount} WARNING issues found.`);
+    console.log(
+      `RESULT: ${criticalCount} CRITICAL, ${warningCount} WARNING issues found.`
+    );
     if (criticalCount > 0) {
-      console.log("Action required: investigate and fix CRITICAL issues before they affect search quality.");
+      console.log(
+        "Action required: investigate and fix CRITICAL issues before they affect search quality."
+      );
     }
   }
-  console.log("══════════════════════════════════════════════════════════════\n");
+  console.log(
+    "══════════════════════════════════════════════════════════════\n"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -404,6 +491,9 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error("Audit failed:", err instanceof Error ? err.message : String(err));
+  console.error(
+    "Audit failed:",
+    err instanceof Error ? err.message : String(err)
+  );
   process.exit(1);
 });

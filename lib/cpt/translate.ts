@@ -42,15 +42,18 @@ const IMAGING_FAMILIES: ImagingFamily[] = [
   {
     // Lower-extremity/knee MRI family: without, with, and with+without contrast.
     codes: ["73721", "73722", "73723"],
-    trigger: /\bmri\b.*\b(knee|lower extremity|leg|ankle|hip|joint)\b|\b(knee|lower extremity|leg|ankle|hip|joint)\b.*\bmri\b/i,
+    trigger:
+      /\bmri\b.*\b(knee|lower extremity|leg|ankle|hip|joint)\b|\b(knee|lower extremity|leg|ankle|hip|joint)\b.*\bmri\b/i,
   },
   {
     codes: ["70551", "70552", "70553"],
-    trigger: /\bmri\b.*\b(brain|head|cranial|neuro)\b|\b(brain|head|cranial|neuro)\b.*\bmri\b/i,
+    trigger:
+      /\bmri\b.*\b(brain|head|cranial|neuro)\b|\b(brain|head|cranial|neuro)\b.*\bmri\b/i,
   },
   {
     codes: ["70450", "70460", "70470"],
-    trigger: /\b(ct|cat scan|computed tomography)\b.*\b(head|brain|cranial)\b|\b(head|brain|cranial)\b.*\b(ct|cat scan|computed tomography)\b/i,
+    trigger:
+      /\b(ct|cat scan|computed tomography)\b.*\b(head|brain|cranial)\b|\b(head|brain|cranial)\b.*\b(ct|cat scan|computed tomography)\b/i,
   },
 ];
 
@@ -67,7 +70,12 @@ function parseJsonResponse(text: string): Record<string, unknown> {
   return JSON.parse(cleaned);
 }
 
-type RawCode = { code: string; codeType?: string; description: string; category: string };
+type RawCode = {
+  code: string;
+  codeType?: string;
+  description: string;
+  category: string;
+};
 
 function normalizeCodeType(value: unknown): BillingCodeType {
   if (value === "hcpcs" || value === "ms_drg") return value;
@@ -78,7 +86,9 @@ function normalizeCodeValue(code: string): string {
   return code.trim().toUpperCase();
 }
 
-function detectContrastPreference(query: string): ContrastPreference | undefined {
+function detectContrastPreference(
+  query: string
+): ContrastPreference | undefined {
   if (WITH_AND_WITHOUT_CONTRAST_REGEX.test(query)) return "with_and_without";
   if (WITHOUT_CONTRAST_REGEX.test(query)) return "without";
   if (WITH_CONTRAST_REGEX.test(query)) return "with";
@@ -96,7 +106,11 @@ function extractExplicitCptCodes(query: string): string[] {
   return Array.from(codes);
 }
 
-function hasCode(codes: CPTCode[], codeType: BillingCodeType, codeValue: string): boolean {
+function hasCode(
+  codes: CPTCode[],
+  codeType: BillingCodeType,
+  codeValue: string
+): boolean {
   const normalizedCode = normalizeCodeValue(codeValue);
   return codes.some(
     (code) =>
@@ -122,7 +136,10 @@ function addCodeIfMissing(
   ];
 }
 
-function applyExplicitCodeGuardrail(query: string, codes: CPTCode[]): CPTCode[] {
+function applyExplicitCodeGuardrail(
+  query: string,
+  codes: CPTCode[]
+): CPTCode[] {
   const explicitCodes = extractExplicitCptCodes(query);
   if (explicitCodes.length === 0) return codes;
 
@@ -151,10 +168,12 @@ function applyContrastGuardrails(query: string, codes: CPTCode[]): CPTCode[] {
   let nextCodes = [...codes];
   for (const family of IMAGING_FAMILIES) {
     const mentionsFamily =
-      family.trigger.test(query) || family.codes.some((candidate) => hasCode(nextCodes, "cpt", candidate));
+      family.trigger.test(query) ||
+      family.codes.some((candidate) => hasCode(nextCodes, "cpt", candidate));
     if (!mentionsFamily) continue;
 
-    const [withoutContrast, withContrast, withAndWithoutContrast] = family.codes;
+    const [withoutContrast, withContrast, withAndWithoutContrast] =
+      family.codes;
     const targetCode =
       contrastPreference === "without"
         ? withoutContrast
@@ -176,7 +195,8 @@ function dedupeAndSortCodes(codes: CPTCode[]): CPTCode[] {
   const deduped = new Map<string, CPTCode>();
 
   for (const code of codes) {
-    if (typeof code.code !== "string" || code.code.trim().length === 0) continue;
+    if (typeof code.code !== "string" || code.code.trim().length === 0)
+      continue;
     const codeType = normalizeCodeType(code.codeType);
     const codeValue = normalizeCodeValue(code.code);
     const key = `${codeType}:${codeValue}`;
@@ -220,10 +240,16 @@ function mapCodes(rawCodes: RawCode[]): CPTCode[] {
 /**
  * Extracts and maps billing codes from Claude's parsed JSON response.
  */
-function extractCodes(parsed: Record<string, unknown>, query: string): CPTCode[] {
+function extractCodes(
+  parsed: Record<string, unknown>,
+  query: string
+): CPTCode[] {
   const rawCodes = mapCodes((parsed.codes as RawCode[]) || []);
   const withExplicitCodes = applyExplicitCodeGuardrail(query, rawCodes);
-  const withContrastGuardrails = applyContrastGuardrails(query, withExplicitCodes);
+  const withContrastGuardrails = applyContrastGuardrails(
+    query,
+    withExplicitCodes
+  );
   return dedupeAndSortCodes(withContrastGuardrails);
 }
 
@@ -264,9 +290,7 @@ export async function translateQueryToCPT(
  * Guided search: initial assessment of a user query.
  * Returns either high-confidence codes or the first clarifying question.
  */
-export async function assessQuery(
-  query: string
-): Promise<TranslationResponse> {
+export async function assessQuery(query: string): Promise<TranslationResponse> {
   const client = getAnthropicClient();
 
   const message = await client.messages.create({

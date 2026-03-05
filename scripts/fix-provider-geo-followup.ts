@@ -103,7 +103,10 @@ async function main(): Promise<void> {
       .select("id, name, state, zip, lat, lng")
       .not("zip", "is", null)
       .range(offset, offset + 999);
-    if (error) { console.error(error.message); break; }
+    if (error) {
+      console.error(error.message);
+      break;
+    }
     if (!data || data.length === 0) break;
     allProviders.push(...(data as Provider[]));
     offset += 1000;
@@ -160,7 +163,9 @@ async function main(): Promise<void> {
       if (realZip && realZip !== "00000") {
         // Also check if this ZIP gives us a better state
         const zipInfo = zipcodes.lookup(realZip);
-        console.log(`  ${p.name}: 00000 → ${realZip} (${zipInfo?.city ?? "?"}, ${zipInfo?.state ?? "?"})`);
+        console.log(
+          `  ${p.name}: 00000 → ${realZip} (${zipInfo?.city ?? "?"}, ${zipInfo?.state ?? "?"})`
+        );
 
         fixes.push({
           id: p.id,
@@ -281,7 +286,9 @@ async function main(): Promise<void> {
     const values: unknown[] = [];
     const valueClauses: string[] = [];
     for (let i = 0; i < bothIds.length; i++) {
-      valueClauses.push(`($${i * 3 + 1}::uuid, $${i * 3 + 2}::text, $${i * 3 + 3}::text)`);
+      valueClauses.push(
+        `($${i * 3 + 1}::uuid, $${i * 3 + 2}::text, $${i * 3 + 3}::text)`
+      );
       values.push(bothIds[i].id, bothIds[i].state, bothIds[i].zip);
     }
     const result = await pgPool.query(

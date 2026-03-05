@@ -17,7 +17,9 @@ let optionsSet = false;
 function buildInfoWindowContent(result: ChargeResult): string {
   const address = result.provider.address || result.provider.city || "";
   const price = result.cashPrice ? `$${result.cashPrice.toLocaleString()}` : "";
-  const distance = result.distanceMiles ? `${result.distanceMiles.toFixed(1)} mi` : "";
+  const distance = result.distanceMiles
+    ? `${result.distanceMiles.toFixed(1)} mi`
+    : "";
 
   return `
     <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
@@ -90,7 +92,13 @@ function haversineMiles(
   return earthRadiusMiles * c;
 }
 
-export function MapView({ results, center, onMarkerClick, selectedResultId, className }: MapViewProps) {
+export function MapView({
+  results,
+  center,
+  onMarkerClick,
+  selectedResultId,
+  className,
+}: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -212,7 +220,10 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
                 ),
               }))
               .sort((a, b) => a.distanceMiles - b.distanceMiles)
-          : positionedResults.map((candidate) => ({ ...candidate, distanceMiles: Infinity }));
+          : positionedResults.map((candidate) => ({
+              ...candidate,
+              distanceMiles: Infinity,
+            }));
 
       const localCandidates = fitCandidates.filter(
         (candidate) => candidate.distanceMiles <= FIT_RADIUS_MILES
@@ -220,14 +231,12 @@ export function MapView({ results, center, onMarkerClick, selectedResultId, clas
       const selectedCandidates =
         localCandidates.length > 0 ? localCandidates : fitCandidates;
 
-      selectedCandidates
-        .slice(0, FIT_MARKER_LIMIT)
-        .forEach((candidate) =>
-          bounds.extend({
-            lat: candidate.lat,
-            lng: candidate.lng,
-          })
-        );
+      selectedCandidates.slice(0, FIT_MARKER_LIMIT).forEach((candidate) =>
+        bounds.extend({
+          lat: candidate.lat,
+          lng: candidate.lng,
+        })
+      );
 
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, 50);

@@ -26,7 +26,10 @@ async function main() {
   console.log("Cross-Column Search Migration");
   console.log(`Target: ${DB_URL.replace(/:[^:@]+@/, ":***@")}\n`);
 
-  const client = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
+  const client = new pg.Client({
+    connectionString: DB_URL,
+    ssl: { rejectUnauthorized: false },
+  });
   await client.connect();
   console.log("Connected to Postgres.\n");
 
@@ -40,7 +43,9 @@ async function main() {
     console.log("  Done.\n");
 
     // Step 2: Update the RPC function
-    console.log("Step 2: Update search_charges_nearby RPC (cross-column CPT/HCPCS)...");
+    console.log(
+      "Step 2: Update search_charges_nearby RPC (cross-column CPT/HCPCS)..."
+    );
     await client.query(`
       create or replace function search_charges_nearby(
         p_code_type text,
@@ -149,7 +154,9 @@ async function main() {
         )
         AND (c.cpt = '99385' OR c.hcpcs = '99385');
     `);
-    console.log(`  Cross-column count for code 99385 near Bordentown NJ (200km): ${result.rows[0].total} rows`);
+    console.log(
+      `  Cross-column count for code 99385 near Bordentown NJ (200km): ${result.rows[0].total} rows`
+    );
 
     // Also verify the RPC works via Supabase REST
     if (SUPABASE_URL && SERVICE_ROLE_KEY) {
@@ -186,7 +193,6 @@ async function main() {
       WHERE tablename = 'charges' AND indexname = 'idx_charges_hcpcs_provider';
     `);
     console.log(`  Index exists: ${idxResult.rows.length > 0 ? "yes" : "NO"}`);
-
   } finally {
     await client.end();
   }

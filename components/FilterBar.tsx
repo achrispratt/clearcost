@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import type { ChargeResult, Payer } from "@/types";
 
-export type SortOption = "price-asc" | "price-desc" | "estimated-total" | "distance" | "name";
+export type SortOption =
+  | "price-asc"
+  | "price-desc"
+  | "estimated-total"
+  | "distance"
+  | "name";
 
 interface FilterBarProps {
   results: ChargeResult[];
@@ -12,7 +17,12 @@ interface FilterBarProps {
   onRadiusChange?: (radius: number) => void;
 }
 
-export function FilterBar({ results, onFilteredResults, radius: controlledRadius, onRadiusChange }: FilterBarProps) {
+export function FilterBar({
+  results,
+  onFilteredResults,
+  radius: controlledRadius,
+  onRadiusChange,
+}: FilterBarProps) {
   const [sort, setSort] = useState<SortOption>("distance");
   const [internalRadius, setInternalRadius] = useState<number>(25);
   const radius = controlledRadius ?? internalRadius;
@@ -56,7 +66,10 @@ export function FilterBar({ results, onFilteredResults, radius: controlledRadius
         case "price-desc":
           return (b.cashPrice ?? 0) - (a.cashPrice ?? 0);
         case "estimated-total":
-          return (a.estimatedTotalMedian ?? a.cashPrice ?? Infinity) - (b.estimatedTotalMedian ?? b.cashPrice ?? Infinity);
+          return (
+            (a.estimatedTotalMedian ?? a.cashPrice ?? Infinity) -
+            (b.estimatedTotalMedian ?? b.cashPrice ?? Infinity)
+          );
         case "distance":
           return (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity);
         case "name":

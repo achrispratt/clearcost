@@ -7,35 +7,39 @@ import type { User } from "@supabase/supabase-js";
 
 export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [configured, setConfigured] = useState(false);
+  const [configured] = useState(() => {
+    try {
+      createClient();
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  const [loading, setLoading] = useState(configured);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const supabase = createClient();
-      setConfigured(true);
+    if (!configured) return;
 
-      const getUser = async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUser(user);
-        setLoading(false);
-      };
-      getUser();
+    const supabase = createClient();
 
+    const getUser = async () => {
       const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
-      });
-
-      return () => subscription.unsubscribe();
-    } catch {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
       setLoading(false);
-    }
-  }, []);
+    };
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [configured]);
 
   useEffect(() => {
     if (!open) return;

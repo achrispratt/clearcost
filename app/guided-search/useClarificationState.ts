@@ -29,7 +29,9 @@ export function useClarificationState() {
     useState<ClarificationQuestion | null>(null);
   const [allCodes, setAllCodes] = useState<CPTCode[]>([]);
   const [interpretation, setInterpretation] = useState("");
-  const [pricingPlan, setPricingPlan] = useState<PricingPlan | undefined>(undefined);
+  const [pricingPlan, setPricingPlan] = useState<PricingPlan | undefined>(
+    undefined
+  );
   const [phase, setPhase] = useState<"loading" | "clarifying" | "resolved">(
     "loading"
   );
@@ -72,9 +74,9 @@ export function useClarificationState() {
         existing.push(code.code);
         codesByType.set(type, existing);
       }
-      const codeGroups: DirectCodeGroup[] = Array.from(codesByType.entries()).map(
-        ([codeType, groupedCodes]) => ({ codeType, codes: groupedCodes })
-      );
+      const codeGroups: DirectCodeGroup[] = Array.from(
+        codesByType.entries()
+      ).map(([codeType, groupedCodes]) => ({ codeType, codes: groupedCodes }));
       const codeType = codeGroups[0]?.codeType || "cpt";
 
       const codeDescs: Record<string, string> = {};
@@ -161,9 +163,7 @@ export function useClarificationState() {
         responseCache.current.set(cacheKey, data);
         handleResponse(data);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Something went wrong"
-        );
+        setError(err instanceof Error ? err.message : "Something went wrong");
         setPhase("clarifying");
       } finally {
         setLoading(false);

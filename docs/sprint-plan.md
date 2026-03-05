@@ -7,12 +7,12 @@ All sprint plan details, implementation context, and success criteria have been 
 
 ## Issue Groupings (for orientation)
 
-| Group | Issues | Focus |
-|-------|--------|-------|
-| **Data Quality** | #6–#12 | Unknown-state providers, geocode backfill, dedup, pipeline hardening, QA |
+| Group               | Issues  | Focus                                                                                                 |
+| ------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| **Data Quality**    | #6–#12  | Unknown-state providers, geocode backfill, dedup, pipeline hardening, QA                              |
 | **Frontend Polish** | #13–#19 | Skeletons, billing callouts, distance filter, low-result handling, payer filter, code cleanup, mobile |
-| **Pre-Launch** | #20–#23 | Security headers, rate limiting, verification checklist, mobile QA |
-| **Future** | #24–#28 | SEO, MRF crawler, plan-level pricing, inpatient codes |
-| **Backlog** | #32–#37 | Search suggestions, E2E tests, Sentry, PostHog, accessibility, cache eviction |
+| **Pre-Launch**      | #20–#23 | Security headers, rate limiting, verification checklist, mobile QA                                    |
+| **Future**          | #24–#28 | SEO, MRF crawler, plan-level pricing, inpatient codes                                                 |
+| **Backlog**         | #32–#37 | Search suggestions, E2E tests, Sentry, PostHog, accessibility, cache eviction                         |
 
 See: `gh issue list --state open` or the [project board](https://github.com/users/achrispratt/projects/2).

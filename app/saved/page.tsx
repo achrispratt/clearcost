@@ -85,8 +85,20 @@ export default function SavedPage() {
           viewBox="0 0 24 24"
           fill="none"
         >
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="2"
+            opacity="0.25"
+          />
+          <path
+            d="M12 2a10 10 0 0 1 10 10"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       </div>
     );
@@ -102,7 +114,15 @@ export default function SavedPage() {
             color: "var(--cc-primary)",
           }}
         >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="w-6 h-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
           </svg>
         </div>
@@ -115,7 +135,10 @@ export default function SavedPage() {
         >
           Saved Searches
         </h1>
-        <p className="text-sm mb-8" style={{ color: "var(--cc-text-secondary)" }}>
+        <p
+          className="text-sm mb-8"
+          style={{ color: "var(--cc-text-secondary)" }}
+        >
           Sign in to save and revisit your price comparisons.
         </p>
         <button
@@ -161,10 +184,16 @@ export default function SavedPage() {
           >
             <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
           </svg>
-          <p className="font-medium" style={{ color: "var(--cc-text-secondary)" }}>
+          <p
+            className="font-medium"
+            style={{ color: "var(--cc-text-secondary)" }}
+          >
             No saved searches yet
           </p>
-          <p className="text-sm mt-1 mb-5" style={{ color: "var(--cc-text-tertiary)" }}>
+          <p
+            className="text-sm mt-1 mb-5"
+            style={{ color: "var(--cc-text-tertiary)" }}
+          >
             Save a search to quickly revisit it later.
           </p>
           <button

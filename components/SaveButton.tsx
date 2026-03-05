@@ -12,7 +12,13 @@ interface SaveButtonProps {
   lng?: number;
 }
 
-export function SaveButton({ query, location, cptCodes, lat, lng }: SaveButtonProps) {
+export function SaveButton({
+  query,
+  location,
+  cptCodes,
+  lat,
+  lng,
+}: SaveButtonProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -58,13 +64,27 @@ export function SaveButton({ query, location, cptCodes, lat, lng }: SaveButtonPr
       style={{
         background: saved ? "var(--cc-success-light)" : "transparent",
         color: saved ? "var(--cc-success)" : "var(--cc-text-secondary)",
-        border: saved ? "1px solid rgba(5, 150, 105, 0.2)" : "1px solid var(--cc-border)",
+        border: saved
+          ? "1px solid rgba(5, 150, 105, 0.2)"
+          : "1px solid var(--cc-border)",
       }}
     >
       {saving ? (
         <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="2"
+            opacity="0.25"
+          />
+          <path
+            d="M12 2a10 10 0 0 1 10 10"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       ) : (
         <svg

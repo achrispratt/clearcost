@@ -7,10 +7,7 @@ export async function GET(request: NextRequest) {
   const address = searchParams.get("address");
 
   if (!address) {
-    return NextResponse.json(
-      { error: "Address is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Address is required" }, { status: 400 });
   }
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -33,15 +30,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(
-      { error: "Location not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Location not found" }, { status: 404 });
   } catch {
-    return NextResponse.json(
-      { error: "Geocoding failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Geocoding failed" }, { status: 500 });
   }
 }
 
@@ -54,7 +45,10 @@ function parseCityState(value: string): { city: string; state: string } | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  const parts = trimmed.split(",").map((part) => part.trim()).filter(Boolean);
+  const parts = trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (parts.length < 2) return null;
 
   const city = parts.slice(0, -1).join(", ");
@@ -95,7 +89,8 @@ function handleFallbackGeocode(address: string) {
 
   return NextResponse.json(
     {
-      error: "Location not found. Without Google Maps API, enter a US ZIP code or City, ST.",
+      error:
+        "Location not found. Without Google Maps API, enter a US ZIP code or City, ST.",
     },
     { status: 404 }
   );

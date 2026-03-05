@@ -93,10 +93,12 @@ async function main() {
   console.log("  Postgres pool connected\n");
 
   // ── Step 1: Baseline total count ──────────────────────────────────────
-  const { rows: [{ count: totalCharges }] } = await pgPool.query(
-    "SELECT COUNT(*)::int AS count FROM charges"
+  const {
+    rows: [{ count: totalCharges }],
+  } = await pgPool.query("SELECT COUNT(*)::int AS count FROM charges");
+  console.log(
+    `  Total charges in database: ${Number(totalCharges).toLocaleString()}\n`
   );
-  console.log(`  Total charges in database: ${Number(totalCharges).toLocaleString()}\n`);
 
   // ── Step 2: Get state list ────────────────────────────────────────────
   let states: string[];
@@ -125,7 +127,9 @@ async function main() {
       await client.query("SET statement_timeout = 0");
 
       // Count charges for this state
-      const { rows: [{ count: stateTotal }] } = await client.query(
+      const {
+        rows: [{ count: stateTotal }],
+      } = await client.query(
         `SELECT COUNT(*)::int AS count FROM charges c
          JOIN providers p ON c.provider_id = p.id
          WHERE p.state = $1`,
@@ -163,7 +167,10 @@ async function main() {
       );
 
       const dupGroups = dupRows.length;
-      const excessRows = dupRows.reduce((sum: number, r: { cnt: number }) => sum + (r.cnt - 1), 0);
+      const excessRows = dupRows.reduce(
+        (sum: number, r: { cnt: number }) => sum + (r.cnt - 1),
+        0
+      );
 
       stateSummaries.push({
         state,
@@ -184,19 +191,28 @@ async function main() {
           description: (row.description || "").slice(0, 60),
           billingClass: row.billing_class,
           setting: row.setting,
-          cashPrice: row.cash_price != null ? `$${Number(row.cash_price).toFixed(2)}` : "null",
+          cashPrice:
+            row.cash_price != null
+              ? `$${Number(row.cash_price).toFixed(2)}`
+              : "null",
           count: row.cnt,
         });
       }
 
       const elapsed = ((Date.now() - scanStart) / 1000).toFixed(1);
       if (dupGroups > 0) {
-        console.log(`  [${ts()}] ${state}: ${Number(stateTotal).toLocaleString()} charges, ${dupGroups.toLocaleString()} dup groups, ${excessRows.toLocaleString()} excess rows (${elapsed}s)`);
+        console.log(
+          `  [${ts()}] ${state}: ${Number(stateTotal).toLocaleString()} charges, ${dupGroups.toLocaleString()} dup groups, ${excessRows.toLocaleString()} excess rows (${elapsed}s)`
+        );
       } else {
-        console.log(`  [${ts()}] ${state}: ${Number(stateTotal).toLocaleString()} charges, clean (${elapsed}s)`);
+        console.log(
+          `  [${ts()}] ${state}: ${Number(stateTotal).toLocaleString()} charges, clean (${elapsed}s)`
+        );
       }
     } catch (err) {
-      console.error(`  [${ts()}] ${state}: ERROR — ${err instanceof Error ? err.message : err}`);
+      console.error(
+        `  [${ts()}] ${state}: ERROR — ${err instanceof Error ? err.message : err}`
+      );
     } finally {
       client.release();
     }
@@ -204,11 +220,17 @@ async function main() {
 
   // ── Step 4: Summary ───────────────────────────────────────────────────
   console.log("\n── Summary ──\n");
-  console.log(`  Total charges:        ${Number(totalCharges).toLocaleString()}`);
+  console.log(
+    `  Total charges:        ${Number(totalCharges).toLocaleString()}`
+  );
   console.log(`  Duplicate groups:     ${totalDupGroups.toLocaleString()}`);
   console.log(`  Excess rows to remove: ${totalExcessRows.toLocaleString()}`);
-  console.log(`  Post-dedup estimate:  ${(Number(totalCharges) - totalExcessRows).toLocaleString()}`);
-  console.log(`  Reduction:            ${((totalExcessRows / Number(totalCharges)) * 100).toFixed(2)}%`);
+  console.log(
+    `  Post-dedup estimate:  ${(Number(totalCharges) - totalExcessRows).toLocaleString()}`
+  );
+  console.log(
+    `  Reduction:            ${((totalExcessRows / Number(totalCharges)) * 100).toFixed(2)}%`
+  );
 
   // Top states by excess rows
   const topStates = [...stateSummaries]
@@ -219,7 +241,9 @@ async function main() {
   if (topStates.length > 0) {
     console.log("\n  Top states by duplicate count:");
     for (const s of topStates) {
-      console.log(`    ${s.state}: ${s.excessRows.toLocaleString()} excess rows (${s.dupGroups.toLocaleString()} groups) out of ${s.totalCharges.toLocaleString()}`);
+      console.log(
+        `    ${s.state}: ${s.excessRows.toLocaleString()} excess rows (${s.dupGroups.toLocaleString()} groups) out of ${s.totalCharges.toLocaleString()}`
+      );
     }
   }
 
@@ -231,14 +255,18 @@ async function main() {
   if (topExamples.length > 0) {
     console.log("\n  Top duplicate examples:");
     for (const ex of topExamples) {
-      console.log(`    ${ex.state} | ${ex.providerName} | ${ex.cpt || ex.hcpcs} | ${ex.description} | ${ex.billingClass || "-"} | ${ex.setting || "-"} | ${ex.cashPrice} | ×${ex.count}`);
+      console.log(
+        `    ${ex.state} | ${ex.providerName} | ${ex.cpt || ex.hcpcs} | ${ex.description} | ${ex.billingClass || "-"} | ${ex.setting || "-"} | ${ex.cashPrice} | ×${ex.count}`
+      );
     }
   }
 
   // Clean states
   const cleanStates = stateSummaries.filter((s) => s.excessRows === 0);
   if (cleanStates.length > 0) {
-    console.log(`\n  Clean states (no duplicates): ${cleanStates.map((s) => s.state).join(", ")}`);
+    console.log(
+      `\n  Clean states (no duplicates): ${cleanStates.map((s) => s.state).join(", ")}`
+    );
   }
 
   const totalElapsed = ((Date.now() - scanStart) / 1000).toFixed(1);
@@ -246,20 +274,29 @@ async function main() {
 
   // ── JSON summary ──────────────────────────────────────────────────────
   console.log("\n── JSON Summary ──\n");
-  console.log(JSON.stringify({
-    totalCharges: Number(totalCharges),
-    totalDupGroups,
-    totalExcessRows,
-    postDedupEstimate: Number(totalCharges) - totalExcessRows,
-    reductionPercent: ((totalExcessRows / Number(totalCharges)) * 100).toFixed(2),
-    statesScanned: states.length,
-    statesWithDupes: stateSummaries.filter((s) => s.excessRows > 0).length,
-    topStates: topStates.map((s) => ({
-      state: s.state,
-      excessRows: s.excessRows,
-      dupGroups: s.dupGroups,
-    })),
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        totalCharges: Number(totalCharges),
+        totalDupGroups,
+        totalExcessRows,
+        postDedupEstimate: Number(totalCharges) - totalExcessRows,
+        reductionPercent: (
+          (totalExcessRows / Number(totalCharges)) *
+          100
+        ).toFixed(2),
+        statesScanned: states.length,
+        statesWithDupes: stateSummaries.filter((s) => s.excessRows > 0).length,
+        topStates: topStates.map((s) => ({
+          state: s.state,
+          excessRows: s.excessRows,
+          dupGroups: s.dupGroups,
+        })),
+      },
+      null,
+      2
+    )
+  );
 
   await pgPool.end();
   console.log("\n  Done.");

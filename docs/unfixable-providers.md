@@ -16,18 +16,18 @@ After running the full geography remediation pipeline (3-tier geocoding cascade 
 
 ## The 10 Unfixable Providers
 
-| Name | State | Address | City | Charges | Why Unfixable |
-|------|-------|---------|------|--------:|---------------|
-| UAB St. Vincent's East | AL | `[]` | — | 0 | Garbage address, no city |
-| UAB St. Vincent's Chilton | AL | `[]` | — | 0 | Garbage address, no city |
-| UAB St. Vincent's Blount | AL | `[]` | — | 0 | Garbage address, no city |
-| Warren Medical Group | CO | `TBD` | — | 0 | Placeholder address, no city |
-| Baxter Health | CO | `TBD` | — | 26 | Placeholder address, no city |
-| John H. Stroger Jr. Hospital | IL | `[]` | — | 0 | Garbage address, no city |
-| Provident Hospital Cook County | IL | `[]` | — | 0 | Garbage address, no city |
-| Easton Avenue | NJ | `[]` | — | 0 | Garbage address, no city |
-| Coquille Valley Hospital | OR | `[]` | — | 0 | Garbage address, no city |
-| Medical Behavioral Hospital of Clear Lake, LLC | TX | `[]` | — | 0 | Garbage address, no city |
+| Name                                           | State | Address | City | Charges | Why Unfixable                |
+| ---------------------------------------------- | ----- | ------- | ---- | ------: | ---------------------------- |
+| UAB St. Vincent's East                         | AL    | `[]`    | —    |       0 | Garbage address, no city     |
+| UAB St. Vincent's Chilton                      | AL    | `[]`    | —    |       0 | Garbage address, no city     |
+| UAB St. Vincent's Blount                       | AL    | `[]`    | —    |       0 | Garbage address, no city     |
+| Warren Medical Group                           | CO    | `TBD`   | —    |       0 | Placeholder address, no city |
+| Baxter Health                                  | CO    | `TBD`   | —    |      26 | Placeholder address, no city |
+| John H. Stroger Jr. Hospital                   | IL    | `[]`    | —    |       0 | Garbage address, no city     |
+| Provident Hospital Cook County                 | IL    | `[]`    | —    |       0 | Garbage address, no city     |
+| Easton Avenue                                  | NJ    | `[]`    | —    |       0 | Garbage address, no city     |
+| Coquille Valley Hospital                       | OR    | `[]`    | —    |       0 | Garbage address, no city     |
+| Medical Behavioral Hospital of Clear Lake, LLC | TX    | `[]`    | —    |       0 | Garbage address, no city     |
 
 ## Resolution Options
 
@@ -41,21 +41,21 @@ These could be manually fixed in a future pass:
 
 The full remediation fixed **599 of 609** affected providers:
 
-| Method | Providers Fixed | Cost |
-|--------|----------------:|-----:|
-| extractZipV2 (regex + state validation) | 387 | Free |
-| lookupByName (city+state → ZIP centroid) | 28 | Free |
-| Google Maps Geocoding API | 184 | ~$0.92 |
-| **Total fixed** | **599** | **~$0.92** |
+| Method                                   | Providers Fixed |       Cost |
+| ---------------------------------------- | --------------: | ---------: |
+| extractZipV2 (regex + state validation)  |             387 |       Free |
+| lookupByName (city+state → ZIP centroid) |              28 |       Free |
+| Google Maps Geocoding API                |             184 |     ~$0.92 |
+| **Total fixed**                          |         **599** | **~$0.92** |
 
 Follow-up pass corrected 45 wrong state fields and 12 placeholder ZIPs (reverse geocode).
 
 **Before → After:**
 
-| Metric | Before | After |
-|--------|-------:|------:|
-| Geocoded providers | 5,034 (92.9%) | 5,409 (99.8%) |
-| Null-location providers | 385 | 10 |
-| Wrong-ZIP providers | 224 | 0 |
-| Invalid ZIPs | 0 | 0 |
-| Charges searchable | ~11.2M | ~13.1M |
+| Metric                  |        Before |         After |
+| ----------------------- | ------------: | ------------: |
+| Geocoded providers      | 5,034 (92.9%) | 5,409 (99.8%) |
+| Null-location providers |           385 |            10 |
+| Wrong-ZIP providers     |           224 |             0 |
+| Invalid ZIPs            |             0 |             0 |
+| Charges searchable      |        ~11.2M |        ~13.1M |

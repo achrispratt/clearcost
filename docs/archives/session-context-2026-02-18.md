@@ -3,6 +3,7 @@
 ## What Was Accomplished This Session
 
 ### 1. Database Migration (DONE)
+
 - Ran `scripts/full-migration.sql` against live Supabase (project ref: `rzfelzmkdbicrfghofyf`)
 - Fixed policy drop order bug (policies can't be dropped on non-existent tables)
 - All 5 tables created: `providers`, `charges`, `payer_rates`, `payers`, `saved_searches`
@@ -10,6 +11,7 @@
 - Supabase CLI linked and `SUPABASE_ACCESS_TOKEN` saved to `~/.zshrc`
 
 ### 2. Oria Data Downloaded & Extracted (DONE)
+
 - Downloaded `mrf_lake.zip` (28GB) from Trilliant Oria via curl with resume
 - Extracted to `lib/data/` — 81GB of Parquet files + 11MB DuckDB file
 - Data structure: DuckDB has `hospitals` table (6,039 rows) + views pointing to Parquet files
@@ -17,6 +19,7 @@
 - Files partitioned by `hospital_state`
 
 ### 3. Data Quality Verified
+
 - **6,039 hospitals** total, **5,419 completed** (with data), 620 failed (parse/download errors)
 - **5,407 have street addresses**, 5,419 have city, 5,301 have state
 - **274 million** standard_charges rows
@@ -27,19 +30,23 @@
 ## What Still Needs To Happen
 
 ### Data Import (PARTIALLY DONE — needs Supabase Pro upgrade)
+
 Import script `lib/data/import-trilliant.ts` fully updated and tested.
 
 **What's done:**
+
 - 5,419 providers imported to Supabase (5,034 geocoded, 385 missing zip)
 - Wyoming test import succeeded: 37,725 charges inserted, no errors
 - Import script tested and working end-to-end
 
 **What's next:**
+
 - Upgrade Supabase from Free to Pro ($25/month) — free plan has 500MB limit, we need ~3.9GB
 - Run full import: `npx tsx --env-file=.env.local lib/data/import-trilliant.ts --skip-providers`
 - `--skip-providers` because providers are already imported
 
 **Import strategy: 1,010 curated CPT/HCPCS codes, national scope**
+
 - Codes sourced from 4 lists merged into `lib/data/final-codes.json`:
   - CMS 70 mandatory shoppable services
   - CMS top 200 Level I CPT codes by charges (from cms.gov spreadsheet)
@@ -55,6 +62,7 @@ Import script `lib/data/import-trilliant.ts` fully updated and tested.
 - State-by-state processing: iterates through states to keep DuckDB memory manageable
 
 **Decisions resolved:**
+
 - Geocoding: zip-based via `zipcodes` package (no Google Maps API needed for import)
 - Revenue codes: too generic for consumer search (e.g., "OR services per 15 min"), excluded from filtering
 - ICD codes: diagnosis codes, not useful for procedure search (Claude already does symptom→CPT)
@@ -62,18 +70,21 @@ Import script `lib/data/import-trilliant.ts` fully updated and tested.
 - All-in cost: three-tier approach using billing_class data + Claude prompt for context warnings
 
 ### Other .env.local Issues
+
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` = placeholder value (not needed for import, only for map UI)
 - `ANTHROPIC_API_KEY` = placeholder value (needed for live search, not import)
 
 ## Key Data Insights Discussed
 
 ### Billing Code Types
+
 - **CPT**: Specific procedures (MRI, X-ray, office visit). Primary search target. Claude translates natural language → CPT.
 - **HCPCS**: Superset of CPT, adds supplies/drugs/equipment. Second most useful.
 - **MS-DRG**: Inpatient hospital stays grouped by diagnosis. Covers admissions.
 - **Revenue Code**: Facility line items (OR time, pharmacy, MRI dept). Too generic for consumer search.
 
 ### The "All-In Cost" Problem
+
 - Hospital charges come in components: facility fee + professional fee (radiologist, etc.)
 - `billing_class` field indicates: "facility", "professional", "Both", or null
 - Null billing_class (12,457 of 16,668 MRI knee rows) likely represents bundled all-in prices
@@ -82,19 +93,23 @@ Import script `lib/data/import-trilliant.ts` fully updated and tested.
 - This is an industry-wide unsolved problem — competitors handle it the same way
 
 ### Hospital vs. Payer Data (Two Federal Mandates)
+
 - **Hospital Price Transparency Rule** (2021): Hospitals publish MRFs. Covers hospital services only (~12% of encounters). Includes cash prices.
 - **Transparency in Coverage Act** (2022): Insurers publish MRFs. Covers ALL provider types. No cash prices — only negotiated rates.
 - Oria dataset = hospital MRFs only
 - Payer TiC data would expand to clinics, private practices, labs, etc. but no cash prices for those
 
 ### Product Graduation Path (saved in plan file)
+
 Full roadmap saved at `/Users/chrispratt/.claude/plans/imperative-wishing-brooks.md` under "Product Graduation Path" section:
+
 - MVP: Cash prices + aggregated payer stats (Supabase Pro, ~5-8GB)
 - Phase 7: Plan-level insurance pricing from hospital data (~50-100GB, outgrow Supabase)
 - Phase 8: Payer TiC data for all provider types (~200-500GB)
 - Phase 9: Non-hospital cash prices (crowdsourced/partnerships/state data)
 
 ## File Locations
+
 - **Implementation plan**: `/Users/chrispratt/.claude/plans/imperative-wishing-brooks.md`
 - **DuckDB file**: `/Users/chrispratt/clearcost/lib/data/mrf_lake.duckdb`
 - **Parquet data**: `/Users/chrispratt/clearcost/lib/data/parquet/` (~81GB)
@@ -107,12 +122,14 @@ Full roadmap saved at `/Users/chrispratt/.claude/plans/imperative-wishing-brooks
 ## Key Product Decision: Facility Fee vs. All-In Cost
 
 ### The Reality
+
 - Hospital MRF data is primarily **facility/technical fees** — not the total cost of a visit
 - Patients routinely get **multiple separate bills**: hospital facility fee, radiologist, anesthesiologist, pathologist — each from independent billing entities
 - The facility fee is typically **70-80% of total cost** for imaging, 50-70% for surgeries
 - Professional fees (radiologist reading, anesthesia, etc.) are billed by independent physician groups with their own contracts, NOT through the hospital
 
 ### MVP Approach (decided)
+
 - Show ALL pricing we have — don't hide or filter anything based on billing_class
 - Be **contextually transparent** about what might be missing — not a blanket disclaimer on every result, but smart callouts where the data tells us the picture is incomplete
 - Use `billing_class` to drive UI context:
@@ -124,6 +141,7 @@ Full roadmap saved at `/Users/chrispratt/.claude/plans/imperative-wishing-brooks
 - Do NOT label everything as just "facility fee" — show what we have, and only flag gaps where the data indicates them
 
 ### Future Opportunity: All-In Cost Estimation
+
 - **Investigate whether Trilliant has more granular data** that separates or aggregates facility + professional fees
 - **Build estimated total cost ranges** by adding typical professional fee percentages on top of facility data (e.g., MRI facility + ~$50-150 radiologist reading)
 - **Cross-reference payer TiC data** (Phase 8) — payer MRFs include negotiated rates for professional services, which could fill in the professional fee gap
@@ -131,6 +149,7 @@ Full roadmap saved at `/Users/chrispratt/.claude/plans/imperative-wishing-brooks
 - This would be a genuine differentiator — no competitor currently shows reliable all-in cost estimates
 
 ## Open Questions (Resolved)
+
 - ~~Geocoding approach~~ → zip-based via `zipcodes` npm package
 - ~~Whether 274M charges all need importing~~ → Top 500 CPT/HCPCS codes nationally (~8.9M rows)
 - ~~How to handle billing_class~~ → Show all, use billing_class for smart UI callouts

@@ -5,11 +5,13 @@ Detailed reference for `lib/data/import-trilliant.ts` — the only working impor
 ## Commands
 
 **Fresh import** (wipe and reload all data):
+
 ```
 npx tsx --env-file=.env.local lib/data/import-trilliant.ts
 ```
 
 **Resume import** (keep existing states, import remaining):
+
 ```
 npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
   --skip-providers \
@@ -17,6 +19,7 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 ```
 
 **Test import** (verify script works with small dataset):
+
 ```
 npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
   --skip-providers --state WY --limit 1000
@@ -24,13 +27,13 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 ## Flags
 
-| Flag | Purpose |
-|------|---------|
-| `--skip-providers` | Providers already loaded, skip re-import |
+| Flag                      | Purpose                                                |
+| ------------------------- | ------------------------------------------------------ |
+| `--skip-providers`        | Providers already loaded, skip re-import               |
 | `--skip-states AK,CA,...` | Skip these states (preserves existing data, no DELETE) |
-| `--state NY` | Only import one state |
-| `--limit 1000` | Stop after N charges (for testing) |
-| `--batch-size 2000` | Rows per Supabase insert (default: 2000) |
+| `--state NY`              | Only import one state                                  |
+| `--limit 1000`            | Stop after N charges (for testing)                     |
+| `--batch-size 2000`       | Rows per Supabase insert (default: 2000)               |
 
 ## DuckDB Technical Notes
 

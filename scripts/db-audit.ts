@@ -62,19 +62,71 @@ const DUPLICATE_SAMPLE_PROVIDER_LIMIT = 120;
 const DUPLICATE_EXAMPLE_LIMIT = 20;
 
 const VALID_STATE_CODES = new Set<string>([
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
-  "DC", "PR", "VI", "GU", "AS", "MP",
+  "AL",
+  "AK",
+  "AZ",
+  "AR",
+  "CA",
+  "CO",
+  "CT",
+  "DE",
+  "FL",
+  "GA",
+  "HI",
+  "ID",
+  "IL",
+  "IN",
+  "IA",
+  "KS",
+  "KY",
+  "LA",
+  "ME",
+  "MD",
+  "MA",
+  "MI",
+  "MN",
+  "MS",
+  "MO",
+  "MT",
+  "NE",
+  "NV",
+  "NH",
+  "NJ",
+  "NM",
+  "NY",
+  "NC",
+  "ND",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VT",
+  "VA",
+  "WA",
+  "WV",
+  "WI",
+  "WY",
+  "DC",
+  "PR",
+  "VI",
+  "GU",
+  "AS",
+  "MP",
 ]);
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  console.error(
+    "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+  );
   process.exit(1);
 }
 
@@ -143,7 +195,9 @@ function severityRank(severity: Severity): number {
   return 1;
 }
 
-function keySortDescending<T extends { severity: Severity; impactCount: number }>(items: T[]): T[] {
+function keySortDescending<
+  T extends { severity: Severity; impactCount: number },
+>(items: T[]): T[] {
   return items.slice().sort((a, b) => {
     const severityDiff = severityRank(b.severity) - severityRank(a.severity);
     if (severityDiff !== 0) return severityDiff;
@@ -155,7 +209,9 @@ function keySortDescending<T extends { severity: Severity; impactCount: number }
 // Data loading (unchanged — small tables, paginated REST is fine)
 // ---------------------------------------------------------------------------
 
-async function fetchAllProviders(client: SupabaseClient): Promise<ProviderRow[]> {
+async function fetchAllProviders(
+  client: SupabaseClient
+): Promise<ProviderRow[]> {
   logProgress("Loading providers (paginated)...");
   const providers: ProviderRow[] = [];
   let offset = 0;
@@ -165,7 +221,10 @@ async function fetchAllProviders(client: SupabaseClient): Promise<ProviderRow[]>
       .select("id,name,state,city,address,zip,lat,lng")
       .order("id", { ascending: true })
       .range(offset, offset + PROVIDER_PAGE_SIZE - 1);
-    if (error) throw new Error(`Failed fetching providers at offset ${offset}: ${error.message}`);
+    if (error)
+      throw new Error(
+        `Failed fetching providers at offset ${offset}: ${error.message}`
+      );
     if (!data || data.length === 0) break;
     providers.push(...(data as ProviderRow[]));
     offset += data.length;
@@ -176,8 +235,13 @@ async function fetchAllProviders(client: SupabaseClient): Promise<ProviderRow[]>
   return providers;
 }
 
-async function countRows(client: SupabaseClient, table: string): Promise<number> {
-  const { count, error } = await client.from(table).select("id", { count: "exact", head: true });
+async function countRows(
+  client: SupabaseClient,
+  table: string
+): Promise<number> {
+  const { count, error } = await client
+    .from(table)
+    .select("id", { count: "exact", head: true });
   if (error) throw new Error(`Failed counting ${table}: ${error.message}`);
   return count ?? 0;
 }
@@ -186,12 +250,17 @@ async function loadCuratedCodes(): Promise<string[]> {
   const path = resolve(process.cwd(), "lib/data/final-codes.json");
   const contents = await readFile(path, "utf-8");
   const parsed = JSON.parse(contents) as unknown;
-  if (!Array.isArray(parsed)) throw new Error("lib/data/final-codes.json is not an array");
-  const codes = parsed.filter((v): v is string => typeof v === "string" && v.trim() !== "");
+  if (!Array.isArray(parsed))
+    throw new Error("lib/data/final-codes.json is not an array");
+  const codes = parsed.filter(
+    (v): v is string => typeof v === "string" && v.trim() !== ""
+  );
   return Array.from(new Set(codes.map((c) => c.trim().toUpperCase())));
 }
 
-function groupProvidersByState(providers: ProviderRow[]): Map<string, ProviderRow[]> {
+function groupProvidersByState(
+  providers: ProviderRow[]
+): Map<string, ProviderRow[]> {
   const grouped = new Map<string, ProviderRow[]>();
   for (const provider of providers) {
     const bucket = stateBucket(provider.state);
@@ -206,8 +275,12 @@ function groupProvidersByState(providers: ProviderRow[]): Map<string, ProviderRo
 // Severity calculations (unchanged)
 // ---------------------------------------------------------------------------
 
-function severityForMissingStateCharges(statesWithMissing: StateChargeSummary[]): Severity {
-  const fullyEmptyStates = statesWithMissing.filter((s) => s.providersWithCharges === 0);
+function severityForMissingStateCharges(
+  statesWithMissing: StateChargeSummary[]
+): Severity {
+  const fullyEmptyStates = statesWithMissing.filter(
+    (s) => s.providersWithCharges === 0
+  );
   if (fullyEmptyStates.length > 0) return "CRITICAL";
   if (statesWithMissing.length > 0) return "WARNING";
   return "INFO";
@@ -221,7 +294,10 @@ function severityForMissingGeocode(count: number): Severity {
   return count > 0 ? "CRITICAL" : "INFO";
 }
 
-function severityForUnknownStateProviders(providers: ProviderRow[], withCharges: number): Severity {
+function severityForUnknownStateProviders(
+  providers: ProviderRow[],
+  withCharges: number
+): Severity {
   if (withCharges > 0) return "CRITICAL";
   if (providers.length > 0) return "WARNING";
   return "INFO";
@@ -237,13 +313,19 @@ function severityForZeroPriceCharges(pct: number): Severity {
   return "INFO";
 }
 
-function severityForLowChargeProviders(lowCount: number, totalProviders: number): Severity {
+function severityForLowChargeProviders(
+  lowCount: number,
+  totalProviders: number
+): Severity {
   if (lowCount === 0) return "INFO";
   if (toPercent(lowCount, totalProviders) >= 5) return "CRITICAL";
   return "WARNING";
 }
 
-function severityForCodeCoverage(zeroCount: number, totalCodes: number): Severity {
+function severityForCodeCoverage(
+  zeroCount: number,
+  totalCodes: number
+): Severity {
   if (toPercent(zeroCount, totalCodes) >= 10) return "CRITICAL";
   if (zeroCount > 0) return "WARNING";
   return "INFO";
@@ -267,14 +349,18 @@ async function main(): Promise<void> {
     countRows(supabase, "charges"),
     countRows(supabase, "payer_rates"),
   ]);
-  logProgress(`Top-level counts: charges=${totalCharges.toLocaleString()}, payer_rates=${totalPayerRates.toLocaleString()}`);
+  logProgress(
+    `Top-level counts: charges=${totalCharges.toLocaleString()}, payer_rates=${totalPayerRates.toLocaleString()}`
+  );
 
   const providers = await fetchAllProviders(supabase);
   const totalProviders = providers.length;
   const curatedCodes = await loadCuratedCodes();
 
   // Phase 1: Parallel RPCs — all independent aggregations at once
-  logProgress("Running parallel audit RPCs (provider counts, zero-price, orphans, code coverage)...");
+  logProgress(
+    "Running parallel audit RPCs (provider counts, zero-price, orphans, code coverage)..."
+  );
   const [
     providerCountsResult,
     zeroPriceResult,
@@ -287,16 +373,31 @@ async function main(): Promise<void> {
     supabase.rpc("audit_code_coverage", { p_codes: curatedCodes }),
   ]);
 
-  if (providerCountsResult.error) throw new Error(`audit_provider_charge_counts failed: ${providerCountsResult.error.message}`);
-  if (zeroPriceResult.error) throw new Error(`audit_zero_price_by_state failed: ${zeroPriceResult.error.message}`);
-  if (orphanResult.error) throw new Error(`audit_orphan_charges failed: ${orphanResult.error.message}`);
-  if (codeCoverageResult.error) throw new Error(`audit_code_coverage failed: ${codeCoverageResult.error.message}`);
+  if (providerCountsResult.error)
+    throw new Error(
+      `audit_provider_charge_counts failed: ${providerCountsResult.error.message}`
+    );
+  if (zeroPriceResult.error)
+    throw new Error(
+      `audit_zero_price_by_state failed: ${zeroPriceResult.error.message}`
+    );
+  if (orphanResult.error)
+    throw new Error(
+      `audit_orphan_charges failed: ${orphanResult.error.message}`
+    );
+  if (codeCoverageResult.error)
+    throw new Error(
+      `audit_code_coverage failed: ${codeCoverageResult.error.message}`
+    );
 
   logProgress("Phase 1 RPCs complete");
 
   // Build provider charge count map
   const providerChargeCounts = new Map<string, number>();
-  for (const row of (providerCountsResult.data ?? []) as Array<{ provider_id: string; charge_count: number }>) {
+  for (const row of (providerCountsResult.data ?? []) as Array<{
+    provider_id: string;
+    charge_count: number;
+  }>) {
     providerChargeCounts.set(row.provider_id, Number(row.charge_count));
   }
   for (const provider of providers) {
@@ -308,7 +409,10 @@ async function main(): Promise<void> {
   // Build zero-price by state map
   const zeroPriceByState = new Map<string, number>();
   let totalZeroPriceCharges = 0;
-  for (const row of (zeroPriceResult.data ?? []) as Array<{ state: string; zero_price_count: number }>) {
+  for (const row of (zeroPriceResult.data ?? []) as Array<{
+    state: string;
+    zero_price_count: number;
+  }>) {
     const count = Number(row.zero_price_count);
     zeroPriceByState.set(row.state, count);
     totalZeroPriceCharges += count;
@@ -320,7 +424,10 @@ async function main(): Promise<void> {
 
   // Code coverage
   const zeroCoverageCodes: string[] = [];
-  for (const row of (codeCoverageResult.data ?? []) as Array<{ code: string; match_count: number }>) {
+  for (const row of (codeCoverageResult.data ?? []) as Array<{
+    code: string;
+    match_count: number;
+  }>) {
     if (Number(row.match_count) === 0) {
       zeroCoverageCodes.push(row.code);
     }
@@ -333,12 +440,18 @@ async function main(): Promise<void> {
   const DUPLICATE_BATCH_SIZE = 5;
   const topProviderIds = providers
     .filter((p) => (providerChargeCounts.get(p.id) ?? 0) > 0)
-    .sort((a, b) => (providerChargeCounts.get(b.id) ?? 0) - (providerChargeCounts.get(a.id) ?? 0))
+    .sort(
+      (a, b) =>
+        (providerChargeCounts.get(b.id) ?? 0) -
+        (providerChargeCounts.get(a.id) ?? 0)
+    )
     .slice(0, DUPLICATE_SAMPLE_PROVIDER_LIMIT)
     .map((p) => p.id);
 
   const totalBatches = Math.ceil(topProviderIds.length / DUPLICATE_BATCH_SIZE);
-  logProgress(`Running duplicate detection RPC (top ${topProviderIds.length} providers in ${totalBatches} batches of ${DUPLICATE_BATCH_SIZE})...`);
+  logProgress(
+    `Running duplicate detection RPC (top ${topProviderIds.length} providers in ${totalBatches} batches of ${DUPLICATE_BATCH_SIZE})...`
+  );
 
   type DuplicateRow = {
     provider_id: string;
@@ -353,10 +466,14 @@ async function main(): Promise<void> {
   for (let i = 0; i < topProviderIds.length; i += DUPLICATE_BATCH_SIZE) {
     const batch = topProviderIds.slice(i, i + DUPLICATE_BATCH_SIZE);
     const batchNum = Math.floor(i / DUPLICATE_BATCH_SIZE) + 1;
-    const result = await supabase.rpc("audit_duplicate_charges", { p_provider_ids: batch });
+    const result = await supabase.rpc("audit_duplicate_charges", {
+      p_provider_ids: batch,
+    });
     if (result.error) {
       duplicateBatchFailures++;
-      logProgress(`Duplicate batch ${batchNum}/${totalBatches} timed out (${batch.length} providers skipped)`);
+      logProgress(
+        `Duplicate batch ${batchNum}/${totalBatches} timed out (${batch.length} providers skipped)`
+      );
       continue;
     }
     allDuplicateRows.push(...((result.data ?? []) as DuplicateRow[]));
@@ -364,7 +481,9 @@ async function main(): Promise<void> {
   }
 
   // Sort all results by occurrences desc (each batch was individually sorted)
-  allDuplicateRows.sort((a, b) => Number(b.occurrences) - Number(a.occurrences));
+  allDuplicateRows.sort(
+    (a, b) => Number(b.occurrences) - Number(a.occurrences)
+  );
 
   const duplicateSample: DuplicateSummary = {
     sampledProviders: topProviderIds.length,
@@ -392,10 +511,16 @@ async function main(): Promise<void> {
   // ---------------------------------------------------------------------------
 
   // 1) Missing charge data by state
-  const stateChargeStats = new Map<string, { providerCount: number; providersWithCharges: number }>();
+  const stateChargeStats = new Map<
+    string,
+    { providerCount: number; providersWithCharges: number }
+  >();
   for (const provider of providers) {
     const bucket = stateBucket(provider.state);
-    const entry = stateChargeStats.get(bucket) ?? { providerCount: 0, providersWithCharges: 0 };
+    const entry = stateChargeStats.get(bucket) ?? {
+      providerCount: 0,
+      providersWithCharges: 0,
+    };
     entry.providerCount += 1;
     if ((providerChargeCounts.get(provider.id) ?? 0) > 0) {
       entry.providersWithCharges += 1;
@@ -403,12 +528,15 @@ async function main(): Promise<void> {
     stateChargeStats.set(bucket, entry);
   }
 
-  const stateChargeSummaries: StateChargeSummary[] = Array.from(stateChargeStats.entries())
+  const stateChargeSummaries: StateChargeSummary[] = Array.from(
+    stateChargeStats.entries()
+  )
     .map(([state, counts]) => ({
       state,
       providerCount: counts.providerCount,
       providersWithCharges: counts.providersWithCharges,
-      providersWithoutCharges: counts.providerCount - counts.providersWithCharges,
+      providersWithoutCharges:
+        counts.providerCount - counts.providersWithCharges,
     }))
     .sort((a, b) => {
       if (b.providersWithoutCharges !== a.providersWithoutCharges) {
@@ -417,9 +545,16 @@ async function main(): Promise<void> {
       return b.providerCount - a.providerCount;
     });
 
-  const statesWithMissingCharges = stateChargeSummaries.filter((s) => s.providersWithoutCharges > 0);
-  const fullyEmptyStates = stateChargeSummaries.filter((s) => s.providerCount > 0 && s.providersWithCharges === 0);
-  const totalProvidersWithoutCharges = statesWithMissingCharges.reduce((sum, s) => sum + s.providersWithoutCharges, 0);
+  const statesWithMissingCharges = stateChargeSummaries.filter(
+    (s) => s.providersWithoutCharges > 0
+  );
+  const fullyEmptyStates = stateChargeSummaries.filter(
+    (s) => s.providerCount > 0 && s.providersWithCharges === 0
+  );
+  const totalProvidersWithoutCharges = statesWithMissingCharges.reduce(
+    (sum, s) => sum + s.providersWithoutCharges,
+    0
+  );
 
   // 2) Missing provider addresses
   const missingAddressProviders = providers.filter(
@@ -428,11 +563,15 @@ async function main(): Promise<void> {
   const missingAddressByState = groupProvidersByState(missingAddressProviders);
 
   // 3) Missing geocoding
-  const missingGeocodeProviders = providers.filter((p) => p.lat === null || p.lng === null);
+  const missingGeocodeProviders = providers.filter(
+    (p) => p.lat === null || p.lng === null
+  );
   const missingGeocodeByState = groupProvidersByState(missingGeocodeProviders);
 
   // 4) Unknown/unrecognized state providers
-  const unknownStateProviders = providers.filter((p) => !isRecognizedState(p.state));
+  const unknownStateProviders = providers.filter(
+    (p) => !isRecognizedState(p.state)
+  );
   const unknownStateProvidersWithCharges = unknownStateProviders.filter(
     (p) => (providerChargeCounts.get(p.id) ?? 0) > 0
   );
@@ -448,18 +587,32 @@ async function main(): Promise<void> {
   // Severity calculations
   // ---------------------------------------------------------------------------
 
-  const severityMissingChargeByState = severityForMissingStateCharges(statesWithMissingCharges);
-  const severityMissingAddresses = severityForMissingAddresses(missingAddressProviders.length);
-  const severityMissingGeocoding = severityForMissingGeocode(missingGeocodeProviders.length);
+  const severityMissingChargeByState = severityForMissingStateCharges(
+    statesWithMissingCharges
+  );
+  const severityMissingAddresses = severityForMissingAddresses(
+    missingAddressProviders.length
+  );
+  const severityMissingGeocoding = severityForMissingGeocode(
+    missingGeocodeProviders.length
+  );
   const severityUnknownStates = severityForUnknownStateProviders(
     unknownStateProviders,
     unknownStateProvidersWithCharges.length
   );
   const severityOrphans = severityForOrphanCharges(orphanCharges);
   const severityZeroPrice = severityForZeroPriceCharges(zeroPricePercent);
-  const severityLowChargeProviders = severityForLowChargeProviders(lowChargeProviders.length, totalProviders);
-  const severityCodeCoverage = severityForCodeCoverage(zeroCoverageCodes.length, curatedCodes.length);
-  const severityDuplicates = severityForDuplicateSample(duplicateSample.suspectedDuplicateRows);
+  const severityLowChargeProviders = severityForLowChargeProviders(
+    lowChargeProviders.length,
+    totalProviders
+  );
+  const severityCodeCoverage = severityForCodeCoverage(
+    zeroCoverageCodes.length,
+    curatedCodes.length
+  );
+  const severityDuplicates = severityForDuplicateSample(
+    duplicateSample.suspectedDuplicateRows
+  );
 
   // ---------------------------------------------------------------------------
   // Prioritized issues
@@ -471,11 +624,15 @@ async function main(): Promise<void> {
     prioritizedIssues.push({
       severity: "CRITICAL",
       title: "States with zero charge coverage",
-      impactCount: fullyEmptyStates.reduce((sum, s) => sum + s.providerCount, 0),
+      impactCount: fullyEmptyStates.reduce(
+        (sum, s) => sum + s.providerCount,
+        0
+      ),
       detail: fullyEmptyStates
         .map((s) => `${s.state} (${s.providerCount} providers, 0 with charges)`)
         .join("; "),
-      recommendation: "Re-run or backfill charge import for these states first, then re-audit coverage.",
+      recommendation:
+        "Re-run or backfill charge import for these states first, then re-audit coverage.",
     });
   }
 
@@ -485,7 +642,8 @@ async function main(): Promise<void> {
       title: "Providers missing coordinates",
       impactCount: missingGeocodeProviders.length,
       detail: `${missingGeocodeProviders.length} providers have NULL lat/lng and are excluded from ST_DWithin search.`,
-      recommendation: "Backfill geocoding for all providers with NULL lat/lng and monitor geocode success rates per state.",
+      recommendation:
+        "Backfill geocoding for all providers with NULL lat/lng and monitor geocode success rates per state.",
     });
   }
 
@@ -495,7 +653,8 @@ async function main(): Promise<void> {
       title: "Charge-bearing providers with unknown state",
       impactCount: unknownStateProvidersWithCharges.length,
       detail: `${unknownStateProvidersWithCharges.length} providers have charges but unrecognized/null state values.`,
-      recommendation: "Normalize provider.state values so geographically scoped queries can reach these charges.",
+      recommendation:
+        "Normalize provider.state values so geographically scoped queries can reach these charges.",
     });
   }
 
@@ -505,7 +664,8 @@ async function main(): Promise<void> {
       title: "Orphan charges",
       impactCount: orphanCharges,
       detail: `${orphanCharges.toLocaleString()} charges reference provider_id values that do not match providers.id.`,
-      recommendation: "Reconcile provider_id integrity and enforce FK consistency in import pipeline.",
+      recommendation:
+        "Reconcile provider_id integrity and enforce FK consistency in import pipeline.",
     });
   }
 
@@ -515,7 +675,8 @@ async function main(): Promise<void> {
       title: "Price-unavailable charge rows",
       impactCount: totalZeroPriceCharges,
       detail: `${totalZeroPriceCharges.toLocaleString()} charges (${zeroPricePercent.toFixed(2)}%) have all pricing fields NULL.`,
-      recommendation: "Investigate pricing parser coverage and fill core pricing columns where available.",
+      recommendation:
+        "Investigate pricing parser coverage and fill core pricing columns where available.",
     });
   }
 
@@ -525,7 +686,8 @@ async function main(): Promise<void> {
       title: "Providers with low charge counts (<10)",
       impactCount: lowChargeProviders.length,
       detail: `${lowChargeProviders.length} providers have partial-looking imports (1-9 charges).`,
-      recommendation: "Audit source files for low-count providers and re-run failed/partial imports.",
+      recommendation:
+        "Audit source files for low-count providers and re-run failed/partial imports.",
     });
   }
 
@@ -535,7 +697,8 @@ async function main(): Promise<void> {
       title: "Providers missing address fields",
       impactCount: missingAddressProviders.length,
       detail: `${missingAddressProviders.length} providers are missing city/address/zip and may fail geocoding.`,
-      recommendation: "Complete missing address fields before geocode jobs and add input validation.",
+      recommendation:
+        "Complete missing address fields before geocode jobs and add input validation.",
     });
   }
 
@@ -545,7 +708,8 @@ async function main(): Promise<void> {
       title: "Curated billing codes with zero coverage",
       impactCount: zeroCoverageCodes.length,
       detail: `${zeroCoverageCodes.length}/${curatedCodes.length} curated codes have zero matching charges (CPT/HCPCS).`,
-      recommendation: "Review code list alignment with imported data and adjust ingestion filters or curated list.",
+      recommendation:
+        "Review code list alignment with imported data and adjust ingestion filters or curated list.",
     });
   }
 
@@ -555,7 +719,8 @@ async function main(): Promise<void> {
       title: "Suspected duplicate charges (sample)",
       impactCount: duplicateSample.suspectedDuplicateRows,
       detail: `${duplicateSample.suspectedDuplicateRows} duplicate rows across ${duplicateSample.suspectedDuplicateGroups} groups in sampled data.`,
-      recommendation: "Add dedupe rules on provider+code+cash_price+description during import/upsert.",
+      recommendation:
+        "Add dedupe rules on provider+code+cash_price+description during import/upsert.",
     });
   }
 
@@ -594,32 +759,44 @@ async function main(): Promise<void> {
     );
   }
 
-  console.log("\n--- 2) Missing Provider Addresses (city/address/zip is NULL or empty) ---");
-  for (const [state, providersInState] of Array.from(missingAddressByState.entries()).sort((a, b) => b[1].length - a[1].length)) {
+  console.log(
+    "\n--- 2) Missing Provider Addresses (city/address/zip is NULL or empty) ---"
+  );
+  for (const [state, providersInState] of Array.from(
+    missingAddressByState.entries()
+  ).sort((a, b) => b[1].length - a[1].length)) {
     console.log(`- ${state}: ${providersInState.length}`);
     for (const provider of providersInState) {
       const missingFields: string[] = [];
       if (isBlank(provider.city)) missingFields.push("city");
       if (isBlank(provider.address)) missingFields.push("address");
       if (isBlank(provider.zip)) missingFields.push("zip");
-      console.log(`  - ${providerLabel(provider)} | missing=${missingFields.join(",")}`);
+      console.log(
+        `  - ${providerLabel(provider)} | missing=${missingFields.join(",")}`
+      );
     }
   }
 
   console.log("\n--- 3) Missing Geocoding (lat/lng is NULL) ---");
-  for (const [state, providersInState] of Array.from(missingGeocodeByState.entries()).sort((a, b) => b[1].length - a[1].length)) {
+  for (const [state, providersInState] of Array.from(
+    missingGeocodeByState.entries()
+  ).sort((a, b) => b[1].length - a[1].length)) {
     console.log(`- ${state}: ${providersInState.length}`);
     for (const provider of providersInState) {
       const missingFields: string[] = [];
       if (provider.lat === null) missingFields.push("lat");
       if (provider.lng === null) missingFields.push("lng");
-      console.log(`  - ${providerLabel(provider)} | missing=${missingFields.join(",")}`);
+      console.log(
+        `  - ${providerLabel(provider)} | missing=${missingFields.join(",")}`
+      );
     }
   }
 
   console.log("\n--- 4) Unknown/Unrecognized State Providers ---");
   console.log(`Total unknown providers: ${unknownStateProviders.length}`);
-  console.log(`Unknown providers with >=1 charge: ${unknownStateProvidersWithCharges.length}`);
+  console.log(
+    `Unknown providers with >=1 charge: ${unknownStateProvidersWithCharges.length}`
+  );
   for (const provider of unknownStateProviders) {
     const chargeCount = providerChargeCounts.get(provider.id) ?? 0;
     console.log(
@@ -636,13 +813,17 @@ async function main(): Promise<void> {
       2
     )}%)`
   );
-  for (const [state, count] of Array.from(zeroPriceByState.entries()).sort((a, b) => b[1] - a[1])) {
+  for (const [state, count] of Array.from(zeroPriceByState.entries()).sort(
+    (a, b) => b[1] - a[1]
+  )) {
     console.log(`- ${state}: ${count.toLocaleString()}`);
   }
 
   console.log("\n--- 7) Providers with Very Low Charge Counts (1-9) ---");
   console.log(`Total providers with 1-9 charges: ${lowChargeProviders.length}`);
-  for (const [state, providersInState] of Array.from(lowChargeProvidersByState.entries()).sort((a, b) => b[1].length - a[1].length)) {
+  for (const [state, providersInState] of Array.from(
+    lowChargeProvidersByState.entries()
+  ).sort((a, b) => b[1].length - a[1].length)) {
     console.log(`- ${state}: ${providersInState.length}`);
     for (const provider of providersInState) {
       const count = providerChargeCounts.get(provider.id) ?? 0;
@@ -658,12 +839,20 @@ async function main(): Promise<void> {
   }
 
   console.log("\n--- 9) Potential Duplicate Charges (RPC-based) ---");
-  console.log(`Sampled providers (top by charge count): ${duplicateSample.sampledProviders}`);
+  console.log(
+    `Sampled providers (top by charge count): ${duplicateSample.sampledProviders}`
+  );
   if (duplicateBatchFailures > 0) {
-    console.log(`Batch timeouts: ${duplicateBatchFailures}/${totalBatches} (results are partial — heaviest providers skipped)`);
+    console.log(
+      `Batch timeouts: ${duplicateBatchFailures}/${totalBatches} (results are partial — heaviest providers skipped)`
+    );
   }
-  console.log(`Suspected duplicate groups: ${duplicateSample.suspectedDuplicateGroups.toLocaleString()}`);
-  console.log(`Suspected duplicate rows: ${duplicateSample.suspectedDuplicateRows.toLocaleString()}`);
+  console.log(
+    `Suspected duplicate groups: ${duplicateSample.suspectedDuplicateGroups.toLocaleString()}`
+  );
+  console.log(
+    `Suspected duplicate rows: ${duplicateSample.suspectedDuplicateRows.toLocaleString()}`
+  );
   for (const example of duplicateSample.examples) {
     console.log(
       `- provider=${example.providerName} [${example.providerId}] | code=${example.code} | cash_price=${example.cashPrice} | occurrences=${example.occurrences}`
@@ -725,13 +914,30 @@ async function main(): Promise<void> {
     performanceNotes: {
       mode: "rpc-optimized",
       rpcCalls: 5,
-      parallelPhase1: ["audit_provider_charge_counts", "audit_zero_price_by_state", "audit_orphan_charges", "audit_code_coverage"],
+      parallelPhase1: [
+        "audit_provider_charge_counts",
+        "audit_zero_price_by_state",
+        "audit_orphan_charges",
+        "audit_code_coverage",
+      ],
       sequentialPhase2: ["audit_duplicate_charges"],
       duplicateSampleProviderLimit: DUPLICATE_SAMPLE_PROVIDER_LIMIT,
     },
     spotChecks: {
-      nj: njState ? { providers: njState.providerCount, withCharges: njState.providersWithCharges, withoutCharges: njState.providersWithoutCharges } : null,
-      pa: paState ? { providers: paState.providerCount, withCharges: paState.providersWithCharges, withoutCharges: paState.providersWithoutCharges } : null,
+      nj: njState
+        ? {
+            providers: njState.providerCount,
+            withCharges: njState.providersWithCharges,
+            withoutCharges: njState.providersWithoutCharges,
+          }
+        : null,
+      pa: paState
+        ? {
+            providers: paState.providerCount,
+            withCharges: paState.providersWithCharges,
+            withoutCharges: paState.providersWithoutCharges,
+          }
+        : null,
     },
   };
 

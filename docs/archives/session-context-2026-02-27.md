@@ -3,6 +3,7 @@
 ## What Was Accomplished This Session
 
 ### 1. Guided Search Core Implementation (DONE)
+
 - Built the full Phase 5.5 guided search flow: AI-driven multi-turn diagnostic clarification
 - **9 files created/modified**, ~1,198 lines of new code
 - New types in `types/index.ts`: `ClarificationOption`, `ClarificationQuestion`, `ClarificationTurn`, `TranslationResponse`
@@ -17,18 +18,22 @@
 - **Commit:** `5806dd5` — pushed to main
 
 ### 2. UX Polish Round 2 (DONE)
+
 After testing flows ("I need an MRI", "my head hurts"), identified and fixed three UX issues:
 
 **a) Search button lag fix**
+
 - `LocationInput.tsx`: Added debounced geocoding (500ms after typing stops), `onGeocodingChange` callback
 - `SearchBar.tsx`: Button shows "Locating..." with spinner while geocoding, instead of appearing dead/disabled
 
 **b) Paired Previous/Next buttons**
+
 - `ClarificationStep.tsx`: Added `onBack` + `backLabel` props, renders `[← Previous] [Next →]` at bottom
 - Previous: ghost/outlined style (secondary), Next: teal fill (primary)
 - "← Back to search" on first question, "← Previous" on subsequent
 
 **c) Clickable breadcrumbs with response cache**
+
 - `guided-search/page.tsx`: Added `responseCache` (Map keyed by `JSON.stringify(turns)`)
 - Created `fetchOrCacheQuestion()` — single function replacing 3 separate fetch paths
 - Breadcrumb items are now `<button>` elements — click any to jump back instantly from cache
@@ -37,6 +42,7 @@ After testing flows ("I need an MRI", "my head hurts"), identified and fixed thr
 - **Commit:** `5cf95e4` — pushed to main
 
 ### 3. Verified Full Flow
+
 - "I need an MRI" → 3 clarifying questions (body part → joint → contrast) → CPT 73721 → 61 results
 - "my head hurts" → symptom-based intake (headache duration → type → doctor referral)
 - Direct codes bypass URL working
@@ -47,6 +53,7 @@ After testing flows ("I need an MRI", "my head hurts"), identified and fixed thr
 ## What Still Needs To Happen
 
 ### Results Page Improvements (Phase 5.6 — next round)
+
 User tested results page and provided feedback. Decisions already made:
 
 - **Map + List split view** — Always side-by-side on desktop (Zillow/Airbnb pattern), toggle on mobile. User chose "Always split." `MapView` has `onMarkerClick` callback but it's not wired up yet.
@@ -55,6 +62,7 @@ User tested results page and provided feedback. Decisions already made:
 - **Insurance filter** — Payer dropdown loads payer list but doesn't actually filter results. Wire it up or remove it.
 
 ### Future UX Enhancements (post Phase 5.6)
+
 - Smart typeahead/suggestions in search bar
 - Conversational follow-up for deeply ambiguous queries
 - Results grouped by procedure type when query isn't fully resolved
@@ -64,21 +72,26 @@ User tested results page and provided feedback. Decisions already made:
 ## Key Technical Decisions Made
 
 ### Response Cache Pattern
+
 Client-side `Map<string, TranslationResponse>` stored in `useRef`. Cache key is `JSON.stringify(turns)` — simple and effective because the state space is tiny (max 6 turns = max 7 cache entries per session). Forward nav always calls API (user's new answer changes the conversation). Backward nav always hits cache (already-seen states).
 
 ### fetchOrCacheQuestion() Consolidation
+
 Before: 3 separate `fetch("/api/clarify", ...)` calls in mount effect, handleSubmit, and handleBack — each with slightly different error handling. After: single `fetchOrCacheQuestion(turnsArray)` that checks cache → API call → stores result → calls `handleResponse()`. Used by mount, submit, back button, and breadcrumb click. Eliminated all duplication.
 
 ### Debounced Geocoding
+
 LocationInput geocodes on a 500ms debounce after typing stops (via `useRef` timer). Blur and Enter are immediate (cancel any pending debounce). `onGeocodingChange` callback lets SearchBar show "Locating..." feedback. Cleanup on unmount prevents memory leaks.
 
 ## Git History
+
 - `f050ae3` — Doc updates (CLAUDE.md, MEMORY.md, plan file)
 - `5806dd5` — Full guided search implementation (9 files, 1,198 lines)
 - `70ec24f` — Visual learning directive for search pipeline diagrams
 - `5cf95e4` — UX Polish Round 2 (4 files: debounced geocoding, paired buttons, clickable breadcrumbs)
 
 ## File Locations
+
 - **Active plan:** `.claude/plans/groovy-popping-wind.md` (deferred items for Phase 5.6)
 - **Guided search page:** `app/guided-search/page.tsx`
 - **Clarification component:** `components/ClarificationStep.tsx`

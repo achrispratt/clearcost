@@ -6,7 +6,10 @@ import { Pool as PgPool } from "pg";
 
 async function main() {
   const dbUrl = process.env.SUPABASE_DB_URL;
-  if (!dbUrl) { console.error("No SUPABASE_DB_URL"); process.exit(1); }
+  if (!dbUrl) {
+    console.error("No SUPABASE_DB_URL");
+    process.exit(1);
+  }
   const poolerUrl = dbUrl.replace(/:5432\//, ":6543/");
   const pgPool = new PgPool({
     connectionString: poolerUrl,
@@ -49,7 +52,9 @@ async function main() {
     ORDER BY MIN(cnt)
   `);
   for (const m of multipliers) {
-    console.log(`  ${m.multiplier}: ${Number(m.groups).toLocaleString()} groups, ${Number(m.excess_rows).toLocaleString()} excess rows`);
+    console.log(
+      `  ${m.multiplier}: ${Number(m.groups).toLocaleString()} groups, ${Number(m.excess_rows).toLocaleString()} excess rows`
+    );
   }
 
   // ── Q2: Top codes with dupes (TX sample) ──────────────────────────
@@ -74,7 +79,9 @@ async function main() {
     LIMIT 20
   `);
   for (const r of topCodes) {
-    console.log(`  ${r.code}: ${Number(r.total_excess).toLocaleString()} excess rows (${r.dup_groups} groups)`);
+    console.log(
+      `  ${r.code}: ${Number(r.total_excess).toLocaleString()} excess rows (${r.dup_groups} groups)`
+    );
   }
 
   // ── Q3: Spot-check non-allergen/drug-test duplicates ──────────────
@@ -102,12 +109,16 @@ async function main() {
     LIMIT 15
   `);
   for (const d of otherDups) {
-    console.log(`  x${d.cnt} | ${d.code} | ${d.provider_name.slice(0, 35)} | ${(d.description || "").slice(0, 45)} | ${d.billing_class || "-"} | ${d.setting || "-"} | $${d.cash_price}`);
+    console.log(
+      `  x${d.cnt} | ${d.code} | ${d.provider_name.slice(0, 35)} | ${(d.description || "").slice(0, 45)} | ${d.billing_class || "-"} | ${d.setting || "-"} | $${d.cash_price}`
+    );
   }
 
   // ── Q4: How many distinct codes have dupes vs total? ──────────────
   console.log("\n=== Breadth (TX sample) ===\n");
-  const { rows: [breadth] } = await client.query(`
+  const {
+    rows: [breadth],
+  } = await client.query(`
     SELECT
       (SELECT COUNT(DISTINCT COALESCE(NULLIF(cpt, ''), hcpcs))::int
        FROM charges c JOIN providers p ON c.provider_id = p.id
@@ -128,7 +139,9 @@ async function main() {
   `);
   console.log(`  Total codes in TX: ${breadth.total_codes}`);
   console.log(`  Codes with duplicates: ${breadth.codes_with_dupes}`);
-  console.log(`  Codes affected: ${((breadth.codes_with_dupes / breadth.total_codes) * 100).toFixed(1)}%`);
+  console.log(
+    `  Codes affected: ${((breadth.codes_with_dupes / breadth.total_codes) * 100).toFixed(1)}%`
+  );
 
   // ── Q5: A different state to compare (FL) ─────────────────────────
   console.log("\n=== Non-allergen/drug-test duplicates (FL, top 10) ===\n");
@@ -153,7 +166,9 @@ async function main() {
     LIMIT 10
   `);
   for (const d of flDups) {
-    console.log(`  x${d.cnt} | ${d.code} | ${d.provider_name.slice(0, 35)} | ${(d.description || "").slice(0, 45)} | $${d.cash_price}`);
+    console.log(
+      `  x${d.cnt} | ${d.code} | ${d.provider_name.slice(0, 35)} | ${(d.description || "").slice(0, 45)} | $${d.cash_price}`
+    );
   }
 
   client.release();

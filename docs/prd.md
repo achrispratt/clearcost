@@ -60,6 +60,7 @@ ClearCost is the **Kayak for healthcare pricing** — a consumer tool that lets 
 Users type natural language queries like "knee MRI", "colonoscopy", "blood work panel", or "physical therapy session." Claude AI translates these into standardized billing codes (CPT/HCPCS).
 
 **Search flow:**
+
 1. User enters procedure description + location
 2. Claude translates description into billing code(s) with code type
 3. PostGIS queries `charges` table for matching codes near the user's location
@@ -114,6 +115,7 @@ The MVP uses Trilliant Health's free Oria data lake — a consolidated, pre-proc
 Rather than importing all 274M charges, the MVP filters to 1,010 carefully curated CPT/HCPCS codes representing the most shoppable procedures. This reduces the import to ~13.1M rows (~3.9GB).
 
 Sources merged into `lib/data/final-codes.json`:
+
 1. **CMS 70** — Federally mandated shoppable services every hospital must list
 2. **CMS Top 200** — Level I CPT codes with highest total charges nationally
 3. **Top 500** — Most universally reported codes by hospital coverage count
@@ -153,30 +155,31 @@ Trilliant Oria Full Dataset
 
 **What's excluded and why:**
 
-| Exclusion | Rows Dropped | % of Total | Reason |
-|-----------|-------------|------------|--------|
-| Non-matching codes | ~261M | ~95.2% | MVP focuses on 1,010 most shoppable procedures |
-| Inpatient rows | ~62K of matched | ~7% of matched | Not consumer-shoppable (complex multi-day stays) |
-| Payer detail rows | ~6B | 100% | Pre-aggregated stats sufficient for MVP; plan-level pricing is Phase 7 |
-| Revenue/ICD/other codes | (overlap with above) | — | Too generic (revenue) or not procedure-based (ICD) |
+| Exclusion               | Rows Dropped         | % of Total     | Reason                                                                 |
+| ----------------------- | -------------------- | -------------- | ---------------------------------------------------------------------- |
+| Non-matching codes      | ~261M                | ~95.2%         | MVP focuses on 1,010 most shoppable procedures                         |
+| Inpatient rows          | ~62K of matched      | ~7% of matched | Not consumer-shoppable (complex multi-day stays)                       |
+| Payer detail rows       | ~6B                  | 100%           | Pre-aggregated stats sufficient for MVP; plan-level pricing is Phase 7 |
+| Revenue/ICD/other codes | (overlap with above) | —              | Too generic (revenue) or not procedure-based (ICD)                     |
 
 **Precise source counts (from DuckDB queries on full Oria dataset):**
 
-| Metric | Value |
-|--------|-------|
-| Total standard_charges | 274,299,828 |
-| Total standard_charge_details (payer-specific) | ~6 billion |
-| Distinct CPT codes | 120,097 |
-| Distinct HCPCS codes | 109,354 |
-| Distinct MS-DRG codes | 5,628 |
-| Inpatient rows | 50,777,849 (18.5%) |
-| Outpatient/null rows | 223,521,979 (81.5%) |
-| Hospitals total | 6,039 |
-| Hospitals with data | 5,419 |
-| Curated MVP codes | 1,010 |
-| Estimated MVP rows | ~13.1M |
+| Metric                                         | Value               |
+| ---------------------------------------------- | ------------------- |
+| Total standard_charges                         | 274,299,828         |
+| Total standard_charge_details (payer-specific) | ~6 billion          |
+| Distinct CPT codes                             | 120,097             |
+| Distinct HCPCS codes                           | 109,354             |
+| Distinct MS-DRG codes                          | 5,628               |
+| Inpatient rows                                 | 50,777,849 (18.5%)  |
+| Outpatient/null rows                           | 223,521,979 (81.5%) |
+| Hospitals total                                | 6,039               |
+| Hospitals with data                            | 5,419               |
+| Curated MVP codes                              | 1,010               |
+| Estimated MVP rows                             | ~13.1M              |
 
 **Expansion path:**
+
 - More codes → import more of the 120K CPT / 109K HCPCS codes
 - Inpatient → add MS-DRG data (~50.8M rows, Phase 7+)
 - Payer detail → 6B rows, requires self-hosted Postgres (~50-100GB, Phase 7)
@@ -184,13 +187,13 @@ Trilliant Oria Full Dataset
 
 ### 4.3 Billing Code Types
 
-| Code Type | What It Covers | MVP Use |
-|-----------|---------------|---------|
-| **CPT** | Procedures (MRI, surgery, office visit) | Primary search target |
-| **HCPCS** | Superset of CPT + supplies/drugs/equipment | Secondary search (many hospitals use HCPCS instead of CPT) |
-| **MS-DRG** | Inpatient hospital stays by diagnosis | Excluded for MVP (inpatient filtered out) |
-| **Revenue Code** | Facility line items (OR time, pharmacy) | Too generic for consumer search |
-| **ICD** | Diagnosis codes | Not used (Claude handles symptom-to-procedure translation) |
+| Code Type        | What It Covers                             | MVP Use                                                    |
+| ---------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **CPT**          | Procedures (MRI, surgery, office visit)    | Primary search target                                      |
+| **HCPCS**        | Superset of CPT + supplies/drugs/equipment | Secondary search (many hospitals use HCPCS instead of CPT) |
+| **MS-DRG**       | Inpatient hospital stays by diagnosis      | Excluded for MVP (inpatient filtered out)                  |
+| **Revenue Code** | Facility line items (OR time, pharmacy)    | Too generic for consumer search                            |
+| **ICD**          | Diagnosis codes                            | Not used (Claude handles symptom-to-procedure translation) |
 
 **Critical data insight**: Many hospitals populate the `hcpcs` column instead of `cpt` for the same procedures. The import and search always check BOTH columns to avoid missing ~1,800 hospitals.
 
@@ -199,6 +202,7 @@ Trilliant Oria Full Dataset
 Hospital charges come in components: facility fee + professional fee (radiologist, anesthesiologist, etc.). The `billing_class` field indicates what a charge covers.
 
 **MVP approach — contextual transparency:**
+
 - Show ALL available pricing (don't hide or filter by billing_class)
 - "Both" or null billing_class → show as a more complete estimate
 - "facility" → note that professional fees may apply separately
@@ -217,6 +221,7 @@ Hospital charges come in components: facility fee + professional fee (radiologis
 - **`saved_searches`** — User-scoped saved searches with location coordinates.
 
 **2 RPC functions:**
+
 - `search_charges_nearby()` — Code-based search with PostGIS radius filtering
 - `search_charges_by_description()` — Description-based fallback search
 
@@ -228,16 +233,16 @@ Hospital charges come in components: facility fee + professional fee (radiologis
 
 ### 5.1 Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 16 (App Router), React 19, TypeScript |
-| Styling | Tailwind CSS v4, DaisyUI 5 |
-| Database | Supabase (Postgres 15 + PostGIS) |
-| Auth | Supabase Auth (Google OAuth) |
-| AI | Claude API (Anthropic SDK) — Sonnet for cost efficiency |
-| Maps | Google Maps JavaScript API |
-| Data Pipeline | DuckDB + Parquet (local), bulk insert to Supabase |
-| Hosting | Vercel |
+| Layer         | Technology                                              |
+| ------------- | ------------------------------------------------------- |
+| Frontend      | Next.js 16 (App Router), React 19, TypeScript           |
+| Styling       | Tailwind CSS v4, DaisyUI 5                              |
+| Database      | Supabase (Postgres 15 + PostGIS)                        |
+| Auth          | Supabase Auth (Google OAuth)                            |
+| AI            | Claude API (Anthropic SDK) — Sonnet for cost efficiency |
+| Maps          | Google Maps JavaScript API                              |
+| Data Pipeline | DuckDB + Parquet (local), bulk insert to Supabase       |
+| Hosting       | Vercel                                                  |
 
 ### 5.2 Search Pipeline
 
@@ -360,12 +365,12 @@ Providers are geocoded using the `zipcodes` npm package (zip-centroid lat/lng, ~
 
 ## 8. Infrastructure Trajectory
 
-| Phase | Storage | Platform | Monthly Cost |
-|-------|---------|----------|--------------|
-| MVP (current) | ~5-8 GB | Supabase Pro | $25 |
-| Phase 7 | ~50-100 GB | Self-hosted Postgres (AWS RDS / GCP Cloud SQL) | $200-600 |
-| Phase 8 | ~500 GB-1 TB | Self-hosted Postgres + analytical store | $500-1,000 |
-| Phase 9 | ~1-2 TB | Hybrid architecture | $1,000+ |
+| Phase         | Storage      | Platform                                       | Monthly Cost |
+| ------------- | ------------ | ---------------------------------------------- | ------------ |
+| MVP (current) | ~5-8 GB      | Supabase Pro                                   | $25          |
+| Phase 7       | ~50-100 GB   | Self-hosted Postgres (AWS RDS / GCP Cloud SQL) | $200-600     |
+| Phase 8       | ~500 GB-1 TB | Self-hosted Postgres + analytical store        | $500-1,000   |
+| Phase 9       | ~1-2 TB      | Hybrid architecture                            | $1,000+      |
 
 Key insight: **Phases 6-8 are pure data engineering** — all data is publicly available, no partnerships needed. Phase 9 is the inflection point requiring B2B relationships and a sales motion.
 

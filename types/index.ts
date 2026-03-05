@@ -4,21 +4,31 @@
 // ============================================================================
 
 // -- Billing code types supported by the system --
-export type BillingCodeType = 'cpt' | 'hcpcs' | 'ms_drg';
-export type QueryType = 'procedure' | 'symptom' | 'condition' | 'code';
-export type ConfidenceLevel = 'high' | 'low';
+export type BillingCodeType = "cpt" | "hcpcs" | "ms_drg";
+export type QueryType = "procedure" | "symptom" | "condition" | "code";
+export type ConfidenceLevel = "high" | "low";
 
 // -- Laterality --
-export type Laterality = 'left' | 'right' | 'bilateral';
+export type Laterality = "left" | "right" | "bilateral";
 
 // -- Care setting --
-export type ChargeSetting = 'inpatient' | 'outpatient' | 'both';
-export type AdderEstimateSource = 'facility' | 'local_fallback';
-export type AdderEstimateConfidence = 'high' | 'low';
-export type OptionalAdderType = 'xray' | 'mri' | 'ct' | 'ultrasound' | 'lab' | 'other';
-export type PricingMode = 'encounter_first' | 'procedure_first';
-export type EncounterType = 'emergency' | 'office' | 'urgent_care_proxy' | 'specialist';
-export type FallbackSource = 'facility' | 'local_fallback';
+export type ChargeSetting = "inpatient" | "outpatient" | "both";
+export type AdderEstimateSource = "facility" | "local_fallback";
+export type AdderEstimateConfidence = "high" | "low";
+export type OptionalAdderType =
+  | "xray"
+  | "mri"
+  | "ct"
+  | "ultrasound"
+  | "lab"
+  | "other";
+export type PricingMode = "encounter_first" | "procedure_first";
+export type EncounterType =
+  | "emergency"
+  | "office"
+  | "urgent_care_proxy"
+  | "specialist";
+export type FallbackSource = "facility" | "local_fallback";
 
 export interface PricingCodeGroup {
   codeType: BillingCodeType;
@@ -161,9 +171,9 @@ export interface SearchResult {
 export interface ClarificationOption {
   label: string;
   description?: string;
-  codes?: string[];           // Billing codes this resolves to (if terminal)
+  codes?: string[]; // Billing codes this resolves to (if terminal)
   codeType?: BillingCodeType;
-  refinedQuery?: string;      // Rewritten query for re-interpretation
+  refinedQuery?: string; // Rewritten query for re-interpretation
 }
 
 export interface ClarificationQuestion {
@@ -171,13 +181,13 @@ export interface ClarificationQuestion {
   question: string;
   helpText?: string;
   options: ClarificationOption[];
-  allowFreeText?: boolean;    // Default: true — always show "Other" input
+  allowFreeText?: boolean; // Default: true — always show "Other" input
 }
 
 export interface ClarificationTurn {
   questionId: string;
-  selectedOption: string;     // Label of selected option, or "other"
-  freeText?: string;          // What user typed if "other"
+  selectedOption: string; // Label of selected option, or "other"
+  freeText?: string; // What user typed if "other"
 }
 
 export interface TranslationResponse {

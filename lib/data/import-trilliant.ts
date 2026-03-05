@@ -48,24 +48,63 @@ const DEFAULT_BATCH_SIZE = 500;
 
 // Column order for multi-row INSERT INTO charges
 const CHARGE_COLUMNS = [
-  "provider_id", "description", "setting", "billing_class",
-  "cpt", "hcpcs", "ms_drg", "revenue_code", "ndc", "icd", "modifiers",
+  "provider_id",
+  "description",
+  "setting",
+  "billing_class",
+  "cpt",
+  "hcpcs",
+  "ms_drg",
+  "revenue_code",
+  "ndc",
+  "icd",
+  "modifiers",
   "laterality",
-  "gross_charge", "cash_price", "min_price", "max_price",
-  "avg_negotiated_rate", "min_negotiated_rate", "max_negotiated_rate",
-  "payer_count", "source",
+  "gross_charge",
+  "cash_price",
+  "min_price",
+  "max_price",
+  "avg_negotiated_rate",
+  "min_negotiated_rate",
+  "max_negotiated_rate",
+  "payer_count",
+  "source",
 ] as const;
 
 // Index definitions — must match supabase/schema.sql exactly
 const CHARGE_INDEXES = [
-  { name: "idx_charges_cpt", sql: "CREATE INDEX idx_charges_cpt ON charges (cpt)" },
-  { name: "idx_charges_hcpcs", sql: "CREATE INDEX idx_charges_hcpcs ON charges (hcpcs)" },
-  { name: "idx_charges_ms_drg", sql: "CREATE INDEX idx_charges_ms_drg ON charges (ms_drg)" },
-  { name: "idx_charges_provider", sql: "CREATE INDEX idx_charges_provider ON charges (provider_id)" },
-  { name: "idx_charges_cpt_provider", sql: "CREATE INDEX idx_charges_cpt_provider ON charges (cpt, provider_id)" },
-  { name: "idx_charges_hcpcs_provider", sql: "CREATE INDEX idx_charges_hcpcs_provider ON charges (hcpcs, provider_id)" },
-  { name: "idx_charges_description", sql: "CREATE INDEX idx_charges_description ON charges USING gin (to_tsvector('english', coalesce(description, '')))" },
-  { name: "idx_charges_laterality", sql: "CREATE INDEX idx_charges_laterality ON charges (laterality) WHERE laterality IS NOT NULL" },
+  {
+    name: "idx_charges_cpt",
+    sql: "CREATE INDEX idx_charges_cpt ON charges (cpt)",
+  },
+  {
+    name: "idx_charges_hcpcs",
+    sql: "CREATE INDEX idx_charges_hcpcs ON charges (hcpcs)",
+  },
+  {
+    name: "idx_charges_ms_drg",
+    sql: "CREATE INDEX idx_charges_ms_drg ON charges (ms_drg)",
+  },
+  {
+    name: "idx_charges_provider",
+    sql: "CREATE INDEX idx_charges_provider ON charges (provider_id)",
+  },
+  {
+    name: "idx_charges_cpt_provider",
+    sql: "CREATE INDEX idx_charges_cpt_provider ON charges (cpt, provider_id)",
+  },
+  {
+    name: "idx_charges_hcpcs_provider",
+    sql: "CREATE INDEX idx_charges_hcpcs_provider ON charges (hcpcs, provider_id)",
+  },
+  {
+    name: "idx_charges_description",
+    sql: "CREATE INDEX idx_charges_description ON charges USING gin (to_tsvector('english', coalesce(description, '')))",
+  },
+  {
+    name: "idx_charges_laterality",
+    sql: "CREATE INDEX idx_charges_laterality ON charges (laterality) WHERE laterality IS NOT NULL",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -252,14 +291,18 @@ async function batchInsert(
     const { error } = await supabase.from(table).insert(batch);
 
     if (error) {
-      console.error(`  Error inserting ${label} batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+      console.error(
+        `  Error inserting ${label} batch ${Math.floor(i / batchSize) + 1}: ${error.message}`
+      );
       continue;
     }
 
     inserted += batch.length;
 
     if ((Math.floor(i / batchSize) + 1) % 10 === 0) {
-      console.log(`  ${label}: ${inserted.toLocaleString()} / ${rows.length.toLocaleString()} rows inserted`);
+      console.log(
+        `  ${label}: ${inserted.toLocaleString()} / ${rows.length.toLocaleString()} rows inserted`
+      );
     }
   }
 
@@ -283,14 +326,18 @@ async function batchUpsert(
       .upsert(batch, { onConflict: conflictColumn });
 
     if (error) {
-      console.error(`  Error upserting ${label} batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+      console.error(
+        `  Error upserting ${label} batch ${Math.floor(i / batchSize) + 1}: ${error.message}`
+      );
       continue;
     }
 
     upserted += batch.length;
 
     if ((Math.floor(i / batchSize) + 1) % 10 === 0) {
-      console.log(`  ${label}: ${upserted.toLocaleString()} / ${rows.length.toLocaleString()} rows upserted`);
+      console.log(
+        `  ${label}: ${upserted.toLocaleString()} / ${rows.length.toLocaleString()} rows upserted`
+      );
     }
   }
 
@@ -308,7 +355,9 @@ async function dropChargeIndexes(pool: PgPool): Promise<void> {
       await pool.query(`DROP INDEX IF EXISTS ${idx.name}`);
       console.log(`  Dropped ${idx.name}`);
     } catch (err) {
-      console.warn(`  Warning dropping ${idx.name}: ${err instanceof Error ? err.message : err}`);
+      console.warn(
+        `  Warning dropping ${idx.name}: ${err instanceof Error ? err.message : err}`
+      );
     }
   }
 }
@@ -328,7 +377,9 @@ async function createChargeIndexes(pool: PgPool): Promise<void> {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
       console.log(`  Created ${idx.name} (${elapsed}s)`);
     } catch (err) {
-      console.error(`  ERROR creating ${idx.name}: ${err instanceof Error ? err.message : err}`);
+      console.error(
+        `  ERROR creating ${idx.name}: ${err instanceof Error ? err.message : err}`
+      );
     }
   }
 }
@@ -342,7 +393,9 @@ async function verifyImport(pool: PgPool): Promise<void> {
 
   // Total row count
   const countRes = await pool.query("SELECT COUNT(*) as cnt FROM charges");
-  console.log(`  Total charges: ${parseInt(countRes.rows[0].cnt, 10).toLocaleString()}`);
+  console.log(
+    `  Total charges: ${parseInt(countRes.rows[0].cnt, 10).toLocaleString()}`
+  );
 
   // State coverage
   const stateRes = await pool.query(`
@@ -358,8 +411,12 @@ async function verifyImport(pool: PgPool): Promise<void> {
   }
 
   // Distinct codes
-  const cptRes = await pool.query("SELECT COUNT(DISTINCT cpt) as cnt FROM charges WHERE cpt IS NOT NULL");
-  const hcpcsRes = await pool.query("SELECT COUNT(DISTINCT hcpcs) as cnt FROM charges WHERE hcpcs IS NOT NULL");
+  const cptRes = await pool.query(
+    "SELECT COUNT(DISTINCT cpt) as cnt FROM charges WHERE cpt IS NOT NULL"
+  );
+  const hcpcsRes = await pool.query(
+    "SELECT COUNT(DISTINCT hcpcs) as cnt FROM charges WHERE hcpcs IS NOT NULL"
+  );
   console.log(`  Distinct CPT codes: ${cptRes.rows[0].cnt}`);
   console.log(`  Distinct HCPCS codes: ${hcpcsRes.rows[0].cnt}`);
 
@@ -371,7 +428,8 @@ async function verifyImport(pool: PgPool): Promise<void> {
   `);
   const orphans = parseInt(orphanRes.rows[0].cnt, 10);
   console.log(`  Orphan charges (no valid provider): ${orphans}`);
-  if (orphans > 0) console.warn(`  WARNING: ${orphans} charges have invalid provider_id`);
+  if (orphans > 0)
+    console.warn(`  WARNING: ${orphans} charges have invalid provider_id`);
 
   // Price coverage
   const priceRes = await pool.query(`
@@ -382,15 +440,23 @@ async function verifyImport(pool: PgPool): Promise<void> {
     FROM charges
   `);
   const p = priceRes.rows[0];
-  console.log(`  Rows with cash_price: ${parseInt(p.has_cash, 10).toLocaleString()}`);
-  console.log(`  Rows with gross_charge: ${parseInt(p.has_gross, 10).toLocaleString()}`);
-  console.log(`  Rows with avg_negotiated_rate: ${parseInt(p.has_avg_rate, 10).toLocaleString()}`);
+  console.log(
+    `  Rows with cash_price: ${parseInt(p.has_cash, 10).toLocaleString()}`
+  );
+  console.log(
+    `  Rows with gross_charge: ${parseInt(p.has_gross, 10).toLocaleString()}`
+  );
+  console.log(
+    `  Rows with avg_negotiated_rate: ${parseInt(p.has_avg_rate, 10).toLocaleString()}`
+  );
 
   // Index existence
   const idxRes = await pool.query(`
     SELECT indexname FROM pg_indexes WHERE tablename = 'charges' ORDER BY indexname
   `);
-  console.log(`  Indexes on charges: ${idxRes.rows.map((r: { indexname: string }) => r.indexname).join(", ")}`);
+  console.log(
+    `  Indexes on charges: ${idxRes.rows.map((r: { indexname: string }) => r.indexname).join(", ")}`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -412,7 +478,9 @@ async function importProviders(
      WHERE status = 'completed'
      ORDER BY hospital_id`
   )) as unknown as OraHospital[];
-  console.log(`  Found ${hospitals.length.toLocaleString()} completed hospitals in Oria data`);
+  console.log(
+    `  Found ${hospitals.length.toLocaleString()} completed hospitals in Oria data`
+  );
 
   // Geocode using zip codes from addresses
   let geocoded = 0;
@@ -422,7 +490,11 @@ async function importProviders(
   const providerRows: Record<string, unknown>[] = [];
 
   for (const hospital of hospitals) {
-    const geo = geocodeByZip(hospital.hospital_address, hospital.hospital_state, hospital.hospital_city);
+    const geo = geocodeByZip(
+      hospital.hospital_address,
+      hospital.hospital_state,
+      hospital.hospital_city
+    );
 
     if (!hospital.hospital_address) {
       noZip++;
@@ -446,7 +518,9 @@ async function importProviders(
     });
   }
 
-  console.log(`  Geocoded: ${geocoded} hospitals, ${noZip} missing zip, ${noLookup} failed lookup`);
+  console.log(
+    `  Geocoded: ${geocoded} hospitals, ${noZip} missing zip, ${noLookup} failed lookup`
+  );
 
   // Upsert into Supabase
   const upserted = await batchUpsert(
@@ -547,7 +621,9 @@ async function importCharges(
       }
     }
     if (completedStates.size > 0) {
-      console.log(`  Auto-resume: ${completedStates.size} states already have data: ${[...completedStates].sort().join(", ")}`);
+      console.log(
+        `  Auto-resume: ${completedStates.size} states already have data: ${[...completedStates].sort().join(", ")}`
+      );
     }
   }
 
@@ -585,7 +661,9 @@ async function importCharges(
         await pgPool.query("SELECT 1");
         console.log(`  ${state}: reconnected after retry`);
       } catch (retryErr) {
-        console.error(`  ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`);
+        console.error(
+          `  ${state}: SKIPPING — Postgres unreachable (${retryErr instanceof Error ? retryErr.message : retryErr})`
+        );
         continue;
       }
     }
@@ -629,20 +707,39 @@ async function importCharges(
         icd: charge.icd || null,
         modifiers: charge.modifiers || null,
         laterality: parseLaterality(charge.description, charge.modifiers),
-        gross_charge: charge.gross_charge != null ? Number(charge.gross_charge) : null,
-        cash_price: charge.discounted_cash != null ? Number(charge.discounted_cash) : null,
+        gross_charge:
+          charge.gross_charge != null ? Number(charge.gross_charge) : null,
+        cash_price:
+          charge.discounted_cash != null
+            ? Number(charge.discounted_cash)
+            : null,
         min_price: charge.minimum != null ? Number(charge.minimum) : null,
         max_price: charge.maximum != null ? Number(charge.maximum) : null,
-        avg_negotiated_rate: charge.avg_negotiated_rate != null ? Number(charge.avg_negotiated_rate) : null,
-        min_negotiated_rate: charge.min_negotiated_rate != null ? Number(charge.min_negotiated_rate) : null,
-        max_negotiated_rate: charge.max_negotiated_rate != null ? Number(charge.max_negotiated_rate) : null,
-        payer_count: charge.payer_count != null ? Number(charge.payer_count) : null,
+        avg_negotiated_rate:
+          charge.avg_negotiated_rate != null
+            ? Number(charge.avg_negotiated_rate)
+            : null,
+        min_negotiated_rate:
+          charge.min_negotiated_rate != null
+            ? Number(charge.min_negotiated_rate)
+            : null,
+        max_negotiated_rate:
+          charge.max_negotiated_rate != null
+            ? Number(charge.max_negotiated_rate)
+            : null,
+        payer_count:
+          charge.payer_count != null ? Number(charge.payer_count) : null,
         source: "trilliant_oria",
       });
 
       if (batch.length >= config.batchSize) {
         // DIRECT AWAIT — guarantees backpressure. Nothing buffers while this runs.
-        const inserted = await flushOneBatch(pgPool, batch, `charges [${state}]`, numCols);
+        const inserted = await flushOneBatch(
+          pgPool,
+          batch,
+          `charges [${state}]`,
+          numCols
+        );
         if (inserted > 0) {
           stateInserted += inserted;
           totalInserted += inserted;
@@ -655,15 +752,20 @@ async function importCharges(
 
         // Circuit breaker
         if (consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
-          console.error(`  ${state}: CIRCUIT BREAKER — ${consecutiveFailures} consecutive failures, skipping rest of state`);
+          console.error(
+            `  ${state}: CIRCUIT BREAKER — ${consecutiveFailures} consecutive failures, skipping rest of state`
+          );
           break;
         }
 
         // Progress logging every 20 batches (~10,000 rows)
         if (batchNum % 20 === 0) {
-          const heapMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          const heapMB = Math.round(
+            process.memoryUsage().heapUsed / 1024 / 1024
+          );
           const elapsed = (Date.now() - importStart) / 1000;
-          const rowsPerSec = totalInserted > 0 ? (totalInserted / elapsed).toFixed(0) : "—";
+          const rowsPerSec =
+            totalInserted > 0 ? (totalInserted / elapsed).toFixed(0) : "—";
           console.log(
             `  ${state}: ${stateInserted.toLocaleString()} inserted, ` +
               `${stateSkipped} skipped — ${elapsed.toFixed(0)}s elapsed — heap: ${heapMB}MB — ` +
@@ -675,7 +777,12 @@ async function importCharges(
 
     // Flush remaining partial batch
     if (batch.length > 0) {
-      const inserted = await flushOneBatch(pgPool, batch, `charges [${state}]`, numCols);
+      const inserted = await flushOneBatch(
+        pgPool,
+        batch,
+        `charges [${state}]`,
+        numCols
+      );
       if (inserted > 0) {
         stateInserted += inserted;
         totalInserted += inserted;
@@ -692,7 +799,9 @@ async function importCharges(
 
     // Respect --limit across all states
     if (config.limit > 0 && totalInserted >= config.limit) {
-      console.log(`  Reached limit of ${config.limit.toLocaleString()}, stopping`);
+      console.log(
+        `  Reached limit of ${config.limit.toLocaleString()}, stopping`
+      );
       break;
     }
   }
@@ -742,10 +851,14 @@ async function flushOneBatch(
       const msg = err instanceof Error ? err.message : String(err);
       if (attempt < 3) {
         const wait = attempt * 5000; // 5s, 10s backoff — give Supabase time to recover
-        console.warn(`  ${label}: attempt ${attempt} failed, retrying in ${wait / 1000}s... (${msg})`);
+        console.warn(
+          `  ${label}: attempt ${attempt} failed, retrying in ${wait / 1000}s... (${msg})`
+        );
         await new Promise((r) => setTimeout(r, wait));
       } else {
-        console.error(`  ${label}: FAILED after 3 attempts: ${msg} (${rows.length} rows lost)`);
+        console.error(
+          `  ${label}: FAILED after 3 attempts: ${msg} (${rows.length} rows lost)`
+        );
       }
     }
   }
@@ -763,9 +876,11 @@ async function main() {
   console.log(`  DuckDB path: ${config.dbPath}`);
   console.log(`  Batch size: ${config.batchSize}`);
   console.log(`  Fresh import: ${config.fresh}`);
-  if (config.limit > 0) console.log(`  Limit: ${config.limit.toLocaleString()} charges`);
+  if (config.limit > 0)
+    console.log(`  Limit: ${config.limit.toLocaleString()} charges`);
   if (config.state) console.log(`  State filter: ${config.state}`);
-  if (config.skipStates.length > 0) console.log(`  Skipping states: ${config.skipStates.join(", ")}`);
+  if (config.skipStates.length > 0)
+    console.log(`  Skipping states: ${config.skipStates.join(", ")}`);
 
   // Validate environment
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -809,14 +924,16 @@ async function main() {
   // Direct connections get killed by Supabase's load balancer under sustained load.
   const poolerUrl = dbUrl.replace(/:5432\//, ":6543/");
   const isPooler = poolerUrl !== dbUrl;
-  console.log(`  Connecting via ${isPooler ? "Supabase pooler (port 6543)" : "direct Postgres"}...`);
+  console.log(
+    `  Connecting via ${isPooler ? "Supabase pooler (port 6543)" : "direct Postgres"}...`
+  );
 
   const pgPool = new PgPool({
     connectionString: poolerUrl,
     ssl: { rejectUnauthorized: false },
-    max: 3,                                // small pool — pooler manages the real connections
-    idleTimeoutMillis: 30000,              // release idle connections after 30s
-    connectionTimeoutMillis: 30000,        // 30s to get a connection from pooler
+    max: 3, // small pool — pooler manages the real connections
+    idleTimeoutMillis: 30000, // release idle connections after 30s
+    connectionTimeoutMillis: 30000, // 30s to get a connection from pooler
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000,
   });
@@ -831,7 +948,9 @@ async function main() {
   const originalCwd = process.cwd();
   const dbDir = dirname(config.dbPath);
   process.chdir(dbDir);
-  console.log(`\n  Changed CWD to ${dbDir} (required for DuckDB relative parquet paths)`);
+  console.log(
+    `\n  Changed CWD to ${dbDir} (required for DuckDB relative parquet paths)`
+  );
 
   console.log("  Opening DuckDB database...");
   const db = await Database.create(config.dbPath, { access_mode: "READ_ONLY" });
@@ -850,7 +969,9 @@ async function main() {
   const tables = (await db.all(
     `SELECT table_name FROM information_schema.tables WHERE table_schema='main' ORDER BY table_name`
   )) as unknown as { table_name: string }[];
-  console.log(`  Available tables: ${tables.map((t) => t.table_name).join(", ")}`);
+  console.log(
+    `  Available tables: ${tables.map((t) => t.table_name).join(", ")}`
+  );
 
   try {
     // Step 1: Import providers
@@ -859,7 +980,9 @@ async function main() {
     if (!config.skipProviders) {
       providerIdMap = await importProviders(db, supabase, config);
     } else {
-      console.log("\n  Skipping provider import, building ID map from existing data...");
+      console.log(
+        "\n  Skipping provider import, building ID map from existing data..."
+      );
       providerIdMap = new Map();
       let offset = 0;
       const pageSize = 1000;

@@ -128,9 +128,7 @@ export function LocationInput({
         }}
         placeholder="ZIP or city"
         className={`w-full bg-transparent focus:outline-none placeholder:text-[var(--cc-text-tertiary)] ${
-          compact
-            ? "py-2.5 text-sm"
-            : "py-4 sm:py-3.5 text-sm"
+          compact ? "py-2.5 text-sm" : "py-4 sm:py-3.5 text-sm"
         }`}
         style={{ color: "var(--cc-text)" }}
       />
@@ -144,8 +142,20 @@ export function LocationInput({
       >
         {isLoading ? (
           <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="2"
+              opacity="0.25"
+            />
+            <path
+              d="M12 2a10 10 0 0 1 10 10"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
           </svg>
         ) : (
           <svg

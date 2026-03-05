@@ -22,8 +22,9 @@ function parseCodeGroups(raw: string): DirectCodeGroup[] {
     if (!Array.isArray(parsed)) return [];
 
     return parsed
-      .filter((group): group is { codeType: unknown; codes: unknown } =>
-        !!group && typeof group === "object"
+      .filter(
+        (group): group is { codeType: unknown; codes: unknown } =>
+          !!group && typeof group === "object"
       )
       .map((group) => {
         const rawCodeType = group.codeType;
@@ -32,7 +33,10 @@ function parseCodeGroups(raw: string): DirectCodeGroup[] {
             ? rawCodeType
             : "cpt";
         const codes = Array.isArray(group.codes)
-          ? group.codes.filter((code): code is string => typeof code === "string" && code.trim().length > 0)
+          ? group.codes.filter(
+              (code): code is string =>
+                typeof code === "string" && code.trim().length > 0
+            )
           : [];
         return { codeType, codes };
       })
@@ -62,7 +66,8 @@ export function useResultsSearch() {
   const locationDisplay = searchParams.get("loc") || "";
   const directCodeGroupsParam = searchParams.get("codeGroups") || "";
   const directCodeGroups = parseCodeGroups(directCodeGroupsParam);
-  const directCodes = searchParams.get("codes")?.split(",").filter(Boolean) || [];
+  const directCodes =
+    searchParams.get("codes")?.split(",").filter(Boolean) || [];
   const directCodeType = searchParams.get("codeType") || "";
   const directInterp = searchParams.get("interp") || "";
   const directPlanParam = searchParams.get("plan") || "";
@@ -73,7 +78,9 @@ export function useResultsSearch() {
   const [filteredResults, setFilteredResults] = useState<ChargeResult[]>([]);
   const [cptCodes, setCptCodes] = useState<CPTCode[]>([]);
   const [interpretation, setInterpretation] = useState("");
-  const [pricingPlan, setPricingPlan] = useState<PricingPlan | undefined>(directPlan);
+  const [pricingPlan, setPricingPlan] = useState<PricingPlan | undefined>(
+    directPlan
+  );
   const [loading, setLoading] = useState(true);
   const [loadingStage, setLoadingStage] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +88,12 @@ export function useResultsSearch() {
   const [radius, setRadius] = useState<number>(25);
 
   useEffect(() => {
-    if ((!query && directCodeGroups.length === 0 && directCodes.length === 0) || !lat || !lng) return;
+    if (
+      (!query && directCodeGroups.length === 0 && directCodes.length === 0) ||
+      !lat ||
+      !lng
+    )
+      return;
 
     const search = async () => {
       setLoading(true);
@@ -89,7 +101,11 @@ export function useResultsSearch() {
 
       const hasDirectCodes =
         directCodeGroups.length > 0 || directCodes.length > 0;
-      setLoadingStage(hasDirectCodes ? "Finding prices near you..." : "Translating your query...");
+      setLoadingStage(
+        hasDirectCodes
+          ? "Finding prices near you..."
+          : "Translating your query..."
+      );
 
       try {
         const requestBody: Record<string, unknown> = {
@@ -137,10 +153,19 @@ export function useResultsSearch() {
           setCptCodes(apiCodes);
         } else if (directCodeDescsParam) {
           try {
-            const descs = JSON.parse(directCodeDescsParam) as Record<string, string>;
-            const allCodes = directCodeGroups.length > 0
-              ? directCodeGroups.flatMap((g) => g.codes.map((code) => ({ code, codeType: g.codeType })))
-              : directCodes.map((code) => ({ code, codeType: (directCodeType || "cpt") as BillingCodeType }));
+            const descs = JSON.parse(directCodeDescsParam) as Record<
+              string,
+              string
+            >;
+            const allCodes =
+              directCodeGroups.length > 0
+                ? directCodeGroups.flatMap((g) =>
+                    g.codes.map((code) => ({ code, codeType: g.codeType }))
+                  )
+                : directCodes.map((code) => ({
+                    code,
+                    codeType: (directCodeType || "cpt") as BillingCodeType,
+                  }));
             setCptCodes(
               allCodes
                 .filter(({ code }) => descs[code])
@@ -169,8 +194,17 @@ export function useResultsSearch() {
     };
 
     search();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, lat, lng, directCodeGroupsParam, directCodes.join(","), directCodeType, directInterp, directPlanParam]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    query,
+    lat,
+    lng,
+    directCodeGroupsParam,
+    directCodes.join(","),
+    directCodeType,
+    directInterp,
+    directPlanParam,
+  ]);
 
   const handleNewSearch = (
     newQuery: string,
