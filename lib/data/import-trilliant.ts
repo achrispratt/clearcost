@@ -767,7 +767,7 @@ async function importCharges(
     // Pre-import: get expected row count from DuckDB for reconciliation
     const expectedRes = (await db.all(
       `SELECT COUNT(*) as cnt FROM standard_charges
-       WHERE hospital_state = '${state}' AND ${codeFilter}`
+       WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}`
     )) as unknown as { cnt: number }[];
     const expectedCount = Number(expectedRes[0].cnt);
 
@@ -783,7 +783,7 @@ async function importCharges(
               cpt, hcpcs, ms_drg, rc, ndc, icd,
               avg_negotiated_rate, min_negotiated_rate, max_negotiated_rate, payer_count
        FROM standard_charges
-       WHERE hospital_state = '${state}' AND ${codeFilter}
+       WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}
        ${config.limit > 0 ? `LIMIT ${config.limit}` : ""}`
     );
 

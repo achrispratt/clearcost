@@ -175,24 +175,24 @@ Each row in the `charges` table is one line item from a hospital's MRF: a single
 
 Key columns:
 
-| Column                | Type    | What it means                                                  |
-| --------------------- | ------- | -------------------------------------------------------------- |
-| `cpt`                 | text    | CPT code (may be null if hospital used HCPCS column)           |
-| `hcpcs`               | text    | HCPCS code (may contain CPT-range codes)                       |
-| `ms_drg`              | text    | MS-DRG code (unused in current data)                           |
-| `description`         | text    | Hospital's own description of the service                      |
-| `billing_class`       | text    | "facility", "professional", "Both", or null                    |
-| `setting`             | text    | "inpatient", "outpatient", "both" — all settings imported      |
-| `laterality`          | text    | "left", "right", "bilateral", or null (parsed)                 |
-| `modifiers`           | text    | Raw modifier codes, comma-separated                            |
-| `cash_price`          | numeric | Self-pay/uninsured price                                       |
-| `gross_charge`        | numeric | Hospital's list/"sticker" price (nobody pays this)             |
-| `min_price`           | numeric | De-identified minimum rate                                     |
-| `max_price`           | numeric | De-identified maximum rate                                     |
-| `avg_negotiated_rate` | numeric | Average of what insurers negotiated (pre-aggregated)           |
-| `min_negotiated_rate` | numeric | Lowest insurer rate (anonymized)                               |
-| `max_negotiated_rate` | numeric | Highest insurer rate (anonymized)                              |
-| `payer_count`         | integer | Number of payers in the aggregated stats                       |
+| Column                | Type    | What it means                                             |
+| --------------------- | ------- | --------------------------------------------------------- |
+| `cpt`                 | text    | CPT code (may be null if hospital used HCPCS column)      |
+| `hcpcs`               | text    | HCPCS code (may contain CPT-range codes)                  |
+| `ms_drg`              | text    | MS-DRG code (unused in current data)                      |
+| `description`         | text    | Hospital's own description of the service                 |
+| `billing_class`       | text    | "facility", "professional", "Both", or null               |
+| `setting`             | text    | "inpatient", "outpatient", "both" — all settings imported |
+| `laterality`          | text    | "left", "right", "bilateral", or null (parsed)            |
+| `modifiers`           | text    | Raw modifier codes, comma-separated                       |
+| `cash_price`          | numeric | Self-pay/uninsured price                                  |
+| `gross_charge`        | numeric | Hospital's list/"sticker" price (nobody pays this)        |
+| `min_price`           | numeric | De-identified minimum rate                                |
+| `max_price`           | numeric | De-identified maximum rate                                |
+| `avg_negotiated_rate` | numeric | Average of what insurers negotiated (pre-aggregated)      |
+| `min_negotiated_rate` | numeric | Lowest insurer rate (anonymized)                          |
+| `max_negotiated_rate` | numeric | Highest insurer rate (anonymized)                         |
+| `payer_count`         | integer | Number of payers in the aggregated stats                  |
 
 ### 2.2 The `billing_class` Field
 
@@ -530,5 +530,5 @@ WebMD, Ada Health, and Buoy Health all go further toward diagnosis than ClearCos
 | **negotiated rate**     | Price an insurer has agreed to pay a hospital for a service                                                 |
 | **payer_count**         | Number of insurers included in the pre-aggregated negotiated rate stats                                     |
 | **revenue code**        | Facility line-item code (e.g., OR time, pharmacy) — too generic for consumer pricing search                 |
-| **setting**             | Inpatient vs outpatient — all settings imported; context determined at intake                                |
+| **setting**             | Inpatient vs outpatient — all settings imported; context determined at intake                               |
 | **UB-04**               | Institutional claim form used by hospitals/facilities. Separate from CMS-1500 physician claims.             |

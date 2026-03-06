@@ -129,6 +129,7 @@ Sources merged into `lib/data/final-codes.json`:
 The MVP imports ~4.8% of the full Oria dataset: 1,002 curated codes × 5,419 hospitals × all settings → ~13.1M charge rows in Supabase (~3.9 GB). Payer-specific detail rows (~6B) are skipped — pre-aggregated avg/min/max rates are sufficient for MVP.
 
 **Key scoping decisions:**
+
 - The **code list** defines shoppability, not the setting (inpatient/outpatient). All settings are imported.
 - 8 inpatient-only codes (hospital rounding visits) were removed from the code list — not consumer-shoppable.
 - Inpatient vs. outpatient context is handled at the **interpretation layer** (guided search / AI intake), not at import.

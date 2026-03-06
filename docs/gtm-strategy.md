@@ -615,16 +615,16 @@ Reddit is where healthcare cost conversations already happen organically. This i
 
 ### Content Calendar (First 8 Weeks)
 
-| Week | Blog Post                                                      | SEO Pages                                 | Distribution                  |
-| ---- | -------------------------------------------------------------- | ----------------------------------------- | ----------------------------- |
-| 1    | "How Much Does a Knee MRI Cost in 2026?"                       | Top 10 procedures × 5 cities (50 pages)   | Reddit r/personalfinance      |
-| 2    | "Understanding Cash Prices: What Hospitals Don't Tell You"     | 10 more cities added (50 pages)           | Twitter/X thread              |
+| Week | Blog Post                                                    | SEO Pages                                 | Distribution                  |
+| ---- | ------------------------------------------------------------ | ----------------------------------------- | ----------------------------- |
+| 1    | "How Much Does a Knee MRI Cost in 2026?"                     | Top 10 procedures × 5 cities (50 pages)   | Reddit r/personalfinance      |
+| 2    | "Understanding Cash Prices: What Hospitals Don't Tell You"   | 10 more cities added (50 pages)           | Twitter/X thread              |
 | 3    | "We Analyzed 13M Hospital Prices — Here's What Surprised Us" | —                                         | Reddit, HN, Product Hunt prep |
-| 4    | "The 10 Procedures With the Wildest Price Differences"         | Top 20 procedures × 10 cities (100 pages) | Press outreach with data      |
-| 5    | "How to Save Thousands on Your Next Medical Procedure"         | —                                         | Email to early subscribers    |
-| 6    | "Colonoscopy Costs: A Complete State-by-State Guide"           | Top 30 procedures × 15 cities (150 pages) | SEO-focused, Reddit           |
-| 7    | "What Is a Facility Fee? And Why Your Hospital Bill Has One"   | —                                         | Twitter/X, LinkedIn           |
-| 8    | "Healthcare Pricing by State: Where Is Care Cheapest?"         | Top 50 procedures × 20 cities (500 pages) | Press, social, Reddit         |
+| 4    | "The 10 Procedures With the Wildest Price Differences"       | Top 20 procedures × 10 cities (100 pages) | Press outreach with data      |
+| 5    | "How to Save Thousands on Your Next Medical Procedure"       | —                                         | Email to early subscribers    |
+| 6    | "Colonoscopy Costs: A Complete State-by-State Guide"         | Top 30 procedures × 15 cities (150 pages) | SEO-focused, Reddit           |
+| 7    | "What Is a Facility Fee? And Why Your Hospital Bill Has One" | —                                         | Twitter/X, LinkedIn           |
+| 8    | "Healthcare Pricing by State: Where Is Care Cheapest?"       | Top 50 procedures × 20 cities (500 pages) | Press, social, Reddit         |
 
 ---
 
