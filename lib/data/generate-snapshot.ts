@@ -318,7 +318,10 @@ async function main() {
     if (row.status === "completed") entry.completed += Number(row.cnt);
   }
   const duckChargeMap = new Map(
-    stateChargeRows.map((r) => [(r.hospital_state ?? "UNKNOWN").toUpperCase(), Number(r.cnt)])
+    stateChargeRows.map((r) => [
+      (r.hospital_state ?? "UNKNOWN").toUpperCase(),
+      Number(r.cnt),
+    ])
   );
 
   // All states across both databases
@@ -724,7 +727,8 @@ async function main() {
         ? ((Number(row.cnt) / totalStdCharges) * 100).toFixed(1)
         : "?";
     let behavior = "";
-    if (row.setting === "inpatient") behavior = "✅ Included (code list is the filter, not setting)";
+    if (row.setting === "inpatient")
+      behavior = "✅ Included (code list is the filter, not setting)";
     else if (row.setting === "outpatient") behavior = "✅ Included";
     else if (row.setting === "both")
       behavior = "✅ Included (can be done outpatient)";
