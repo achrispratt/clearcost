@@ -239,11 +239,22 @@ async function countRows(
   client: SupabaseClient,
   table: string
 ): Promise<number> {
+  // Try exact count first (works for small tables)
   const { count, error } = await client
     .from(table)
     .select("id", { count: "exact", head: true });
-  if (error) throw new Error(`Failed counting ${table}: ${error.message}`);
-  return count ?? 0;
+  if (!error && count !== null) return count;
+
+  // Fall back to pg_class estimated count for large tables that timeout
+  logProgress(`Exact count for ${table} timed out — using pg_class estimate`);
+  const { data, error: rpcError } = await client.rpc("audit_estimated_count", {
+    p_table: table,
+  });
+  if (rpcError)
+    throw new Error(
+      `Failed counting ${table} (both exact and estimated): ${rpcError.message}`
+    );
+  return Number(data) || 0;
 }
 
 async function loadCuratedCodes(): Promise<string[]> {
