@@ -39,20 +39,16 @@ const MESSAGES: Record<CostPattern, string> = {
 };
 
 // Short intro messages (used when estimates follow as a bullet list)
-const INTROS: Record<CostPattern, string> = {
+// Only patterns with ADDER_DEFS entries need intros — others always use MESSAGES.
+const INTROS: Partial<Record<CostPattern, string>> = {
   surgery: "This is the facility/surgeon fee. Additional costs may include:",
   imaging: "This is the imaging fee. Additional costs may include:",
   cardiac: "This is the test fee. Additional costs may include:",
   lab: "This is the lab test fee. Additional costs may include:",
-  therapy: MESSAGES.therapy,
-  injection: MESSAGES.injection,
   procedure: "Additional costs may include:",
 };
 
-const INPATIENT_ADDENDUM =
-  " For inpatient stays, room & board and daily physician visit charges also typically apply.";
-
-const INPATIENT_FOOTNOTE =
+const INPATIENT_NOTE =
   "For inpatient stays, room & board and daily physician visit charges also typically apply.";
 
 // Ordered keyword rules — first match wins within each pattern
@@ -209,12 +205,12 @@ export function getCostContext(
   let message: string;
   let footnote: string | undefined;
 
-  if (estimates.length > 0) {
+  if (estimates.length > 0 && INTROS[bestPattern]) {
     message = INTROS[bestPattern];
-    footnote = hasInpatient ? INPATIENT_FOOTNOTE : undefined;
+    footnote = hasInpatient ? INPATIENT_NOTE : undefined;
   } else {
     message = MESSAGES[bestPattern];
-    if (hasInpatient) message += INPATIENT_ADDENDUM;
+    if (hasInpatient) message += ` ${INPATIENT_NOTE}`;
   }
 
   return { message, estimates, footnote };
