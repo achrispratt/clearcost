@@ -205,8 +205,9 @@ export function getCostContext(
   let message: string;
   let footnote: string | undefined;
 
-  if (estimates.length > 0 && INTROS[bestPattern]) {
-    message = INTROS[bestPattern];
+  const intro = INTROS[bestPattern];
+  if (estimates.length > 0 && intro) {
+    message = intro;
     footnote = hasInpatient ? INPATIENT_NOTE : undefined;
   } else {
     message = MESSAGES[bestPattern];
