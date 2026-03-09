@@ -61,7 +61,7 @@ export function ClarificationStep({
               key={option.label}
               onClick={() => onSelect(option.label)}
               disabled={loading}
-              className="text-left p-4 rounded-xl border transition-all duration-200 not-disabled:not-[[data-selected]]:hover:border-[var(--cc-border-strong)] not-disabled:not-[[data-selected]]:hover:bg-[var(--cc-surface-hover)]"
+              className="text-left p-4 rounded-xl border min-h-[44px] transition-all duration-200 not-disabled:not-[[data-selected]]:hover:border-[var(--cc-border-strong)] not-disabled:not-[[data-selected]]:hover:bg-[var(--cc-surface-hover)]"
               style={{
                 background: isSelected
                   ? "var(--cc-primary-light)"
@@ -149,7 +149,7 @@ export function ClarificationStep({
           <button
             onClick={onBack}
             disabled={loading}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5"
+            className="px-5 py-3 rounded-xl text-sm font-medium border min-h-[44px] transition-all duration-200 flex items-center gap-1.5"
             style={{
               borderColor: "var(--cc-border-strong)",
               color: loading
@@ -177,7 +177,7 @@ export function ClarificationStep({
         <button
           onClick={onSubmit}
           disabled={!hasSelection || loading}
-          className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-3 rounded-xl text-sm font-semibold min-h-[44px] transition-all duration-200 flex items-center gap-2"
           style={{
             background:
               hasSelection && !loading

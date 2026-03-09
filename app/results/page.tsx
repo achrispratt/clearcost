@@ -146,7 +146,7 @@ function ResultsContent() {
 
         {/* Toolbar: View toggle (mobile only) + Save + Filters */}
         <div className="mt-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-between">
             {/* Toggle pills: mobile only */}
             <div className="lg:hidden">
               <div className="pill-group">

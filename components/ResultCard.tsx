@@ -95,7 +95,7 @@ export function ResultCard({
         {/* Card content */}
         <div className="flex-1 p-4">
           {/* Header row */}
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span
@@ -166,7 +166,7 @@ export function ResultCard({
             </div>
 
             {/* Price column */}
-            <div className="text-right shrink-0">
+            <div className="text-left sm:text-right sm:shrink-0">
               {result.cashPrice != null ? (
                 <>
                   {result.grossCharge != null &&
