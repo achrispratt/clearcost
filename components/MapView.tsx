@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import type { ChargeResult } from "@/types";
+import { getDisplayPrice, formatDisplayPrice } from "@/lib/format";
 
 interface MapViewProps {
   results: ChargeResult[];
@@ -14,7 +15,9 @@ interface MapViewProps {
 
 function buildInfoWindowContent(result: ChargeResult): string {
   const address = result.provider.address || result.provider.city || "";
-  const price = result.cashPrice ? `$${result.cashPrice.toLocaleString()}` : "";
+  const dp = getDisplayPrice(result);
+  const priceStr = dp.amount != null ? formatDisplayPrice(dp) : "";
+  const priceColor = dp.type === "insured" ? "#1e40af" : "#0F766E";
   const distance = result.distanceMiles
     ? `${result.distanceMiles.toFixed(1)} mi`
     : "";
@@ -23,7 +26,8 @@ function buildInfoWindowContent(result: ChargeResult): string {
     <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
       <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${result.provider.name}</p>
       ${address ? `<p style="color: #5C5C6F; font-size: 12px; margin: 4px 0 0;">${address}</p>` : ""}
-      ${price ? `<p style="font-size: 20px; font-weight: 700; color: #0F766E; margin: 8px 0 0;">${price}</p>` : ""}
+      ${priceStr ? `<p style="font-size: 20px; font-weight: 700; color: ${priceColor}; margin: 8px 0 0;">${priceStr}</p>` : ""}
+      ${dp.label ? `<p style="color: #5C5C6F; font-size: 11px; margin: 2px 0 0;">${dp.label}</p>` : ""}
       ${distance ? `<p style="color: #9B9BA8; font-size: 11px; margin: 4px 0 0;">${distance} away</p>` : ""}
     </div>
   `;

@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import type { ChargeResult } from "@/types";
+import { getDisplayPrice, getDisplayPriceAmount } from "@/lib/format";
+
+export type PriceTypeFilter = "all" | "cash";
 
 export type SortOption =
   | "price-asc"
@@ -28,6 +31,7 @@ export function FilterBar({
   const radius = controlledRadius ?? internalRadius;
   const setRadius = onRadiusChange ?? setInternalRadius;
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [priceType, setPriceType] = useState<PriceTypeFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   useEffect(() => {
     let filtered = [...results];
@@ -36,22 +40,32 @@ export function FilterBar({
       (r) => r.distanceMiles == null || r.distanceMiles <= radius
     );
 
+    if (priceType === "cash") {
+      filtered = filtered.filter((r) => getDisplayPrice(r).type === "cash");
+    }
+
     if (maxPrice != null) {
-      filtered = filtered.filter(
-        (r) => r.cashPrice != null && r.cashPrice <= maxPrice
-      );
+      filtered = filtered.filter((r) => {
+        const price = getDisplayPriceAmount(r);
+        return price != null && price <= maxPrice;
+      });
     }
 
     filtered.sort((a, b) => {
       switch (sort) {
         case "price-asc":
-          return (a.cashPrice ?? Infinity) - (b.cashPrice ?? Infinity);
+          return (
+            (getDisplayPriceAmount(a) ?? Infinity) -
+            (getDisplayPriceAmount(b) ?? Infinity)
+          );
         case "price-desc":
-          return (b.cashPrice ?? 0) - (a.cashPrice ?? 0);
+          return (
+            (getDisplayPriceAmount(b) ?? 0) - (getDisplayPriceAmount(a) ?? 0)
+          );
         case "estimated-total":
           return (
-            (a.estimatedTotalMedian ?? a.cashPrice ?? Infinity) -
-            (b.estimatedTotalMedian ?? b.cashPrice ?? Infinity)
+            (a.estimatedTotalMedian ?? getDisplayPriceAmount(a) ?? Infinity) -
+            (b.estimatedTotalMedian ?? getDisplayPriceAmount(b) ?? Infinity)
           );
         case "distance":
           return (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity);
@@ -63,13 +77,13 @@ export function FilterBar({
     });
 
     onFilteredResults(filtered);
-  }, [results, sort, radius, maxPrice, onFilteredResults]);
+  }, [results, sort, radius, maxPrice, priceType, onFilteredResults]);
 
   const handleSortChange = (newSort: SortOption) => {
     setSort(newSort);
   };
 
-  const hasFilters = maxPrice != null || radius !== 25;
+  const hasFilters = maxPrice != null || radius !== 25 || priceType !== "all";
 
   const selectStyles = {
     background: "var(--cc-surface)",
@@ -170,11 +184,23 @@ export function FilterBar({
             onChange={(e) => handleSortChange(e.target.value as SortOption)}
             style={selectStyles}
           >
-            <option value="price-asc">Base: Low to High</option>
-            <option value="price-desc">Base: High to Low</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
             <option value="estimated-total">Estimated total</option>
             <option value="distance">Distance</option>
             <option value="name">Name</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span style={labelStyles}>Prices</span>
+          <select
+            value={priceType}
+            onChange={(e) => setPriceType(e.target.value as PriceTypeFilter)}
+            style={selectStyles}
+          >
+            <option value="all">All</option>
+            <option value="cash">Cash only</option>
           </select>
         </div>
 
@@ -201,6 +227,7 @@ export function FilterBar({
             onClick={() => {
               setRadius(25);
               setMaxPrice(null);
+              setPriceType("all");
             }}
             className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-alt)] hover:text-[var(--cc-text-secondary)]"
             style={{
