@@ -1,7 +1,15 @@
 import type { CPTCode, ChargeResult } from "@/types";
 
+export interface AdderEstimate {
+  label: string;
+  low: number;
+  high: number;
+}
+
 export interface CostContextMessage {
   message: string;
+  estimates: AdderEstimate[];
+  footnote?: string;
 }
 
 type CostPattern =
@@ -13,6 +21,7 @@ type CostPattern =
   | "injection"
   | "procedure";
 
+// Full standalone messages (used when no price estimates available)
 const MESSAGES: Record<CostPattern, string> = {
   surgery:
     "This is the facility/surgeon fee. Your total cost may also include anesthesia, hospital stay, and post-op rehabilitation.",
@@ -29,8 +38,18 @@ const MESSAGES: Record<CostPattern, string> = {
     "Additional costs such as anesthesia or facility fees may apply separately.",
 };
 
-const INPATIENT_ADDENDUM =
-  " For inpatient stays, room & board and daily physician visit charges also typically apply.";
+// Short intro messages (used when estimates follow as a bullet list)
+// Only patterns with ADDER_DEFS entries need intros — others always use MESSAGES.
+const INTROS: Partial<Record<CostPattern, string>> = {
+  surgery: "This is the facility/surgeon fee. Additional costs may include:",
+  imaging: "This is the imaging fee. Additional costs may include:",
+  cardiac: "This is the test fee. Additional costs may include:",
+  lab: "This is the lab test fee. Additional costs may include:",
+  procedure: "Additional costs may include:",
+};
+
+const INPATIENT_NOTE =
+  "For inpatient stays, room & board and daily physician visit charges also typically apply.";
 
 // Ordered keyword rules — first match wins within each pattern
 const KEYWORD_RULES: [RegExp, CostPattern | null][] = [
@@ -56,6 +75,23 @@ const PRIORITY: (CostPattern | null)[] = [
   null,
 ];
 
+// Adder estimation ratios (industry benchmarks)
+interface AdderDef {
+  label: string;
+  lowPct: number;
+  highPct: number;
+  flat?: [number, number];
+}
+
+const ADDER_DEFS: Partial<Record<CostPattern, AdderDef[]>> = {
+  surgery: [{ label: "Anesthesia", lowPct: 0.15, highPct: 0.25 }],
+  imaging: [{ label: "Radiologist reading fee", lowPct: 0.2, highPct: 0.4 }],
+  cardiac: [{ label: "Interpretation fee", lowPct: 0.2, highPct: 0.35 }],
+  lab: [
+    { label: "Specimen collection fee", lowPct: 0, highPct: 0, flat: [5, 25] },
+  ],
+};
+
 function matchKeyword(category: string): CostPattern | null | undefined {
   for (const [regex, pattern] of KEYWORD_RULES) {
     if (regex.test(category)) return pattern;
@@ -76,6 +112,33 @@ function matchCodeRange(code: string): CostPattern | null | undefined {
   if (num >= 90000 && num <= 99199) return "procedure";
   if (num >= 99200 && num <= 99499) return null; // E&M
   return undefined;
+}
+
+function computeEstimates(
+  pattern: CostPattern,
+  results: ChargeResult[]
+): AdderEstimate[] {
+  const defs = ADDER_DEFS[pattern];
+  if (!defs) return [];
+
+  const prices = results
+    .map((r) => r.cashPrice ?? r.minPrice)
+    .filter((p): p is number => p != null && p > 0);
+
+  const pMin = prices.length > 0 ? Math.min(...prices) : 0;
+  const pMax = prices.length > 0 ? Math.max(...prices) : 0;
+
+  return defs
+    .map((d) => {
+      if (d.flat) return { label: d.label, low: d.flat[0], high: d.flat[1] };
+      if (pMin === 0) return null;
+      return {
+        label: d.label,
+        low: Math.round(pMin * d.lowPct),
+        high: Math.round(pMax * d.highPct),
+      };
+    })
+    .filter((e): e is AdderEstimate => e != null && e.high > 0);
 }
 
 export function getCostContext(
@@ -120,15 +183,36 @@ export function getCostContext(
   // null means E&M/visit — no banner
   if (bestPattern === null) return null;
 
-  let message = MESSAGES[bestPattern];
-
-  // Append inpatient addendum for surgery/procedure when any result is inpatient
-  if (
-    (bestPattern === "surgery" || bestPattern === "procedure") &&
-    results.some((r) => r.setting === "inpatient")
-  ) {
-    message += INPATIENT_ADDENDUM;
+  // If generic "procedure" won but code range is more specific, prefer that.
+  // Fixes: category like "Diagnostic Procedure" matching the catch-all keyword
+  // before the code range (e.g., 70xxx → imaging) gets a chance.
+  if (bestPattern === "procedure") {
+    const firstCode = cptCodes[0]?.code;
+    if (firstCode) {
+      const rangeMatch = matchCodeRange(firstCode);
+      if (rangeMatch && rangeMatch !== "procedure") {
+        bestPattern = rangeMatch;
+      }
+    }
   }
 
-  return { message };
+  const hasInpatient =
+    (bestPattern === "surgery" || bestPattern === "procedure") &&
+    results.some((r) => r.setting === "inpatient");
+
+  const estimates = computeEstimates(bestPattern, results);
+
+  let message: string;
+  let footnote: string | undefined;
+
+  const intro = INTROS[bestPattern];
+  if (estimates.length > 0 && intro) {
+    message = intro;
+    footnote = hasInpatient ? INPATIENT_NOTE : undefined;
+  } else {
+    message = MESSAGES[bestPattern];
+    if (hasInpatient) message += ` ${INPATIENT_NOTE}`;
+  }
+
+  return { message, estimates, footnote };
 }
