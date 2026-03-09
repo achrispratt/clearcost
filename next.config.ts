@@ -10,6 +10,7 @@ const cspDirectives: Record<string, string[]> = {
     "'unsafe-inline'",
     "'unsafe-eval'",
     "https://maps.googleapis.com",
+    "https://maps.gstatic.com",
   ],
   "style-src": ["'self'", "'unsafe-inline'"],
   "img-src": [
@@ -26,6 +27,8 @@ const cspDirectives: Record<string, string[]> = {
     "https://*.supabase.co",
     "wss://*.supabase.co",
     "https://maps.googleapis.com",
+    "https://*.googleapis.com",
+    "https://*.gstatic.com",
   ],
   "frame-src": ["'none'"],
   "object-src": ["'none'"],
