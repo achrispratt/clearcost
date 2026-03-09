@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { getCostContext } from "@/lib/cost-context";
+import { formatPrice } from "@/lib/format";
 import type { CPTCode, ChargeResult } from "@/types";
 
 interface CostContextBannerProps {
@@ -46,9 +47,39 @@ export function CostContextBanner({
           <path d="M12 8h.01" />
         </svg>
 
-        <p className="flex-1 text-sm" style={{ color: "var(--cc-accent)" }}>
-          {context.message}
-        </p>
+        <div className="flex-1">
+          <p className="text-sm" style={{ color: "var(--cc-accent)" }}>
+            {context.message}
+          </p>
+
+          {context.estimates.length > 0 && (
+            <div className="mt-1.5 space-y-0.5">
+              {context.estimates.map((e) => (
+                <p
+                  key={e.label}
+                  className="text-sm"
+                  style={{ color: "var(--cc-accent)" }}
+                >
+                  <span className="opacity-60">•</span> {e.label}:{" "}
+                  <span className="font-semibold">
+                    {e.low === e.high
+                      ? formatPrice(e.low)
+                      : `${formatPrice(e.low)}–${formatPrice(e.high)}`}
+                  </span>
+                </p>
+              ))}
+            </div>
+          )}
+
+          {context.footnote && (
+            <p
+              className="text-xs mt-1.5 opacity-75"
+              style={{ color: "var(--cc-accent)" }}
+            >
+              {context.footnote}
+            </p>
+          )}
+        </div>
 
         {/* Dismiss button */}
         <button
