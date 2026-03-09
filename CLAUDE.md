@@ -131,7 +131,8 @@ lib/
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
   data/               — Import pipeline, code lists, DuckDB/Parquet data
   supabase/           — Three Supabase clients (browser, server, middleware)
-scripts/              — DB migration utilities (full-migration.sql, run-migration-api.ts)
+scripts/              — DB migration utilities + one-time audit/fix scripts from data quality phase
+#                       Active/reusable: db-audit.ts, stability-smoke.ts
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
@@ -174,21 +175,21 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - 6,039 hospitals total (5,419 with complete data)
 - 274 million standard_charges rows, 6 billion payer-specific detail rows
 - Local storage: 81GB Parquet files + 11MB DuckDB index in `lib/data/`
-- Import filters to 1,002 curated codes, all settings, national scope → ~13.1M rows
+- Import filters to 1,002 curated codes, all settings, national scope → ~8.15M rows (after dedup)
 
 ### Import Details
 
-Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler port 6543). MVP imports ~4.8% of full Oria dataset (1,002 codes × all settings → ~13.1M rows). Setting filter was removed — code list is the quality gate. See `docs/prd.md` Section 4.2.1 for data scope breakdown.
+Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler port 6543). MVP imports ~4.8% of full Oria dataset (1,002 codes × all settings → ~8.15M rows after dedup). Setting filter was removed — code list is the quality gate. See `docs/prd.md` Section 4.2.1 for data scope breakdown.
 
 **Full import reference** (flags, DuckDB quirks, resume workflow, gotchas): see `docs/import-reference.md`
 
 ## Current Status
 
-**Phases 1-5.6 complete. Data import complete. Deployed to Vercel.**
+**Phases 1-5.6 complete. Data quality sprint complete. Deployed to Vercel.**
 
 - **Live URL:** https://clearcost-orcin.vercel.app
 - Search pipeline working end-to-end. See `docs/data-snapshot.md` for current numbers.
-- **Current phase:** Data quality — resolving issues discovered during initial frontend work
+- **Current phase:** Frontend polish (#13–#19)
 - **Work tracking:** GitHub Issues are the source of truth (issue # = priority)
 
 ## Environment Variables
@@ -292,18 +293,18 @@ gh issue create --title "..." --body "..." \
 
 ## Product Roadmap
 
-| Phase                | What                                                                                      | Status      |
-| -------------------- | ----------------------------------------------------------------------------------------- | ----------- |
-| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,002 codes                         | Complete    |
-| **Phase 5.5**        | Guided Search — AI diagnostic clarification flow + UX polish                              | Complete    |
-| **Phase 5.6**        | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete    |
-| **Data Quality**     | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12)             | In Progress |
-| **Frontend Polish**  | Skeletons, billing callouts, distance filter, mobile UX (#13-#19)                         | Planned     |
-| **Pre-Launch**       | Security headers, rate limiting, verification checklist (#20-#23)                         | Planned     |
-| **Phase 6**          | Independent MRF crawler (replace Trilliant dependency)                                    | Deferred    |
-| **Phase 7**          | Plan-level insurance pricing from hospital MRFs                                           | Future      |
-| **Phase 8**          | Payer Transparency in Coverage data — all provider types                                  | Future      |
-| **Phase 9**          | Non-hospital cash prices (crowdsourced/partnerships/state data)                           | Future      |
+| Phase                | What                                                                                      | Status   |
+| -------------------- | ----------------------------------------------------------------------------------------- | -------- |
+| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,002 codes                         | Complete |
+| **Phase 5.5**        | Guided Search — AI diagnostic clarification flow + UX polish                              | Complete |
+| **Phase 5.6**        | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete |
+| **Data Quality**     | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12)             | Complete |
+| **Frontend Polish**  | Skeletons, billing callouts, distance filter, mobile UX (#13-#19)                         | Planned  |
+| **Pre-Launch**       | Security headers, rate limiting, verification checklist (#20-#23)                         | Planned  |
+| **Phase 6**          | Independent MRF crawler (replace Trilliant dependency)                                    | Deferred |
+| **Phase 7**          | Plan-level insurance pricing from hospital MRFs                                           | Future   |
+| **Phase 8**          | Payer Transparency in Coverage data — all provider types                                  | Future   |
+| **Phase 9**          | Non-hospital cash prices (crowdsourced/partnerships/state data)                           | Future   |
 
 **Future UX enhancements** (tracked as backlog issues #32-#37):
 
