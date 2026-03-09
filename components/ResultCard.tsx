@@ -5,6 +5,8 @@ import {
   formatDistance,
   formatDate,
   formatBillingCode,
+  getDisplayPrice,
+  formatDisplayPrice,
 } from "@/lib/format";
 import type { ChargeResult } from "@/types";
 
@@ -42,9 +44,7 @@ export function ResultCard({
   const billingCode = formatBillingCode(result);
   const distance = formatDistance(result.distanceMiles);
   const lastUpdated = formatDate(result.lastUpdated);
-  const priceLabel =
-    result.baseLabel ||
-    (result.pricingMode === "encounter_first" ? "Base estimate" : "Cash price");
+  const displayPrice = getDisplayPrice(result);
 
   const resultCode = result.cpt || result.hcpcs || result.msDrg;
   const canonicalDescription = resultCode
@@ -167,7 +167,7 @@ export function ResultCard({
 
             {/* Price column */}
             <div className="text-left sm:text-right sm:shrink-0">
-              {result.cashPrice != null ? (
+              {displayPrice.type === "cash" ? (
                 <>
                   {result.grossCharge != null &&
                     result.grossCharge > (result.cashPrice || 0) && (
@@ -182,13 +182,13 @@ export function ResultCard({
                     className="text-2xl font-bold"
                     style={{ color: "var(--cc-primary)" }}
                   >
-                    {formatPrice(result.cashPrice)}
+                    {formatDisplayPrice(displayPrice)}
                   </p>
                   <p
                     className="text-xs mt-0.5"
                     style={{ color: "var(--cc-text-tertiary)" }}
                   >
-                    {priceLabel}
+                    {displayPrice.label}
                   </p>
                   {result.baseSource === "local_fallback" && (
                     <p
@@ -199,6 +199,39 @@ export function ResultCard({
                     </p>
                   )}
                 </>
+              ) : displayPrice.type === "insured" ? (
+                <>
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--cc-info)" }}
+                  >
+                    {formatDisplayPrice(displayPrice)}
+                    <span
+                      className="inline-block ml-1 align-middle cursor-help"
+                      title="Average rate negotiated between this hospital and insurers. Your actual cost depends on your specific plan."
+                    >
+                      <svg
+                        className="w-4 h-4 inline"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4" />
+                        <path d="M12 8h.01" />
+                      </svg>
+                    </span>
+                  </p>
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: "var(--cc-text-tertiary)" }}
+                  >
+                    {displayPrice.label}
+                  </p>
+                </>
               ) : (
                 <p
                   className="text-sm"
@@ -208,15 +241,17 @@ export function ResultCard({
                 </p>
               )}
 
-              {result.minPrice != null && result.maxPrice != null && (
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--cc-text-tertiary)" }}
-                >
-                  {formatPrice(result.minPrice)} &ndash;{" "}
-                  {formatPrice(result.maxPrice)}
-                </p>
-              )}
+              {displayPrice.type === "cash" &&
+                result.minPrice != null &&
+                result.maxPrice != null && (
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: "var(--cc-text-tertiary)" }}
+                  >
+                    {formatPrice(result.minPrice)} &ndash;{" "}
+                    {formatPrice(result.maxPrice)}
+                  </p>
+                )}
               {result.estimatedTotalMedian != null && (
                 <p
                   className="text-xs mt-1.5"
@@ -257,31 +292,32 @@ export function ResultCard({
             style={{ borderTop: "1px solid var(--cc-border)" }}
           >
             <div className="flex items-center gap-4">
-              {result.avgNegotiatedRate != null && (
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--cc-text-tertiary)" }}
-                  >
-                    Avg insured:
-                  </span>
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--cc-info)" }}
-                  >
-                    {formatPrice(result.avgNegotiatedRate)}
-                  </span>
-                  {result.payerCount != null && result.payerCount > 0 && (
+              {displayPrice.type !== "insured" &&
+                result.avgNegotiatedRate != null && (
+                  <div className="flex items-center gap-1.5">
                     <span
                       className="text-xs"
                       style={{ color: "var(--cc-text-tertiary)" }}
                     >
-                      ({result.payerCount} payer
-                      {result.payerCount !== 1 ? "s" : ""})
+                      Avg insured:
                     </span>
-                  )}
-                </div>
-              )}
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--cc-info)" }}
+                    >
+                      {formatPrice(result.avgNegotiatedRate)}
+                    </span>
+                    {result.payerCount != null && result.payerCount > 0 && (
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--cc-text-tertiary)" }}
+                      >
+                        ({result.payerCount} payer
+                        {result.payerCount !== 1 ? "s" : ""})
+                      </span>
+                    )}
+                  </div>
+                )}
             </div>
 
             <div
