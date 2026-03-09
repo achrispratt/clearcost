@@ -58,5 +58,8 @@ lib/data/import-progress.json
 # logs
 import.log
 
+# QA screenshots (local reference only)
+docs/qa-screenshots/
+
 # scratch files
 Untitled
