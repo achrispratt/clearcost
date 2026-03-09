@@ -135,13 +135,6 @@ export interface PayerRate {
   methodology?: string;
 }
 
-// -- Payer (canonical payer for UI dropdown) --
-export interface Payer {
-  id: string;
-  name: string;
-  displayName: string;
-}
-
 // -- Search Query (user input) --
 export interface SearchQuery {
   query: string;

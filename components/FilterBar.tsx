@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { ChargeResult, Payer } from "@/types";
+import type { ChargeResult } from "@/types";
 
 export type SortOption =
   | "price-asc"
@@ -28,24 +28,6 @@ export function FilterBar({
   const radius = controlledRadius ?? internalRadius;
   const setRadius = onRadiusChange ?? setInternalRadius;
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [payers, setPayers] = useState<Payer[]>([]);
-  const [selectedPayer, setSelectedPayer] = useState<string>("");
-
-  useEffect(() => {
-    const fetchPayers = async () => {
-      try {
-        const response = await fetch("/api/payers");
-        if (response.ok) {
-          const data = await response.json();
-          setPayers(data);
-        }
-      } catch {
-        // Silently fail — payer filter just won't be available
-      }
-    };
-    fetchPayers();
-  }, []);
-
   useEffect(() => {
     let filtered = [...results];
 
@@ -86,7 +68,7 @@ export function FilterBar({
     setSort(newSort);
   };
 
-  const hasFilters = maxPrice != null || selectedPayer || radius !== 25;
+  const hasFilters = maxPrice != null || radius !== 25;
 
   const selectStyles = {
     background: "var(--cc-surface)",
@@ -161,30 +143,11 @@ export function FilterBar({
         </select>
       </div>
 
-      {payers.length > 0 && (
-        <div className="flex items-center gap-1.5">
-          <span style={labelStyles}>Insurance</span>
-          <select
-            value={selectedPayer}
-            onChange={(e) => setSelectedPayer(e.target.value)}
-            style={selectStyles}
-          >
-            <option value="">Cash / Self-Pay</option>
-            {payers.map((payer) => (
-              <option key={payer.id} value={payer.name}>
-                {payer.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {hasFilters && (
         <button
           onClick={() => {
             setRadius(25);
             setMaxPrice(null);
-            setSelectedPayer("");
           }}
           className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-alt)] hover:text-[var(--cc-text-secondary)]"
           style={{
