@@ -12,8 +12,6 @@ interface MapViewProps {
   className?: string;
 }
 
-let optionsSet = false;
-
 function buildInfoWindowContent(result: ChargeResult): string {
   const address = result.provider.address || result.provider.city || "";
   const price = result.cashPrice ? `$${result.cashPrice.toLocaleString()}` : "";
@@ -100,6 +98,7 @@ export function MapView({
   className,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const optionsSetRef = useRef(false);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -109,9 +108,9 @@ export function MapView({
   useEffect(() => {
     if (!apiKey || map || !mapRef.current) return;
 
-    if (!optionsSet) {
+    if (!optionsSetRef.current) {
       setOptions({ key: apiKey, v: "weekly" });
-      optionsSet = true;
+      optionsSetRef.current = true;
     }
 
     let cancelled = false;
