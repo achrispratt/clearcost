@@ -28,6 +28,7 @@ export function FilterBar({
   const radius = controlledRadius ?? internalRadius;
   const setRadius = onRadiusChange ?? setInternalRadius;
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   useEffect(() => {
     let filtered = [...results];
 
@@ -94,70 +95,123 @@ export function FilterBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 py-3">
-      <div className="flex items-center gap-1.5">
-        <span style={labelStyles}>Within</span>
-        <select
-          value={radius}
-          onChange={(e) => setRadius(Number(e.target.value))}
-          style={selectStyles}
+    <div className="py-3">
+      {/* Mobile toggle — hidden on desktop */}
+      <button
+        onClick={() => setFiltersOpen(!filtersOpen)}
+        className="flex items-center gap-2 text-sm font-medium sm:hidden"
+        style={{ color: "var(--cc-text-secondary)" }}
+        aria-expanded={filtersOpen}
+        aria-controls="filter-controls"
+      >
+        <svg
+          className="w-4 h-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <option value={10}>10 mi</option>
-          <option value={25}>25 mi</option>
-          <option value={50}>50 mi</option>
-          <option value={100}>100 mi</option>
-          <option value={250}>250 mi</option>
-        </select>
-      </div>
+          <line x1="4" y1="21" x2="4" y2="14" />
+          <line x1="4" y1="10" x2="4" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12" y2="3" />
+          <line x1="20" y1="21" x2="20" y2="16" />
+          <line x1="20" y1="12" x2="20" y2="3" />
+          <line x1="1" y1="14" x2="7" y2="14" />
+          <line x1="9" y1="8" x2="15" y2="8" />
+          <line x1="17" y1="16" x2="23" y2="16" />
+        </svg>
+        Filters
+        {hasFilters && (
+          <span
+            className="w-2 h-2 rounded-full"
+            style={{ background: "var(--cc-primary)" }}
+          />
+        )}
+        <svg
+          className={`w-3 h-3 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
 
-      <div className="flex items-center gap-1.5">
-        <span style={labelStyles}>Sort</span>
-        <select
-          value={sort}
-          onChange={(e) => handleSortChange(e.target.value as SortOption)}
-          style={selectStyles}
-        >
-          <option value="price-asc">Base: Low to High</option>
-          <option value="price-desc">Base: High to Low</option>
-          <option value="estimated-total">Estimated total</option>
-          <option value="distance">Distance</option>
-          <option value="name">Name</option>
-        </select>
-      </div>
+      {/* Filter controls — toggled on mobile, always visible on desktop */}
+      <div
+        id="filter-controls"
+        className={`flex-wrap items-center gap-3 ${filtersOpen ? "flex mt-3" : "hidden"} sm:flex sm:mt-0`}
+      >
+        <div className="flex items-center gap-1.5">
+          <span style={labelStyles}>Within</span>
+          <select
+            value={radius}
+            onChange={(e) => setRadius(Number(e.target.value))}
+            style={selectStyles}
+          >
+            <option value={10}>10 mi</option>
+            <option value={25}>25 mi</option>
+            <option value={50}>50 mi</option>
+            <option value={100}>100 mi</option>
+            <option value={250}>250 mi</option>
+          </select>
+        </div>
 
-      <div className="flex items-center gap-1.5">
-        <span style={labelStyles}>Max price</span>
-        <select
-          value={maxPrice ?? ""}
-          onChange={(e) =>
-            setMaxPrice(e.target.value ? parseInt(e.target.value) : null)
-          }
-          style={selectStyles}
-        >
-          <option value="">Any</option>
-          <option value="500">$500</option>
-          <option value="1000">$1,000</option>
-          <option value="2500">$2,500</option>
-          <option value="5000">$5,000</option>
-          <option value="10000">$10,000</option>
-        </select>
-      </div>
+        <div className="flex items-center gap-1.5">
+          <span style={labelStyles}>Sort</span>
+          <select
+            value={sort}
+            onChange={(e) => handleSortChange(e.target.value as SortOption)}
+            style={selectStyles}
+          >
+            <option value="price-asc">Base: Low to High</option>
+            <option value="price-desc">Base: High to Low</option>
+            <option value="estimated-total">Estimated total</option>
+            <option value="distance">Distance</option>
+            <option value="name">Name</option>
+          </select>
+        </div>
 
-      {hasFilters && (
-        <button
-          onClick={() => {
-            setRadius(25);
-            setMaxPrice(null);
-          }}
-          className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-alt)] hover:text-[var(--cc-text-secondary)]"
-          style={{
-            color: "var(--cc-text-tertiary)",
-            background: "transparent",
-          }}
-        >
-          Clear filters
-        </button>
-      )}
+        <div className="flex items-center gap-1.5">
+          <span style={labelStyles}>Max price</span>
+          <select
+            value={maxPrice ?? ""}
+            onChange={(e) =>
+              setMaxPrice(e.target.value ? parseInt(e.target.value) : null)
+            }
+            style={selectStyles}
+          >
+            <option value="">Any</option>
+            <option value="500">$500</option>
+            <option value="1000">$1,000</option>
+            <option value="2500">$2,500</option>
+            <option value="5000">$5,000</option>
+            <option value="10000">$10,000</option>
+          </select>
+        </div>
+
+        {hasFilters && (
+          <button
+            onClick={() => {
+              setRadius(25);
+              setMaxPrice(null);
+            }}
+            className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-alt)] hover:text-[var(--cc-text-secondary)]"
+            style={{
+              color: "var(--cc-text-tertiary)",
+              background: "transparent",
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
     </div>
   );
 }

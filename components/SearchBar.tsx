@@ -185,7 +185,7 @@ export function SearchBar({
         <button
           type="submit"
           disabled={isDisabled}
-          className={`text-white font-medium transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed ${
+          className={`w-full sm:w-auto text-white font-medium transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed ${
             compact
               ? "m-1.5 px-4 py-2 rounded-lg text-sm"
               : "m-2 px-6 py-3 rounded-xl hover:brightness-110"
