@@ -5,7 +5,16 @@
  * (normalizing pricing plan input). Single source of truth for valid values.
  */
 
-import type { BodySite, Laterality } from "@/types";
+import type { BillingCodeType, BodySite, Laterality } from "@/types";
+
+export function normalizeCodeType(value: unknown): BillingCodeType {
+  if (value === "hcpcs" || value === "ms_drg") return value;
+  return "cpt";
+}
+
+export function normalizeCodeValue(code: string): string {
+  return code.trim().toUpperCase();
+}
 
 export const VALID_LATERALITIES: ReadonlySet<Laterality> = new Set([
   "left",
@@ -33,16 +42,18 @@ export const VALID_BODY_SITES: ReadonlySet<BodySite> = new Set([
   "neck",
 ]);
 
-export function extractLaterality(value: unknown): Laterality | undefined {
+function extractFromSet<T extends string>(
+  set: ReadonlySet<T>,
+  value: unknown
+): T | undefined {
   if (typeof value !== "string") return undefined;
-  return VALID_LATERALITIES.has(value as Laterality)
-    ? (value as Laterality)
-    : undefined;
+  return set.has(value as T) ? (value as T) : undefined;
+}
+
+export function extractLaterality(value: unknown): Laterality | undefined {
+  return extractFromSet(VALID_LATERALITIES, value);
 }
 
 export function extractBodySite(value: unknown): BodySite | undefined {
-  if (typeof value !== "string") return undefined;
-  return VALID_BODY_SITES.has(value as BodySite)
-    ? (value as BodySite)
-    : undefined;
+  return extractFromSet(VALID_BODY_SITES, value);
 }

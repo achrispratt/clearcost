@@ -1,6 +1,8 @@
 import {
   extractLaterality,
   extractBodySite,
+  normalizeCodeType,
+  normalizeCodeValue,
 } from "./body-site-laterality-constants";
 import type {
   BodySite,
@@ -97,15 +99,6 @@ export interface BuildPricingPlanParams {
   bodySite?: BodySite;
 }
 
-function normalizeCodeType(value: unknown): BillingCodeType {
-  if (value === "hcpcs" || value === "ms_drg") return value;
-  return "cpt";
-}
-
-function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
-}
-
 function normalizeCodeGroups(value: unknown): PricingCodeGroup[] {
   if (!Array.isArray(value)) return [];
 
@@ -123,7 +116,7 @@ function normalizeCodeGroups(value: unknown): PricingCodeGroup[] {
               (code): code is string =>
                 typeof code === "string" && code.trim().length > 0
             )
-            .map((code) => normalizeCode(code))
+            .map((code) => normalizeCodeValue(code))
         : [];
 
       return {
@@ -186,7 +179,7 @@ function dedupeCodeGroups(codeGroups: PricingCodeGroup[]): PricingCodeGroup[] {
     const key = group.codeType;
     const existing = merged.get(key) || new Set<string>();
     for (const code of group.codes) {
-      existing.add(normalizeCode(code));
+      existing.add(normalizeCodeValue(code));
     }
     merged.set(key, existing);
     if (group.label && !labels.has(key)) labels.set(key, group.label);
@@ -206,7 +199,7 @@ function codesToGroups(codes: CPTCode[] = []): PricingCodeGroup[] {
 
   for (const code of codes) {
     const codeType = normalizeCodeType(code.codeType);
-    const normalized = normalizeCode(code.code);
+    const normalized = normalizeCodeValue(code.code);
     const existing = grouped.get(codeType) || new Set<string>();
     existing.add(normalized);
     grouped.set(codeType, existing);

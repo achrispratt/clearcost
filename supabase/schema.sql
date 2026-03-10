@@ -102,29 +102,34 @@ create or replace function parse_laterality(
   p_modifiers text
 )
 returns text
-language sql
+language plpgsql
 immutable
 as $$
-  select case
-    when p_modifiers is not null and upper(p_modifiers) ~ '\m50\M'
-      then 'bilateral'
-    when p_modifiers is not null and upper(p_modifiers) ~ '\mLT\M'
-      then 'left'
-    when p_modifiers is not null and upper(p_modifiers) ~ '\mRT\M'
-      then 'right'
-    -- no \mBI\M here — too many false positives (BI-RADS, BI-V, etc.)
-    when p_description is not null and upper(p_description) ~ '\mLT\M'
-      then 'left'
-    when p_description is not null and upper(p_description) ~ '\mRT\M'
-      then 'right'
-    when p_description is not null and (upper(p_description) ~ '\mBILATERAL\M' or upper(p_description) ~ '\mBILAT\M')
-      then 'bilateral'
-    when p_description is not null and upper(p_description) ~ '\mLEFT\M'
-      then 'left'
-    when p_description is not null and upper(p_description) ~ '\mRIGHT\M'
-      then 'right'
-    else null
-  end;
+declare
+  v_desc text;
+  v_mods text;
+begin
+  v_mods := upper(p_modifiers);
+  v_desc := upper(p_description);
+
+  -- Modifiers take priority
+  if v_mods is not null then
+    if v_mods ~ '\m50\M' then return 'bilateral'; end if;
+    if v_mods ~ '\mLT\M' then return 'left'; end if;
+    if v_mods ~ '\mRT\M' then return 'right'; end if;
+  end if;
+
+  -- Fall back to description
+  if v_desc is not null then
+    if v_desc ~ '\mLT\M' then return 'left'; end if;
+    if v_desc ~ '\mRT\M' then return 'right'; end if;
+    if v_desc ~ '\mBILATERAL\M' or v_desc ~ '\mBILAT\M' then return 'bilateral'; end if;
+    if v_desc ~ '\mLEFT\M' then return 'left'; end if;
+    if v_desc ~ '\mRIGHT\M' then return 'right'; end if;
+  end if;
+
+  return null;
+end;
 $$;
 
 -- ============================================================================
@@ -132,57 +137,47 @@ $$;
 -- ============================================================================
 create or replace function parse_body_site(p_description text)
 returns text
-language sql
+language plpgsql
 immutable
 as $$
-  select case
-    -- Generic exclusions
-    when p_description is not null and upper(p_description) ~ '\mLOW(ER)?\s+EXTREMITY\s+JOINT\M'
-      then null
-    when p_description is not null and upper(p_description) ~ '\mUPPER\s+EXTREMITY\s+JOINT\M'
-      then null
-    when p_description is not null and upper(p_description) ~ '\mANY\s+JOINT\M'
-      then null
-    -- Joints
-    when p_description is not null and upper(p_description) ~ '\mKNEE\M'
-      then 'knee'
-    when p_description is not null and upper(p_description) ~ '\mHIP\M'
-      then 'hip'
-    when p_description is not null and upper(p_description) ~ '\mANKLE\M'
-      then 'ankle'
-    when p_description is not null and upper(p_description) ~ '\mSHOULDER\M'
-      then 'shoulder'
-    when p_description is not null and upper(p_description) ~ '\mELBOW\M'
-      then 'elbow'
-    when p_description is not null and upper(p_description) ~ '\mWRIST\M'
-      then 'wrist'
-    when p_description is not null and upper(p_description) ~ '\mHAND\M'
-      then 'hand'
-    when p_description is not null and (upper(p_description) ~ '\mFOOT\M' or upper(p_description) ~ '\mFEET\M')
-      then 'foot'
-    -- Spine segments
-    when p_description is not null and (upper(p_description) ~ '\mCERVICAL\M' or upper(p_description) ~ '\mC[\s-]?SPINE\M')
-      then 'cervical_spine'
-    when p_description is not null and (upper(p_description) ~ '\mTHORACIC\M' or upper(p_description) ~ '\mT[\s-]?SPINE\M')
-      then 'thoracic_spine'
-    when p_description is not null and (upper(p_description) ~ '\mLUMBAR\M' or upper(p_description) ~ '\mL[\s-]?SPINE\M')
-      then 'lumbar_spine'
-    when p_description is not null and (upper(p_description) ~ '\mSACRAL\M' or upper(p_description) ~ '\mSACRUM\M')
-      then 'sacral_spine'
-    -- Torso/body regions
-    when p_description is not null and upper(p_description) ~ '\mCHEST\M'
-      then 'chest'
-    when p_description is not null and (upper(p_description) ~ '\mABDOMEN\M' or upper(p_description) ~ '\mABDOMINAL\M')
-      then 'abdomen'
-    when p_description is not null and upper(p_description) ~ '\mPELVI[SC]\M'
-      then 'pelvis'
-    -- Head/neck
-    when p_description is not null and (upper(p_description) ~ '\mHEAD\M' or upper(p_description) ~ '\mBRAIN\M' or upper(p_description) ~ '\mCRANIAL\M')
-      then 'head'
-    when p_description is not null and upper(p_description) ~ '\mNECK\M'
-      then 'neck'
-    else null
-  end;
+declare
+  v_desc text;
+begin
+  if p_description is null then return null; end if;
+  v_desc := upper(p_description);
+
+  -- Generic exclusions (must come first)
+  if v_desc ~ '\mLOW(ER)?\s+EXTREMITY\s+JOINT\M' then return null; end if;
+  if v_desc ~ '\mUPPER\s+EXTREMITY\s+JOINT\M' then return null; end if;
+  if v_desc ~ '\mANY\s+JOINT\M' then return null; end if;
+
+  -- Joints (most specific first)
+  if v_desc ~ '\mKNEE\M' then return 'knee'; end if;
+  if v_desc ~ '\mHIP\M' then return 'hip'; end if;
+  if v_desc ~ '\mANKLE\M' then return 'ankle'; end if;
+  if v_desc ~ '\mSHOULDER\M' then return 'shoulder'; end if;
+  if v_desc ~ '\mELBOW\M' then return 'elbow'; end if;
+  if v_desc ~ '\mWRIST\M' then return 'wrist'; end if;
+  if v_desc ~ '\mHAND\M' then return 'hand'; end if;
+  if v_desc ~ '\mFOOT\M' or v_desc ~ '\mFEET\M' then return 'foot'; end if;
+
+  -- Spine segments
+  if v_desc ~ '\mCERVICAL\M' or v_desc ~ '\mC[\s-]?SPINE\M' then return 'cervical_spine'; end if;
+  if v_desc ~ '\mTHORACIC\M' or v_desc ~ '\mT[\s-]?SPINE\M' then return 'thoracic_spine'; end if;
+  if v_desc ~ '\mLUMBAR\M' or v_desc ~ '\mL[\s-]?SPINE\M' then return 'lumbar_spine'; end if;
+  if v_desc ~ '\mSACRAL\M' or v_desc ~ '\mSACRUM\M' then return 'sacral_spine'; end if;
+
+  -- Torso/body regions
+  if v_desc ~ '\mCHEST\M' then return 'chest'; end if;
+  if v_desc ~ '\mABDOMEN\M' or v_desc ~ '\mABDOMINAL\M' then return 'abdomen'; end if;
+  if v_desc ~ '\mPELVI[SC]\M' then return 'pelvis'; end if;
+
+  -- Head/neck
+  if v_desc ~ '\mHEAD\M' or v_desc ~ '\mBRAIN\M' or v_desc ~ '\mCRANIAL\M' then return 'head'; end if;
+  if v_desc ~ '\mNECK\M' then return 'neck'; end if;
+
+  return null;
+end;
 $$;
 
 -- ============================================================================
