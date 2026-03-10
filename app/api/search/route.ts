@@ -308,6 +308,8 @@ export async function POST(request: NextRequest) {
       queryType: providedPricingPlan?.queryType || translated.queryType,
       codes: translated.codes,
       modelPricingPlan: providedPricingPlan || translated.pricingPlan,
+      laterality: translated.laterality,
+      bodySite: translated.bodySite,
     });
 
     const hasSearchablePlan =
@@ -337,6 +339,8 @@ export async function POST(request: NextRequest) {
         searchTerms: translated.searchTerms,
         queryType: translated.queryType,
         pricingPlan: translated.pricingPlan,
+        laterality: translated.laterality,
+        bodySite: translated.bodySite,
       });
     }
 

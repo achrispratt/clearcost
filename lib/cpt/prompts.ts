@@ -21,6 +21,16 @@ Rules:
 - Respond ONLY with valid JSON, no markdown or extra text
 - Include searchTerms: 2-3 plain English keywords that describe the procedure, for fallback text search
 
+Include laterality and bodySite in EVERY response where the procedure involves a paired or multi-site body part:
+- laterality: "left", "right", "bilateral", or null (when not applicable or not specified)
+- bodySite: "knee", "hip", "ankle", "shoulder", "elbow", "wrist", "hand", "foot", "cervical_spine", "thoracic_spine", "lumbar_spine", "sacral_spine", "chest", "abdomen", "pelvis", "head", "neck", or null
+
+Laterality/body-site extraction rules:
+- If the user specifies a joint (e.g. "knee MRI"), set bodySite accordingly
+- If the user specifies laterality (e.g. "left knee MRI"), set both laterality and bodySite
+- If the user says a generic area (e.g. "lower extremity MRI"), set both to null — do NOT guess
+- For non-lateralized procedures (e.g. brain MRI, chest CT), set laterality to null
+
 Response format:
 {
   "codes": [
@@ -33,6 +43,8 @@ Response format:
   ],
   "interpretation": "Brief explanation of how you interpreted the query",
   "searchTerms": "knee MRI imaging",
+  "laterality": null,
+  "bodySite": "knee",
   "queryType": "procedure",
   "pricingPlan": {
     "mode": "procedure_first",
@@ -88,10 +100,16 @@ Use these decision trees when asking questions. Each category has a specific seq
 
 ### Imaging (MRI, CT, X-ray, Ultrasound)
 1. **Body part/region** — Which part of the body? (head, spine, chest, abdomen, pelvis, upper extremity, lower extremity)
-2. **Modality** (if not specified) — MRI, CT, X-ray, or ultrasound?
-3. **Contrast** — With contrast, without contrast, or both (with and without)?
-4. **Laterality** (for extremities) — Left, right, or bilateral?
-5. **Specific joint/area** (if extremity) — Shoulder, elbow, wrist, hip, knee, ankle?
+2. **Specific joint/area** (if extremity) — Shoulder, elbow, wrist, hip, knee, ankle? This is CRITICAL for pricing accuracy.
+3. **Modality** (if not specified) — MRI, CT, X-ray, or ultrasound?
+4. **Contrast** — With contrast, without contrast, or both (with and without)?
+5. **Laterality** (for paired body parts) — Left, right, or bilateral?
+
+Body-site and laterality triage rules:
+- If user specifies a joint ("knee MRI") → set bodySite: "knee", then ask laterality
+- If user specifies a generic area ("lower extremity MRI") → ask "Which joint?" FIRST
+- If laterality is implied ("left knee MRI") → set laterality: "left" and bodySite: "knee", skip the laterality question
+- For non-paired structures (brain, chest, abdomen) → set laterality to null, don't ask
 
 Common resolutions:
 - Brain MRI without contrast → CPT 70551
@@ -198,6 +216,8 @@ When you need to ask a question (confidence: "low"):
   "searchTerms": "relevant keywords",
   "confidence": "low",
   "queryType": "symptom",
+  "laterality": null,
+  "bodySite": null,
   "pricingPlan": {
     "mode": "encounter_first",
     "queryType": "symptom",
@@ -246,6 +266,8 @@ When you have enough information (confidence: "high"):
   "searchTerms": "knee MRI imaging",
   "confidence": "high",
   "queryType": "procedure",
+  "laterality": "left",
+  "bodySite": "knee",
   "pricingPlan": {
     "mode": "procedure_first",
     "queryType": "procedure",

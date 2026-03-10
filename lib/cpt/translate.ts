@@ -7,10 +7,16 @@ import {
   buildClarificationPrompt,
 } from "./prompts";
 import { normalizePricingPlanInput } from "./pricing-plan";
+import {
+  extractLaterality,
+  extractBodySite,
+} from "./body-site-laterality-constants";
 import type {
+  BodySite,
   CPTCode,
   BillingCodeType,
   ClarificationTurn,
+  Laterality,
   PricingPlan,
   QueryType,
   TranslationResponse,
@@ -22,6 +28,8 @@ interface TranslationResult {
   searchTerms?: string;
   queryType?: QueryType;
   pricingPlan?: PricingPlan;
+  laterality?: Laterality;
+  bodySite?: BodySite;
 }
 
 const WITH_AND_WITHOUT_CONTRAST_REGEX =
@@ -283,6 +291,8 @@ export async function translateQueryToCPT(
     searchTerms: (parsed.searchTerms as string) || query,
     queryType: parsed.queryType as QueryType,
     pricingPlan: normalizePricingPlanInput(parsed.pricingPlan),
+    laterality: extractLaterality(parsed.laterality),
+    bodySite: extractBodySite(parsed.bodySite),
   };
 }
 
@@ -354,6 +364,8 @@ function buildTranslationResponse(
     confidence: (parsed.confidence as "high" | "low") || "low",
     queryType: parsed.queryType as TranslationResponse["queryType"],
     pricingPlan: normalizePricingPlanInput(parsed.pricingPlan),
+    laterality: extractLaterality(parsed.laterality),
+    bodySite: extractBodySite(parsed.bodySite),
     nextQuestion: parsed.nextQuestion as TranslationResponse["nextQuestion"],
     conversationComplete: (parsed.conversationComplete as boolean) || false,
   };

@@ -61,6 +61,7 @@ create table if not exists charges (
   icd text,            -- ICD-10 diagnosis/procedure code
   modifiers text,      -- Modifier codes (comma-separated if multiple)
   laterality text,     -- 'left', 'right', 'bilateral', or null (parsed from description/modifiers)
+  body_site text,      -- 'knee', 'hip', 'shoulder', etc., or null (parsed from description)
 
   -- Base prices (from hospital's published standard charges)
   gross_charge numeric(12, 2),     -- Chargemaster / list price
@@ -91,6 +92,7 @@ create index if not exists idx_charges_provider_hcpcs on charges (provider_id, h
 create index if not exists idx_charges_provider_ms_drg on charges (provider_id, ms_drg);
 create index if not exists idx_charges_description on charges using gin (to_tsvector('english', coalesce(description, '')));
 create index if not exists idx_charges_laterality on charges (laterality) where laterality is not null;
+create index if not exists idx_charges_body_site on charges (body_site) where body_site is not null;
 
 -- ============================================================================
 -- Laterality parser (SQL mirror of lib/cpt/parse-laterality.ts)
@@ -121,6 +123,64 @@ as $$
       then 'left'
     when p_description is not null and upper(p_description) ~ '\mRIGHT\M'
       then 'right'
+    else null
+  end;
+$$;
+
+-- ============================================================================
+-- Body-site parser (SQL mirror of lib/cpt/parse-body-site.ts)
+-- ============================================================================
+create or replace function parse_body_site(p_description text)
+returns text
+language sql
+immutable
+as $$
+  select case
+    -- Generic exclusions
+    when p_description is not null and upper(p_description) ~ '\mLOW(ER)?\s+EXTREMITY\s+JOINT\M'
+      then null
+    when p_description is not null and upper(p_description) ~ '\mUPPER\s+EXTREMITY\s+JOINT\M'
+      then null
+    when p_description is not null and upper(p_description) ~ '\mANY\s+JOINT\M'
+      then null
+    -- Joints
+    when p_description is not null and upper(p_description) ~ '\mKNEE\M'
+      then 'knee'
+    when p_description is not null and upper(p_description) ~ '\mHIP\M'
+      then 'hip'
+    when p_description is not null and upper(p_description) ~ '\mANKLE\M'
+      then 'ankle'
+    when p_description is not null and upper(p_description) ~ '\mSHOULDER\M'
+      then 'shoulder'
+    when p_description is not null and upper(p_description) ~ '\mELBOW\M'
+      then 'elbow'
+    when p_description is not null and upper(p_description) ~ '\mWRIST\M'
+      then 'wrist'
+    when p_description is not null and upper(p_description) ~ '\mHAND\M'
+      then 'hand'
+    when p_description is not null and (upper(p_description) ~ '\mFOOT\M' or upper(p_description) ~ '\mFEET\M')
+      then 'foot'
+    -- Spine segments
+    when p_description is not null and (upper(p_description) ~ '\mCERVICAL\M' or upper(p_description) ~ '\mC[\s-]?SPINE\M')
+      then 'cervical_spine'
+    when p_description is not null and (upper(p_description) ~ '\mTHORACIC\M' or upper(p_description) ~ '\mT[\s-]?SPINE\M')
+      then 'thoracic_spine'
+    when p_description is not null and (upper(p_description) ~ '\mLUMBAR\M' or upper(p_description) ~ '\mL[\s-]?SPINE\M')
+      then 'lumbar_spine'
+    when p_description is not null and (upper(p_description) ~ '\mSACRAL\M' or upper(p_description) ~ '\mSACRUM\M')
+      then 'sacral_spine'
+    -- Torso/body regions
+    when p_description is not null and upper(p_description) ~ '\mCHEST\M'
+      then 'chest'
+    when p_description is not null and (upper(p_description) ~ '\mABDOMEN\M' or upper(p_description) ~ '\mABDOMINAL\M')
+      then 'abdomen'
+    when p_description is not null and upper(p_description) ~ '\mPELVI[SC]\M'
+      then 'pelvis'
+    -- Head/neck
+    when p_description is not null and (upper(p_description) ~ '\mHEAD\M' or upper(p_description) ~ '\mBRAIN\M' or upper(p_description) ~ '\mCRANIAL\M')
+      then 'head'
+    when p_description is not null and upper(p_description) ~ '\mNECK\M'
+      then 'neck'
     else null
   end;
 $$;
@@ -197,7 +257,8 @@ create or replace function search_charges_nearby(
   p_radius_km double precision default 40,
   p_limit integer default 600,
   p_provider_limit integer default 300,
-  p_laterality text default null -- 'left', 'right', 'bilateral', or null (no filter)
+  p_laterality text default null, -- 'left', 'right', 'bilateral', or null (no filter)
+  p_body_site text default null  -- 'knee', 'hip', etc., or null (no filter)
 )
 returns table (
   id uuid,
@@ -216,6 +277,7 @@ returns table (
   setting text,
   billing_class text,
   laterality text,
+  body_site text,
   cpt text,
   hcpcs text,
   ms_drg text,
@@ -276,6 +338,7 @@ as $$
     c.setting,
     c.billing_class,
     c.laterality,
+    c.body_site,
     c.cpt,
     c.hcpcs,
     c.ms_drg,
@@ -299,6 +362,7 @@ as $$
       or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
     )
     and (p_laterality is null or c.laterality = p_laterality)
+    and (p_body_site is null or c.body_site = p_body_site)
   order by np.distance_km asc, c.cash_price asc nulls last
   limit greatest(coalesce(p_limit, 600), 1);
 $$;
@@ -333,6 +397,7 @@ returns table (
   setting text,
   billing_class text,
   laterality text,
+  body_site text,
   cpt text,
   hcpcs text,
   ms_drg text,
@@ -397,6 +462,7 @@ as $$
     c.setting,
     c.billing_class,
     c.laterality,
+    c.body_site,
     c.cpt,
     c.hcpcs,
     c.ms_drg,
