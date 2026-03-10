@@ -214,6 +214,13 @@ function parseArgs() {
 // Zip-based geocoding
 // ---------------------------------------------------------------------------
 
+/** Trim whitespace, collapse "null" strings and empty strings to SQL NULL. */
+function nullify(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed === "" || trimmed.toLowerCase() === "null" ? null : trimmed;
+}
+
 function extractZip(address: string, state?: string | null): string | null {
   if (!state) return null;
   const normalizedState = state.trim().toUpperCase();
@@ -561,9 +568,9 @@ async function importProviders(
 
     providerRows.push({
       name: hospital.hospital_name,
-      address: hospital.hospital_address || null,
-      city: (hospital.hospital_city || "").trim() || null,
-      state: hospital.hospital_state?.trim().toUpperCase() || null,
+      address: nullify(hospital.hospital_address),
+      city: nullify(hospital.hospital_city),
+      state: nullify(hospital.hospital_state)?.toUpperCase() || null,
       zip: geo?.zip || null,
       lat: geo?.lat || null,
       lng: geo?.lng || null,

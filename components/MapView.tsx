@@ -13,8 +13,12 @@ interface MapViewProps {
   className?: string;
 }
 
+const notNull = (v: string | undefined): string | undefined =>
+  v && v.toLowerCase() !== "null" ? v : undefined;
+
 function buildInfoWindowContent(result: ChargeResult): string {
-  const address = result.provider.address || result.provider.city || "";
+  const address =
+    notNull(result.provider.address) || notNull(result.provider.city) || "";
   const dp = getDisplayPrice(result);
   const priceStr = dp.amount != null ? formatDisplayPrice(dp) : "";
   const priceColor = dp.type === "insured" ? "#1e40af" : "#0F766E";

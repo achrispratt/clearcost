@@ -10,6 +10,9 @@ import {
 } from "@/lib/format";
 import type { ChargeResult } from "@/types";
 
+const notNull = (v: string | undefined): v is string =>
+  !!v && v.toLowerCase() !== "null";
+
 interface ResultCardProps {
   result: ChargeResult;
   rank: number;
@@ -56,9 +59,9 @@ export function ResultCard({
   const address = [
     result.provider.address,
     result.provider.city,
-    [result.provider.state, result.provider.zip].filter(Boolean).join(" "),
+    [result.provider.state, result.provider.zip].filter(notNull).join(" "),
   ]
-    .filter(Boolean)
+    .filter(notNull)
     .join(", ");
 
   const billingClassCallout = (() => {
