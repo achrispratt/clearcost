@@ -1,6 +1,12 @@
 import { createHash } from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import type { CPTCode, PricingPlan, QueryType } from "@/types";
+import type {
+  BodySite,
+  CPTCode,
+  Laterality,
+  PricingPlan,
+  QueryType,
+} from "@/types";
 
 export interface TranslationCachePayload {
   codes: CPTCode[];
@@ -8,6 +14,8 @@ export interface TranslationCachePayload {
   searchTerms?: string;
   queryType?: QueryType;
   pricingPlan?: PricingPlan;
+  laterality?: Laterality;
+  bodySite?: BodySite;
 }
 
 export interface TranslationCacheLookup {

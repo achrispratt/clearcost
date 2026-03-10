@@ -32,6 +32,7 @@ import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { Pool as PgPool } from "pg";
 import { parseLaterality } from "../cpt/parse-laterality";
+import { parseBodySite } from "../cpt/parse-body-site";
 
 // @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
@@ -72,6 +73,7 @@ const CHARGE_COLUMNS = [
   "icd",
   "modifiers",
   "laterality",
+  "body_site",
   "gross_charge",
   "cash_price",
   "min_price",
@@ -810,6 +812,7 @@ async function importCharges(
         icd: charge.icd || null,
         modifiers: charge.modifiers || null,
         laterality: parseLaterality(charge.description, charge.modifiers),
+        body_site: parseBodySite(charge.description),
         gross_charge:
           charge.gross_charge != null ? Number(charge.gross_charge) : null,
         cash_price:

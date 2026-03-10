@@ -1,6 +1,12 @@
+import {
+  extractLaterality,
+  extractBodySite,
+} from "./body-site-laterality-constants";
 import type {
+  BodySite,
   BillingCodeType,
   CPTCode,
+  Laterality,
   PricingPlan,
   PricingCodeGroup,
   PlannedAdder,
@@ -87,6 +93,8 @@ export interface BuildPricingPlanParams {
   queryType?: QueryType;
   codes?: CPTCode[];
   modelPricingPlan?: PricingPlan;
+  laterality?: Laterality;
+  bodySite?: BodySite;
 }
 
 function normalizeCodeType(value: unknown): BillingCodeType {
@@ -324,6 +332,8 @@ export function normalizePricingPlanInput(
     baseCodeGroups?: unknown;
     adders?: unknown;
     proxyLabel?: unknown;
+    laterality?: unknown;
+    bodySite?: unknown;
   };
 
   const mode =
@@ -347,6 +357,9 @@ export function normalizePricingPlanInput(
       ? raw.proxyLabel.trim()
       : undefined;
 
+  const laterality = extractLaterality(raw.laterality);
+  const bodySite = extractBodySite(raw.bodySite);
+
   if (baseCodeGroups.length === 0 && adders.length === 0) return undefined;
 
   return {
@@ -356,6 +369,8 @@ export function normalizePricingPlanInput(
     baseCodeGroups,
     adders,
     proxyLabel,
+    laterality,
+    bodySite,
   };
 }
 
@@ -365,6 +380,8 @@ export function buildPricingPlan({
   queryType,
   codes = [],
   modelPricingPlan,
+  laterality,
+  bodySite,
 }: BuildPricingPlanParams): PricingPlan {
   const normalizedModelPlan = modelPricingPlan
     ? normalizePricingPlanInput(modelPricingPlan)
@@ -415,6 +432,10 @@ export function buildPricingPlan({
   const modelAdders = normalizedModelPlan?.adders || [];
   const adders = mergeAdders(modelAdders, inferredAdders);
 
+  // Resolve laterality/bodySite: explicit params take priority, then model plan
+  const resolvedLaterality = laterality ?? normalizedModelPlan?.laterality;
+  const resolvedBodySite = bodySite ?? normalizedModelPlan?.bodySite;
+
   return {
     mode,
     queryType: queryTypeResolved,
@@ -425,5 +446,7 @@ export function buildPricingPlan({
       encounterType === "urgent_care_proxy"
         ? "Urgent care proxy using office E/M pricing."
         : normalizedModelPlan?.proxyLabel,
+    laterality: resolvedLaterality,
+    bodySite: resolvedBodySite,
   };
 }

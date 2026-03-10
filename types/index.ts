@@ -11,6 +11,26 @@ export type ConfidenceLevel = "high" | "low";
 // -- Laterality --
 export type Laterality = "left" | "right" | "bilateral";
 
+// -- Body site (parsed from charge description) --
+export type BodySite =
+  | "knee"
+  | "hip"
+  | "ankle"
+  | "shoulder"
+  | "elbow"
+  | "wrist"
+  | "hand"
+  | "foot"
+  | "cervical_spine"
+  | "thoracic_spine"
+  | "lumbar_spine"
+  | "sacral_spine"
+  | "chest"
+  | "abdomen"
+  | "pelvis"
+  | "head"
+  | "neck";
+
 // -- Care setting --
 export type ChargeSetting = "inpatient" | "outpatient" | "both";
 export type AdderEstimateSource = "facility" | "local_fallback";
@@ -50,6 +70,8 @@ export interface PricingPlan {
   baseCodeGroups: PricingCodeGroup[];
   adders: PlannedAdder[];
   proxyLabel?: string;
+  laterality?: Laterality;
+  bodySite?: BodySite;
 }
 
 export interface OptionalAdderEstimate {
@@ -94,6 +116,7 @@ export interface ChargeResult {
   setting?: ChargeSetting;
   billingClass?: string;
   laterality?: Laterality;
+  bodySite?: BodySite;
 
   // Billing codes (a charge may have codes in multiple systems)
   cpt?: string;
@@ -190,6 +213,8 @@ export interface TranslationResponse {
   confidence: ConfidenceLevel;
   queryType?: QueryType;
   pricingPlan?: PricingPlan;
+  laterality?: Laterality;
+  bodySite?: BodySite;
   nextQuestion?: ClarificationQuestion;
   conversationComplete?: boolean;
 }

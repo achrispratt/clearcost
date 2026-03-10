@@ -3,6 +3,7 @@ import { milesToKm, kmToMiles } from "@/lib/units";
 // @ts-expect-error zipcodes has no bundled TypeScript declarations.
 import zipcodes from "zipcodes";
 import type {
+  BodySite,
   ChargeResult,
   BillingCodeType,
   Laterality,
@@ -21,6 +22,7 @@ interface LookupParams {
   limit?: number;
   providerLimit?: number;
   laterality?: Laterality;
+  bodySite?: BodySite;
 }
 
 interface FallbackLookupParams {
@@ -459,6 +461,8 @@ async function queryCodeGroupsAtRadius({
   lat,
   lng,
   radiusMiles,
+  laterality,
+  bodySite,
   diagnostics,
   stage,
 }: {
@@ -466,6 +470,8 @@ async function queryCodeGroupsAtRadius({
   lat: number;
   lng: number;
   radiusMiles: number;
+  laterality?: Laterality;
+  bodySite?: BodySite;
   diagnostics?: LookupDiagnostics;
   stage: string;
 }): Promise<ChargeResult[]> {
@@ -474,7 +480,7 @@ async function queryCodeGroupsAtRadius({
   const responses = await Promise.all(
     codeGroups.map(({ codeType, codes }) =>
       lookupCharges(
-        { codes, codeType, lat, lng, radiusMiles },
+        { codes, codeType, lat, lng, radiusMiles, laterality, bodySite },
         { diagnostics, stage }
       )
     )
@@ -488,6 +494,8 @@ async function queryCodeGroupsWithFallback({
   lat,
   lng,
   radiusMiles = 25,
+  laterality,
+  bodySite,
   descriptionFallback,
   diagnostics,
   stage,
@@ -496,6 +504,8 @@ async function queryCodeGroupsWithFallback({
   lat: number;
   lng: number;
   radiusMiles?: number;
+  laterality?: Laterality;
+  bodySite?: BodySite;
   descriptionFallback?: string;
   diagnostics?: LookupDiagnostics;
   stage: string;
@@ -532,6 +542,8 @@ async function queryCodeGroupsWithFallback({
     lat,
     lng,
     radiusMiles,
+    laterality,
+    bodySite,
     diagnostics,
     stage: `${stage}:initial`,
   });
@@ -548,6 +560,8 @@ async function queryCodeGroupsWithFallback({
     lat,
     lng,
     radiusMiles: expandedRadius,
+    laterality,
+    bodySite,
     diagnostics,
     stage: `${stage}:expanded`,
   });
@@ -792,11 +806,14 @@ export async function lookupWithPricingPlan({
   descriptionFallback,
   diagnostics,
 }: LookupWithPlanParams): Promise<ChargeResult[]> {
+  // Thread laterality/bodySite to base results only — adders are separate procedures
   const baseResults = await queryCodeGroupsWithFallback({
     codeGroups: pricingPlan.baseCodeGroups,
     lat,
     lng,
     radiusMiles,
+    laterality: pricingPlan.laterality,
+    bodySite: pricingPlan.bodySite,
     descriptionFallback,
     diagnostics,
     stage: "base",
@@ -940,6 +957,7 @@ export async function lookupCharges(
     limit = CODE_LOOKUP_LIMIT,
     providerLimit = PROVIDER_LIMIT,
     laterality,
+    bodySite,
   }: LookupParams,
   context: RpcExecutionContext = {}
 ): Promise<ChargeResult[]> {
@@ -962,6 +980,7 @@ export async function lookupCharges(
     p_limit: limit,
     p_provider_limit: providerLimit,
     ...(laterality ? { p_laterality: laterality } : {}),
+    ...(bodySite ? { p_body_site: bodySite } : {}),
   };
 
   const initial = await executeRpcWithRetry<RpcRow>({
@@ -1127,6 +1146,7 @@ interface RpcRow {
   setting: string | null;
   billing_class: string | null;
   laterality: string | null;
+  body_site: string | null;
   cpt: string | null;
   hcpcs: string | null;
   ms_drg: string | null;
@@ -1168,6 +1188,7 @@ function mapRows(rows: RpcRow[]): ChargeResult[] {
       setting: row.setting as ChargeResult["setting"],
       billingClass: row.billing_class ?? undefined,
       laterality: (row.laterality as ChargeResult["laterality"]) ?? undefined,
+      bodySite: (row.body_site as ChargeResult["bodySite"]) ?? undefined,
       cpt: row.cpt ?? undefined,
       hcpcs: row.hcpcs ?? undefined,
       msDrg: row.ms_drg ?? undefined,
