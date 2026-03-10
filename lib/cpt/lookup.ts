@@ -13,6 +13,11 @@ import type {
   PricingPlan,
 } from "@/types";
 
+interface LookupFilters {
+  laterality?: Laterality;
+  bodySite?: BodySite;
+}
+
 interface LookupParams {
   codes: string[];
   codeType?: BillingCodeType;
@@ -461,8 +466,7 @@ async function queryCodeGroupsAtRadius({
   lat,
   lng,
   radiusMiles,
-  laterality,
-  bodySite,
+  filters,
   diagnostics,
   stage,
 }: {
@@ -470,8 +474,7 @@ async function queryCodeGroupsAtRadius({
   lat: number;
   lng: number;
   radiusMiles: number;
-  laterality?: Laterality;
-  bodySite?: BodySite;
+  filters?: LookupFilters;
   diagnostics?: LookupDiagnostics;
   stage: string;
 }): Promise<ChargeResult[]> {
@@ -480,7 +483,7 @@ async function queryCodeGroupsAtRadius({
   const responses = await Promise.all(
     codeGroups.map(({ codeType, codes }) =>
       lookupCharges(
-        { codes, codeType, lat, lng, radiusMiles, laterality, bodySite },
+        { codes, codeType, lat, lng, radiusMiles, ...filters },
         { diagnostics, stage }
       )
     )
@@ -494,8 +497,7 @@ async function queryCodeGroupsWithFallback({
   lat,
   lng,
   radiusMiles = 25,
-  laterality,
-  bodySite,
+  filters,
   descriptionFallback,
   diagnostics,
   stage,
@@ -504,8 +506,7 @@ async function queryCodeGroupsWithFallback({
   lat: number;
   lng: number;
   radiusMiles?: number;
-  laterality?: Laterality;
-  bodySite?: BodySite;
+  filters?: LookupFilters;
   descriptionFallback?: string;
   diagnostics?: LookupDiagnostics;
   stage: string;
@@ -542,8 +543,7 @@ async function queryCodeGroupsWithFallback({
     lat,
     lng,
     radiusMiles,
-    laterality,
-    bodySite,
+    filters,
     diagnostics,
     stage: `${stage}:initial`,
   });
@@ -560,8 +560,7 @@ async function queryCodeGroupsWithFallback({
     lat,
     lng,
     radiusMiles: expandedRadius,
-    laterality,
-    bodySite,
+    filters,
     diagnostics,
     stage: `${stage}:expanded`,
   });
@@ -807,13 +806,16 @@ export async function lookupWithPricingPlan({
   diagnostics,
 }: LookupWithPlanParams): Promise<ChargeResult[]> {
   // Thread laterality/bodySite to base results only — adders are separate procedures
+  const baseFilters: LookupFilters = {
+    laterality: pricingPlan.laterality,
+    bodySite: pricingPlan.bodySite,
+  };
   const baseResults = await queryCodeGroupsWithFallback({
     codeGroups: pricingPlan.baseCodeGroups,
     lat,
     lng,
     radiusMiles,
-    laterality: pricingPlan.laterality,
-    bodySite: pricingPlan.bodySite,
+    filters: baseFilters,
     descriptionFallback,
     diagnostics,
     stage: "base",

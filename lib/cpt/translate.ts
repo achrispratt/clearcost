@@ -10,6 +10,8 @@ import { normalizePricingPlanInput } from "./pricing-plan";
 import {
   extractLaterality,
   extractBodySite,
+  normalizeCodeType,
+  normalizeCodeValue,
 } from "./body-site-laterality-constants";
 import type {
   BodySite,
@@ -84,15 +86,6 @@ type RawCode = {
   description: string;
   category: string;
 };
-
-function normalizeCodeType(value: unknown): BillingCodeType {
-  if (value === "hcpcs" || value === "ms_drg") return value;
-  return "cpt";
-}
-
-function normalizeCodeValue(code: string): string {
-  return code.trim().toUpperCase();
-}
 
 function detectContrastPreference(
   query: string

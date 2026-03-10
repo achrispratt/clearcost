@@ -15,6 +15,7 @@ import {
   getTranslationCacheKey,
   setCachedTranslation,
 } from "@/lib/cpt/cache";
+import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
 import { handleApiError } from "@/lib/api-helpers";
 import type { BillingCodeType, CPTCode, PricingPlan } from "@/types";
 
@@ -34,11 +35,6 @@ async function lookupWithAutoExpand(
 }
 
 type CacheStatus = "hit" | "miss" | "skip";
-
-function normalizeCodeType(value: unknown): BillingCodeType {
-  if (value === "hcpcs" || value === "ms_drg") return value;
-  return "cpt";
-}
 
 function normalizeCodeGroups(
   value: unknown
