@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import type { ChargeResult } from "@/types";
 import { ResultCard } from "./ResultCard";
 
@@ -20,10 +21,42 @@ export function ResultsList({
   locationDisplay,
   onExpandRadius,
 }: ResultsListProps) {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Auto-expand first result on new results, and selected card on marker click
+  const [prevResults, setPrevResults] = useState(results);
+  const [prevSelectedId, setPrevSelectedId] = useState(selectedResultId);
+  if (results !== prevResults || selectedResultId !== prevSelectedId) {
+    setPrevResults(results);
+    setPrevSelectedId(selectedResultId);
+    const next =
+      results !== prevResults
+        ? results.length > 0
+          ? new Set([results[0].id])
+          : new Set<string>()
+        : new Set(expandedIds);
+    if (selectedResultId && !next.has(selectedResultId)) {
+      next.add(selectedResultId);
+    }
+    setExpandedIds(next);
+  }
+
+  const handleToggleExpand = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
   if (loading) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div className="space-y-1.5">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
             className="rounded-xl border overflow-hidden"
@@ -34,36 +67,13 @@ export function ResultsList({
           >
             <div className="flex">
               <div className="w-1 shrink-0 shimmer" />
-              <div className="flex-1 p-4">
-                {/* Header: rank + name on left, price on right */}
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg shimmer shrink-0" />
-                      <div className="h-4 w-48 shimmer" />
-                    </div>
-                    <div className="h-3 w-64 shimmer" />
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-12 shimmer" />
-                      <div className="h-3 w-40 shimmer" />
-                    </div>
-                  </div>
-                  <div className="shrink-0 flex flex-col items-end gap-1">
-                    <div className="h-7 w-20 shimmer" />
-                    <div className="h-3 w-14 shimmer" />
-                  </div>
-                </div>
-                {/* Footer */}
-                <div
-                  className="mt-3 pt-3 flex items-center justify-between"
-                  style={{ borderTop: "1px solid var(--cc-border)" }}
-                >
-                  <div className="h-3 w-36 shimmer" />
-                  <div className="flex items-center gap-3">
-                    <div className="h-3 w-12 shimmer" />
-                    <div className="h-3 w-24 shimmer" />
-                  </div>
-                </div>
+              <div className="flex-1 flex items-center gap-2 px-3 py-2">
+                <div className="w-5 h-5 rounded-lg shimmer shrink-0" />
+                <div className="h-4 w-40 shimmer" />
+                <div className="flex-1" />
+                <div className="h-4 w-16 shimmer shrink-0" />
+                <div className="h-3 w-12 shimmer shrink-0 hidden sm:block" />
+                <div className="w-4 h-4 shimmer shrink-0 rounded" />
               </div>
             </div>
           </div>
@@ -124,7 +134,7 @@ export function ResultsList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1.5">
       <p className="text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
         {results.length} result{results.length !== 1 ? "s" : ""} found
       </p>
@@ -162,12 +172,14 @@ export function ResultsList({
         <div
           key={result.id}
           className="animate-fade-up"
-          style={{ animationDelay: `${i * 0.06}s` }}
+          style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
         >
           <ResultCard
             result={result}
             rank={i + 1}
             isSelected={result.id === selectedResultId}
+            isExpanded={expandedIds.has(result.id)}
+            onToggleExpand={() => handleToggleExpand(result.id)}
             codeDescriptionMap={codeDescriptionMap}
           />
         </div>

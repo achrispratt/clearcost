@@ -283,3 +283,21 @@ html {
   color: var(--cc-text);
   box-shadow: 0 1px 3px rgba(26, 26, 46, 0.08);
 }
+
+/* ============================================================================
+   Accordion (CSS Grid height animation)
+   ============================================================================ */
+
+.accordion-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease-out;
+}
+
+.accordion-body.expanded {
+  grid-template-rows: 1fr;
+}
+
+.accordion-body > div {
+  overflow: hidden;
+}
