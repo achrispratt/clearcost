@@ -981,8 +981,8 @@ export async function lookupCharges(
     p_radius_km: milesToKm(radiusMiles),
     p_limit: limit,
     p_provider_limit: providerLimit,
-    ...(laterality ? { p_laterality: laterality } : {}),
-    ...(bodySite ? { p_body_site: bodySite } : {}),
+    p_laterality: laterality ?? null,
+    p_body_site: bodySite ?? null,
   };
 
   const initial = await executeRpcWithRetry<RpcRow>({
