@@ -21,7 +21,12 @@ function buildInfoWindowContent(result: ChargeResult): string {
     notNull(result.provider.address) || notNull(result.provider.city) || "";
   const dp = getDisplayPrice(result);
   const priceStr = dp.amount != null ? formatDisplayPrice(dp) : "";
-  const priceColor = dp.type === "insured" ? "#1e40af" : "#0F766E";
+  const priceColor =
+    dp.type === "insured"
+      ? "#1e40af"
+      : dp.type === "gross"
+        ? "#D97706"
+        : "#0F766E";
   const distance = result.distanceMiles
     ? `${result.distanceMiles.toFixed(1)} mi`
     : "";
