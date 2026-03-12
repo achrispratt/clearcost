@@ -286,7 +286,7 @@ gh issue create --title "..." --body "..." \
 
 - **Warm editorial aesthetic**: warm whites (#FAFAF8), teal primary (#0F766E), amber accents (#D97706)
 - Typography: Instrument Serif for headings, DM Sans for body
-- Reference: Zocdoc, GoodRx — trustworthy, clean, approachable
+- Reference: Zocdoc, GoodRx — trustworthy, clean, approachable; Sidecar Health cost calculator ([cost.sidecarhealth.com](https://cost.sidecarhealth.com/)) for price display patterns (large price focal points, procedure card layout, educational framing)
 - DaisyUI component library for consistent UI
 - Light mode only for MVP
 - CSS custom properties defined in `globals.css` (prefixed `--cc-*`) — use these, not raw colors

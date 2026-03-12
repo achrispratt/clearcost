@@ -126,6 +126,7 @@ export interface ChargeResult {
   // Prices
   grossCharge?: number;
   cashPrice?: number;
+  isDiscounted?: boolean; // true = discounted, false = cash==gross (show badge), undefined = can't determine
   minPrice?: number;
   maxPrice?: number;
 

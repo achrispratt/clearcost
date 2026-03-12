@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { getCostContext } from "@/lib/cost-context";
 import { formatPrice } from "@/lib/format";
 import type { CPTCode, ChargeResult } from "@/types";
+import { InfoCircleIcon } from "./InfoCircleIcon";
 
 interface CostContextBannerProps {
   cptCodes: CPTCode[];
@@ -31,21 +32,10 @@ export function CostContextBanner({
       }}
     >
       <div className="flex items-start gap-2.5">
-        {/* Info icon — matches ResultCard billing_class callout */}
-        <svg
+        <InfoCircleIcon
           className="w-4 h-4 mt-0.5 shrink-0"
           style={{ color: "var(--cc-accent)" }}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 16v-4" />
-          <path d="M12 8h.01" />
-        </svg>
+        />
 
         <div className="flex-1">
           <p className="text-sm" style={{ color: "var(--cc-accent)" }}>

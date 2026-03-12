@@ -238,6 +238,16 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 - Data freshness/sourcing unclear; dated UX; shows averages not actual posted prices
 - _ClearCost advantage:_ Real MRF data + AI search vs. unclear data sources + rigid menus
 
+**Sidecar Health** — Cash-pay health plan + cost calculator ([cost.sidecarhealth.com](https://cost.sidecarhealth.com/))
+
+- Consumer-facing cost calculator showing average cash prices by procedure
+- Data sourced from 1B+ claims — shows national/regional averages, NOT hospital-specific posted prices
+- Simple browse-by-category UX with procedure cards; no location-specific search, filtering, or sorting
+- Does not address facility-only vs. all-in cost distinction — single average price per procedure
+- Primary business is a cash-pay health plan (insurance product); the cost tool drives plan enrollment
+- _ClearCost advantage:_ Hospital-specific MRF prices with map + distance vs. opaque national averages; AI search vs. rigid browse categories; independent tool vs. insurance funnel
+- _UX benchmark:_ Clean price display design — large price figures as focal points, educational framing ("call around"), procedure card layout worth referencing for ClearCost's browse/discovery UX
+
 ### Diagnostic Layer Comps (Adjacent, Not Direct Competitors)
 
 These companies occupy the "what do I need?" layer that ClearCost's guided search partially overlaps with. They're important as both strategic references and potential positioning targets.
@@ -279,16 +289,16 @@ Ada and Buoy validate that the diagnostic Q&A layer is commercially viable even 
 
 ### Competitive Matrix
 
-| Feature                        | ClearCost     | Turquoise Health | Valenz Bluebook | FAIR Health    | GoodRx         | MDsave            | Sesame            |
-| ------------------------------ | ------------- | ---------------- | --------------- | -------------- | -------------- | ----------------- | ----------------- |
-| **Consumer-facing**            | Yes (primary) | No (B2B)         | No (employer)   | Partial        | Yes (pharmacy) | Yes (marketplace) | Yes (marketplace) |
-| **National hospital coverage** | 5,400+        | Yes (data API)   | ~1,000 markets  | Reference only | No             | ~250 facilities   | No                |
-| **Plain English AI search**    | Yes (Claude)  | No               | No              | No             | No             | No                | No                |
-| **Guided diagnostic Q&A**      | Yes           | No               | No              | No             | No             | No                | No                |
-| **Real hospital MRF data**     | Yes           | Yes              | No (survey)     | No (claims)    | No             | No (contracted)   | No                |
-| **Free to consumers**          | Yes           | N/A              | Employer-gated  | Yes            | Yes            | Pay-per-procedure | $10.99/mo         |
-| **Map view**                   | Yes           | No consumer UI   | Limited         | No             | No             | No                | No                |
-| **Booking/transactional**      | No (future)   | No               | No              | No             | No             | Yes               | Yes               |
+| Feature                        | ClearCost     | Turquoise Health | Valenz Bluebook | FAIR Health    | GoodRx         | MDsave            | Sesame            | Sidecar Health     |
+| ------------------------------ | ------------- | ---------------- | --------------- | -------------- | -------------- | ----------------- | ----------------- | ------------------ |
+| **Consumer-facing**            | Yes (primary) | No (B2B)         | No (employer)   | Partial        | Yes (pharmacy) | Yes (marketplace) | Yes (marketplace) | Yes (plan funnel)  |
+| **National hospital coverage** | 5,400+        | Yes (data API)   | ~1,000 markets  | Reference only | No             | ~250 facilities   | No                | No (averages only) |
+| **Plain English AI search**    | Yes (Claude)  | No               | No              | No             | No             | No                | No                | No                 |
+| **Guided diagnostic Q&A**      | Yes           | No               | No              | No             | No             | No                | No                | No                 |
+| **Real hospital MRF data**     | Yes           | Yes              | No (survey)     | No (claims)    | No             | No (contracted)   | No                | No (claims-based)  |
+| **Free to consumers**          | Yes           | N/A              | Employer-gated  | Yes            | Yes            | Pay-per-procedure | $10.99/mo         | Yes                |
+| **Map view**                   | Yes           | No consumer UI   | Limited         | No             | No             | No                | No                | No                 |
+| **Booking/transactional**      | No (future)   | No               | No              | No             | No             | Yes               | Yes               | No                 |
 
 ### ClearCost's Unique Advantages
 

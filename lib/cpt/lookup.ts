@@ -744,6 +744,7 @@ function buildEncounterFirstResults({
       baseSource: facilityBase ? "facility" : "local_fallback",
       proxyLabel: pricingPlan.proxyLabel,
       cashPrice: baseSummary.estimatePrice,
+      isDiscounted: undefined,
       minPrice: baseSummary.minPrice,
       maxPrice: baseSummary.maxPrice,
       optionalAdders,
@@ -1196,6 +1197,10 @@ function mapRows(rows: RpcRow[]): ChargeResult[] {
       msDrg: row.ms_drg ?? undefined,
       grossCharge: row.gross_charge ?? undefined,
       cashPrice: row.cash_price ?? undefined,
+      isDiscounted:
+        row.cash_price != null && row.gross_charge != null
+          ? row.cash_price !== row.gross_charge
+          : undefined,
       minPrice: row.min_price ?? undefined,
       maxPrice: row.max_price ?? undefined,
       avgNegotiatedRate: row.avg_negotiated_rate ?? undefined,
