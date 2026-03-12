@@ -81,6 +81,7 @@ Users type natural language queries like "knee MRI", "colonoscopy", "blood work 
 - Data freshness indicator ("Prices updated: Jan 2026")
 - Source attribution ("Source: Hospital MRF data")
 - Graceful degradation: fewer than 3 results shows a disclaimer with suggestion to expand radius
+- **UX benchmark:** Sidecar Health cost calculator ([cost.sidecarhealth.com](https://cost.sidecarhealth.com/)) — clean price display with large price figures as focal points, procedure card layout, and educational framing ("call around"). Uses 1B+ claims for national averages (not hospital-specific). Reference for browse/discovery UX and price presentation hierarchy.
 
 ### 3.3 Map View
 
