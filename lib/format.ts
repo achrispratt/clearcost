@@ -7,7 +7,7 @@ export function formatPrice(price: number | undefined): string {
 
 // -- Display price waterfall: cash → insured estimate → unavailable --
 
-export type DisplayPriceType = "cash" | "insured" | "unavailable";
+export type DisplayPriceType = "cash" | "insured" | "gross" | "unavailable";
 
 export interface DisplayPrice {
   amount: number | undefined;
@@ -31,6 +31,13 @@ export function getDisplayPrice(result: ChargeResult): DisplayPrice {
       type: "insured",
     };
   }
+  if (result.grossCharge != null) {
+    return {
+      amount: result.grossCharge,
+      label: "Chargemaster rate",
+      type: "gross",
+    };
+  }
   return { amount: undefined, label: "", type: "unavailable" };
 }
 
@@ -43,7 +50,8 @@ export function getDisplayPriceAmount(
 export function formatDisplayPrice(dp: DisplayPrice): string {
   if (dp.amount == null) return "N/A";
   const formatted = formatPrice(dp.amount);
-  return dp.type === "insured" ? `~${formatted}` : formatted;
+  if (dp.type === "insured") return `~${formatted}`;
+  return formatted;
 }
 
 export function formatDistance(miles: number | undefined): string {

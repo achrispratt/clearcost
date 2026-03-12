@@ -83,7 +83,9 @@ export function ResultCard({
       ? "var(--cc-primary)"
       : displayPrice.type === "insured"
         ? "var(--cc-info)"
-        : "var(--cc-text-tertiary)";
+        : displayPrice.type === "gross"
+          ? "var(--cc-accent)"
+          : "var(--cc-text-tertiary)";
 
   return (
     <div
@@ -291,6 +293,32 @@ export function ResultCard({
                             <InfoCircleIcon className="w-4 h-4 inline" />
                           </span>
                         </p>
+                        <p
+                          className="text-xs mt-0.5"
+                          style={{ color: "var(--cc-text-tertiary)" }}
+                        >
+                          {displayPrice.label}
+                        </p>
+                      </>
+                    ) : displayPrice.type === "gross" ? (
+                      <>
+                        <p
+                          className="text-2xl font-bold"
+                          style={{ color: "var(--cc-accent)" }}
+                        >
+                          {formatDisplayPrice(displayPrice)}
+                        </p>
+                        <span
+                          className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full cursor-help mt-0.5"
+                          style={{
+                            background: "var(--cc-accent-light)",
+                            color: "var(--cc-accent)",
+                          }}
+                          title="No cash or insured price reported. This is the hospital's chargemaster rate — there may be room to negotiate."
+                        >
+                          <InfoCircleIcon className="w-3 h-3" />
+                          List Price
+                        </span>
                         <p
                           className="text-xs mt-0.5"
                           style={{ color: "var(--cc-text-tertiary)" }}
