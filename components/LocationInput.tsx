@@ -109,13 +109,14 @@ export function LocationInput({
           display: "Current Location",
         });
         setValue("Current Location");
+        onTextChange?.("Current Location");
         setDetectingLocation(false);
       },
       () => {
         setDetectingLocation(false);
       }
     );
-  }, [onLocationSelect]);
+  }, [onLocationSelect, onTextChange]);
 
   const isLoading = geocoding || detectingLocation;
 
@@ -128,7 +129,6 @@ export function LocationInput({
         onBlur={() => handleImmediate(value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            e.preventDefault();
             handleImmediate(value);
           }
         }}
