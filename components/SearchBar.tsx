@@ -119,7 +119,6 @@ export function SearchBar({
 
   const isLocating =
     pendingSearch || (!location && geocoding && !!query.trim());
-  const looksReady = !!query.trim() && !!location && !loading;
 
   // Button label logic
   const getButtonContent = (size: "compact" | "full") => {
@@ -268,10 +267,10 @@ export function SearchBar({
               : "m-2 px-6 py-3 rounded-xl hover:brightness-110"
           }`}
           style={{
-            background: looksReady
-              ? "var(--cc-primary)"
-              : "var(--cc-text-tertiary)",
-            opacity: looksReady ? 1 : 0.4,
+            background: loading
+              ? "var(--cc-text-tertiary)"
+              : "var(--cc-primary)",
+            opacity: loading ? 0.4 : 1,
           }}
         >
           {getButtonContent(compact ? "compact" : "full")}
