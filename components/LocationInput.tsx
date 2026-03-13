@@ -9,6 +9,8 @@ interface LocationInputProps {
     display: string;
   }) => void;
   onGeocodingChange?: (geocoding: boolean) => void;
+  onTextChange?: (text: string) => void;
+  onLocationInvalidate?: () => void;
   compact?: boolean;
   initialValue?: string;
 }
@@ -16,6 +18,8 @@ interface LocationInputProps {
 export function LocationInput({
   onLocationSelect,
   onGeocodingChange,
+  onTextChange,
+  onLocationInvalidate,
   compact,
   initialValue = "",
 }: LocationInputProps) {
@@ -56,10 +60,12 @@ export function LocationInput({
     [onLocationSelect]
   );
 
-  // Debounced geocoding — triggers 500ms after user stops typing
+  // Debounced geocoding — triggers 300ms after user stops typing
   const handleInputChange = useCallback(
     (input: string) => {
       setValue(input);
+      onTextChange?.(input);
+      onLocationInvalidate?.();
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
       // Only auto-geocode if input looks like a plausible location
@@ -68,10 +74,10 @@ export function LocationInput({
       if (trimmed.length >= 3) {
         debounceRef.current = setTimeout(() => {
           geocodeAddress(trimmed);
-        }, 500);
+        }, 300);
       }
     },
-    [geocodeAddress]
+    [geocodeAddress, onTextChange, onLocationInvalidate]
   );
 
   // Immediate geocode on blur or Enter (no debounce)
@@ -103,13 +109,14 @@ export function LocationInput({
           display: "Current Location",
         });
         setValue("Current Location");
+        onTextChange?.("Current Location");
         setDetectingLocation(false);
       },
       () => {
         setDetectingLocation(false);
       }
     );
-  }, [onLocationSelect]);
+  }, [onLocationSelect, onTextChange]);
 
   const isLoading = geocoding || detectingLocation;
 
@@ -122,7 +129,6 @@ export function LocationInput({
         onBlur={() => handleImmediate(value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            e.preventDefault();
             handleImmediate(value);
           }
         }}
