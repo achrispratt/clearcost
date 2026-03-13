@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { LocationInput } from "./LocationInput";
 
 interface SearchBarProps {
@@ -35,24 +35,91 @@ export function SearchBar({
     display: string;
   } | null>(initialLocation || null);
   const [geocoding, setGeocoding] = useState(false);
+  const [locationText, setLocationText] = useState(
+    initialLocation?.display || ""
+  );
+  const [validationErrors, setValidationErrors] = useState<{
+    query?: string;
+    location?: string;
+  }>({});
+  const [pendingSearch, setPendingSearch] = useState(false);
+  const pendingSearchRef = useRef(false);
+  const queryRef = useRef(query);
+  const queryInputRef = useRef<HTMLInputElement>(null);
 
   const [placeholder] = useState(
     () => placeholders[Math.floor(Math.random() * placeholders.length)]
   );
 
-  const handleGeocodingChange = useCallback((isGeocoding: boolean) => {
-    setGeocoding(isGeocoding);
+  const clearPending = useCallback(() => {
+    pendingSearchRef.current = false;
+    setPendingSearch(false);
   }, []);
+
+  // Wrap onLocationSelect to check pending search (success path)
+  const handleLocationSelect = useCallback(
+    (loc: { lat: number; lng: number; display: string }) => {
+      setLocation(loc);
+      if (pendingSearchRef.current) {
+        clearPending();
+        onSearch(queryRef.current.trim(), loc);
+      }
+    },
+    [onSearch, clearPending]
+  );
+
+  // Check pending search failure when geocoding finishes without a location
+  const handleGeocodingChange = useCallback(
+    (isGeocoding: boolean) => {
+      setGeocoding(isGeocoding);
+      if (!isGeocoding && pendingSearchRef.current) {
+        clearPending();
+        setValidationErrors((prev) => ({
+          ...prev,
+          location: "Couldn\u2019t find that location. Try a ZIP code.",
+        }));
+      }
+    },
+    [clearPending]
+  );
+
+  const handleLocationTextChange = useCallback((text: string) => {
+    setLocationText(text);
+    setValidationErrors((prev) =>
+      prev.location ? { ...prev, location: undefined } : prev
+    );
+  }, []);
+
+  const handleLocationInvalidate = useCallback(() => {
+    setLocation(null);
+    clearPending();
+  }, [clearPending]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim() && location) {
+    if (loading) return;
+
+    const errors: { query?: string; location?: string } = {};
+    if (!query.trim()) errors.query = "Describe a procedure or service";
+    if (!locationText.trim()) errors.location = "Enter a ZIP code or city";
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      if (errors.query) queryInputRef.current?.focus();
+      return;
+    }
+
+    if (location) {
       onSearch(query.trim(), location);
+    } else {
+      pendingSearchRef.current = true;
+      setPendingSearch(true);
     }
   };
 
-  const isDisabled = !query.trim() || !location || loading;
-  const isWaitingForLocation = !!(query.trim() && !location && geocoding);
+  const isLocating =
+    pendingSearch || (!location && geocoding && !!query.trim());
+  const looksReady = !!query.trim() && !!location && !loading;
 
   // Button label logic
   const getButtonContent = (size: "compact" | "full") => {
@@ -80,7 +147,7 @@ export function SearchBar({
         </svg>
       );
     }
-    if (isWaitingForLocation) {
+    if (isLocating) {
       return (
         <span className="flex items-center gap-1.5">
           <svg
@@ -138,9 +205,17 @@ export function SearchBar({
             <path d="m21 21-4.3-4.3" />
           </svg>
           <input
+            ref={queryInputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              queryRef.current = val;
+              setQuery(val);
+              setValidationErrors((prev) =>
+                prev.query ? { ...prev, query: undefined } : prev
+              );
+            }}
             placeholder={placeholder}
             className={`w-full bg-transparent focus:outline-none placeholder:text-[var(--cc-text-tertiary)] ${
               compact ? "py-2.5 text-sm" : "py-4 sm:py-3.5 text-base"
@@ -175,8 +250,10 @@ export function SearchBar({
             <circle cx="12" cy="10" r="3" />
           </svg>
           <LocationInput
-            onLocationSelect={setLocation}
+            onLocationSelect={handleLocationSelect}
             onGeocodingChange={handleGeocodingChange}
+            onTextChange={handleLocationTextChange}
+            onLocationInvalidate={handleLocationInvalidate}
             initialValue={initialLocation?.display}
             compact={compact}
           />
@@ -184,21 +261,45 @@ export function SearchBar({
 
         <button
           type="submit"
-          disabled={isDisabled}
-          className={`w-full sm:w-auto text-white font-medium transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed ${
+          disabled={loading}
+          className={`w-full sm:w-auto text-white font-medium transition-all cursor-pointer disabled:cursor-not-allowed ${
             compact
               ? "m-1.5 px-4 py-2 rounded-lg text-sm"
               : "m-2 px-6 py-3 rounded-xl hover:brightness-110"
           }`}
           style={{
-            background: isDisabled
-              ? "var(--cc-text-tertiary)"
-              : "var(--cc-primary)",
+            background: looksReady
+              ? "var(--cc-primary)"
+              : "var(--cc-text-tertiary)",
+            opacity: looksReady ? 1 : 0.4,
           }}
         >
           {getButtonContent(compact ? "compact" : "full")}
         </button>
       </div>
+
+      {(validationErrors.query || validationErrors.location) && (
+        <div className="flex justify-between px-2 pt-1.5 gap-4">
+          {validationErrors.query ? (
+            <p
+              className="text-xs animate-fade-in"
+              style={{ color: "var(--cc-error)" }}
+            >
+              {validationErrors.query}
+            </p>
+          ) : (
+            <span />
+          )}
+          {validationErrors.location && (
+            <p
+              className="text-xs sm:ml-auto animate-fade-in"
+              style={{ color: "var(--cc-error)" }}
+            >
+              {validationErrors.location}
+            </p>
+          )}
+        </div>
+      )}
     </form>
   );
 }
