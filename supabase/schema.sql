@@ -77,6 +77,7 @@ create table if not exists charges (
 
   -- Metadata
   source text default 'trilliant_oria', -- Data source: 'trilliant_oria', 'cms_mrf', etc.
+  imported_at timestamptz default now(), -- When this row was imported (NULL for pre-tracking rows)
   last_updated timestamptz default now(),
   created_at timestamptz default now()
 );

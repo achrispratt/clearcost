@@ -1,7 +1,7 @@
 /**
  * Data pipeline for importing Trilliant Health Oria data into Supabase.
  *
- * Imports ~13M rows across 1,010 CPT/HCPCS codes from 4,230 hospitals nationally.
+ * Imports ~13M rows across 1,050 CPT/HCPCS codes from 4,230 hospitals nationally.
  * Codes sourced from: CMS 70 shoppable + CMS top 200 by charges + top 500 by
  * hospital coverage + FAIR Health 300+ consumer shoppable services.
  *
@@ -23,11 +23,16 @@
  *   --skip-states <ST,ST>  Skip these states (already imported). Preserves existing data.
  *                          (e.g. --skip-states AK,AL,AR,AZ,CA,CO,CT,DC,DE,FL)
  *   --fresh                TRUNCATE charges + drop/recreate indexes for clean reimport
+ *   --codes <file.json>    Targeted import: only import charges for codes in this file.
+ *                          Uses scoped DELETE (only target codes per state, not all charges).
+ *                          Tracks progress under a separate run key (derived from filename).
+ *                          Auto-skips provider import. Idempotent — safe to re-run.
+ *                          Use for code list expansion or targeted price refreshes.
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "duckdb-async";
-import { resolve, dirname } from "path";
+import { resolve, dirname, basename } from "path";
 import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { Pool as PgPool } from "pg";
@@ -56,7 +61,7 @@ interface StateProgress {
 }
 
 interface ProgressData {
-  trilliant_oria: Record<string, StateProgress>;
+  [runKey: string]: Record<string, StateProgress>;
 }
 
 // Column order for multi-row INSERT INTO charges
@@ -83,6 +88,7 @@ const CHARGE_COLUMNS = [
   "max_negotiated_rate",
   "payer_count",
   "source",
+  "imported_at",
 ] as const;
 
 // Index definitions — must match supabase/schema.sql exactly
@@ -176,6 +182,7 @@ function parseArgs() {
     state: "", // empty = all states
     skipStates: [] as string[], // states to skip (already imported)
     fresh: false, // TRUNCATE + drop/recreate indexes for clean reimport
+    codesFile: "", // path to JSON with specific codes for targeted import
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -203,6 +210,9 @@ function parseArgs() {
         break;
       case "--fresh":
         config.fresh = true;
+        break;
+      case "--codes":
+        config.codesFile = resolve(args[++i]);
         break;
     }
   }
@@ -309,17 +319,19 @@ function loadProgress(): ProgressData {
       `  Warning: could not read progress file: ${err instanceof Error ? err.message : err}`
     );
   }
-  return { trilliant_oria: {} };
+  return {};
 }
 
 function saveStateProgress(
+  progressKey: string,
   state: string,
   rows: number,
   expected: number = 0,
   skipped: number = 0
 ): void {
   const progress = loadProgress();
-  progress.trilliant_oria[state] = {
+  if (!progress[progressKey]) progress[progressKey] = {};
+  progress[progressKey][state] = {
     rows,
     expected,
     skipped,
@@ -668,6 +680,14 @@ async function importCharges(
   }
   console.log(`  Processing ${states.length} states: ${states.join(", ")}`);
 
+  // Derive progress key from the codes file name (or default)
+  const progressKey = config.codesFile
+    ? basename(config.codesFile, ".json")
+    : "trilliant_oria";
+  if (config.codesFile) {
+    console.log(`  Progress key: "${progressKey}" (targeted import)`);
+  }
+
   // Auto-resume via progress file
   // States in the file completed successfully → skip them.
   // States NOT in the file get DELETE + reimport (cleans up partial data from crashes).
@@ -675,14 +695,15 @@ async function importCharges(
   let completedStates = new Set<string>();
   if (!config.fresh && !config.state) {
     const progress = loadProgress();
-    const progressStates = Object.keys(progress.trilliant_oria);
+    const progressStates = Object.keys(progress[progressKey] || {});
     for (const st of progressStates) {
       completedStates.add(st);
     }
 
     // Bootstrap: if no progress file exists but DB has data, seed the progress file
-    // from Supabase row counts (one-time migration for pre-tracking imports)
-    if (progressStates.length === 0) {
+    // from Supabase row counts (one-time migration for pre-tracking imports).
+    // Only applies to default imports — targeted imports always start fresh.
+    if (progressStates.length === 0 && !config.codesFile) {
       const existingRes = await pgPool.query(`
         SELECT p.state, COUNT(*) as cnt
         FROM charges c JOIN providers p ON c.provider_id = p.id
@@ -693,7 +714,7 @@ async function importCharges(
       for (const row of existingRes.rows) {
         if (row.state && parseInt(row.cnt, 10) > 0) {
           completedStates.add(row.state);
-          saveStateProgress(row.state, parseInt(row.cnt, 10));
+          saveStateProgress(progressKey, row.state, parseInt(row.cnt, 10));
           bootstrapped++;
         }
       }
@@ -727,6 +748,7 @@ async function importCharges(
   let totalInserted = 0;
   let totalSkipped = 0;
   const importStart = Date.now();
+  const importTimestamp = new Date().toISOString();
   const numCols = CHARGE_COLUMNS.length;
 
   for (const state of states) {
@@ -758,18 +780,22 @@ async function importCharges(
     // Clean up any partial data from a previous interrupted import.
     // This runs for every non-skipped state — if the state was complete, it was
     // already skipped above. If we're here, the state needs a fresh import.
+    // When --codes is active, scoped DELETE targets only those codes (safe for
+    // additive imports, crash recovery, and price refreshes). Otherwise, delete
+    // all charges for the state.
     const deleteRes = await pgPool.query(
       `DELETE FROM charges c
        USING providers p
        WHERE c.provider_id = p.id
          AND UPPER(TRIM(p.state)) = $1
-         AND c.source = 'trilliant_oria'`,
-      [state]
+         AND c.source = 'trilliant_oria'
+         AND ($2::text[] IS NULL OR c.cpt = ANY($2) OR c.hcpcs = ANY($2))`,
+      [state, config.codesFile ? codes : null]
     );
     const deletedCount = parseInt(deleteRes.rowCount?.toString() || "0", 10);
     if (deletedCount > 0) {
       console.log(
-        `  ${state}: deleted ${deletedCount.toLocaleString()} existing charges (partial/stale data)`
+        `  ${state}: deleted ${deletedCount.toLocaleString()} existing charges (${config.codesFile ? "scoped to target codes" : "partial/stale data"})`
       );
     }
 
@@ -843,6 +869,7 @@ async function importCharges(
         payer_count:
           charge.payer_count != null ? Number(charge.payer_count) : null,
         source: "trilliant_oria",
+        imported_at: importTimestamp,
       });
 
       if (batch.length >= config.batchSize) {
@@ -926,7 +953,13 @@ async function importCharges(
 
     // Record successful completion (skip if circuit breaker tripped or limit/test mode)
     if (!circuitBreakerTriggered && config.limit === 0 && stateInserted > 0) {
-      saveStateProgress(state, stateInserted, expectedCount, stateSkipped);
+      saveStateProgress(
+        progressKey,
+        state,
+        stateInserted,
+        expectedCount,
+        stateSkipped
+      );
     }
 
     // Respect --limit across all states
@@ -1008,6 +1041,8 @@ async function main() {
   console.log(`  DuckDB path: ${config.dbPath}`);
   console.log(`  Batch size: ${config.batchSize}`);
   console.log(`  Fresh import: ${config.fresh}`);
+  if (config.codesFile)
+    console.log(`  Targeted codes file: ${config.codesFile}`);
   if (config.limit > 0)
     console.log(`  Limit: ${config.limit.toLocaleString()} charges`);
   if (config.state) console.log(`  State filter: ${config.state}`);
@@ -1091,10 +1126,19 @@ async function main() {
   await db.run(`SET threads = 2`);
   console.log("  DuckDB memory_limit=2GB, threads=2");
 
-  // Load the curated code list (1,010 codes from CMS 70 + CMS 200 + top 500 + FAIR Health)
-  const codesPath = resolve(__dirname, "final-codes.json");
-  const importCodes: string[] = JSON.parse(readFileSync(codesPath, "utf8"));
-  console.log(`  Loaded ${importCodes.length} codes from final-codes.json`);
+  // Load the code list — either a targeted subset or the full curated list
+  let importCodes: string[];
+  if (config.codesFile) {
+    importCodes = JSON.parse(readFileSync(config.codesFile, "utf8"));
+    console.log(
+      `  TARGETED MODE: ${importCodes.length} codes from ${config.codesFile}`
+    );
+    config.skipProviders = true; // providers already loaded from base import
+  } else {
+    const codesPath = resolve(__dirname, "final-codes.json");
+    importCodes = JSON.parse(readFileSync(codesPath, "utf8"));
+    console.log(`  Loaded ${importCodes.length} codes from final-codes.json`);
+  }
 
   // Verify tables are accessible
   const tables = (await db.all(
@@ -1136,16 +1180,16 @@ async function main() {
 
     // Step 2: Import charges (filtered to curated codes, all settings)
     if (!config.skipCharges) {
-      // Phase A: Drop indexes for reliable bulk loading
-      if (config.fresh) {
+      // Phase A: Drop indexes for reliable bulk loading (only for full fresh reimports)
+      if (config.fresh && !config.codesFile) {
         await dropChargeIndexes(pgPool);
       }
 
       // Phase B: Bulk insert all charges
       await importCharges(db, pgPool, providerIdMap, importCodes, config);
 
-      // Phase C: Recreate indexes
-      if (config.fresh) {
+      // Phase C: Recreate indexes (only if we dropped them)
+      if (config.fresh && !config.codesFile) {
         await createChargeIndexes(pgPool);
       }
     } else {
