@@ -253,12 +253,12 @@ export function ResultCard({
                         </p>
                         {result.isDiscounted === false && (
                           <span
-                            className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full cursor-help mt-0.5"
+                            className="tooltip tooltip-bottom inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full cursor-help mt-0.5"
                             style={{
                               background: "var(--cc-accent-light)",
                               color: "var(--cc-accent)",
                             }}
-                            title="This hospital's listed cash price matches their chargemaster rate with no discount applied. There may be room to negotiate a lower price directly with the facility."
+                            data-tip="This hospital's listed cash price matches their chargemaster rate with no discount applied. There may be room to negotiate a lower price directly with the facility."
                           >
                             <InfoCircleIcon className="w-3 h-3" />
                             List Price
@@ -287,8 +287,8 @@ export function ResultCard({
                         >
                           {formatDisplayPrice(displayPrice)}
                           <span
-                            className="inline-block ml-1 align-middle cursor-help"
-                            title="Average rate negotiated between this hospital and insurers. Your actual cost depends on your specific plan."
+                            className="tooltip tooltip-bottom inline-block ml-1 align-middle cursor-help"
+                            data-tip="Average rate negotiated between this hospital and insurers. Your actual cost depends on your specific plan."
                           >
                             <InfoCircleIcon className="w-4 h-4 inline" />
                           </span>
@@ -309,12 +309,12 @@ export function ResultCard({
                           {formatDisplayPrice(displayPrice)}
                         </p>
                         <span
-                          className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full cursor-help mt-0.5"
+                          className="tooltip tooltip-bottom inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full cursor-help mt-0.5"
                           style={{
                             background: "var(--cc-accent-light)",
                             color: "var(--cc-accent)",
                           }}
-                          title="No cash or insured price reported. This is the hospital's chargemaster rate — there may be room to negotiate."
+                          data-tip="No cash or insured price reported. This is the hospital's chargemaster rate — there may be room to negotiate."
                         >
                           <InfoCircleIcon className="w-3 h-3" />
                           List Price
