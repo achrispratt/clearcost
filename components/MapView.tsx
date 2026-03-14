@@ -145,23 +145,21 @@ export function MapView({
 
     const markers: google.maps.Marker[] = [];
     let fitListener: google.maps.MapsEventListener | null = null;
-    const positionedResults = results.flatMap((result) => {
+    const positionedResults = results.flatMap((result, index) => {
       const { lat, lng } = result.provider;
       if (lat == null || lng == null) return [];
-      return [{ result, lat, lng }];
+      return [{ result, lat, lng, index }];
     });
 
-    results.forEach((result, i) => {
-      if (result.provider.lat == null || result.provider.lng == null) return;
-
-      const position = { lat: result.provider.lat, lng: result.provider.lng };
+    positionedResults.forEach(({ result, lat, lng, index }) => {
+      const position = { lat, lng };
 
       const isSelected = result.id === selectedResultId;
       const marker = new google.maps.Marker({
         position,
         map,
         label: {
-          text: `${i + 1}`,
+          text: `${index + 1}`,
           color: "white",
           fontSize: isSelected ? "13px" : "11px",
           fontWeight: "600",
@@ -174,7 +172,7 @@ export function MapView({
           strokeColor: isSelected ? "#B45309" : "#115E59",
           strokeWeight: isSelected ? 3 : 2,
         },
-        zIndex: isSelected ? 1000 : i,
+        zIndex: isSelected ? 1000 : index,
       });
 
       const infoWindow = new google.maps.InfoWindow({
