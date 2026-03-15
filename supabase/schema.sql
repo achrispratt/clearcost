@@ -640,3 +640,115 @@ create policy "Anyone can view payers" on payers for select using (true);
 create policy "Anyone can view translation cache" on translation_cache for select using (true);
 create policy "Anyone can insert translation cache" on translation_cache for insert with check (true);
 create policy "Anyone can update translation cache" on translation_cache for update using (true) with check (true);
+
+-- ============================================================================
+-- EPISODE DEFINITIONS (Turquoise Health Standard Service Packages)
+-- Maps principal procedure codes to typical co-occurring billing codes based
+-- on 2.7B Komodo Health claims. One row per SSP principal procedure.
+-- ~2,948 rows (all SSPs), though pricing enrichment only activates for codes
+-- that match search results.
+-- ============================================================================
+create table if not exists episode_definitions (
+  id uuid primary key default gen_random_uuid(),
+  ssp_code text unique not null,           -- Turquoise SSP identifier (= principal CPT/HCPCS)
+  principal_code text not null,            -- Primary procedure code
+  principal_code_type text not null default 'cpt', -- 'cpt' or 'hcpcs'
+  label text not null,                     -- Human-readable name ("Knee Replacement")
+  category text,                           -- Grouping: 'orthopedic', 'cardiac', etc.
+  source text default 'turquoise_ssp',
+  source_claim_count integer,              -- N claims underlying the SSP
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_episode_defs_principal on episode_definitions (principal_code);
+
+alter table episode_definitions enable row level security;
+create policy "Anyone can view episode definitions"
+  on episode_definitions for select using (true);
+
+-- ============================================================================
+-- EPISODE COMPONENTS (codes that typically co-occur with a principal procedure)
+-- Each row = one billing code observed in claims alongside the principal code.
+-- Tier classification based on association (frequency ratio from claims data):
+--   'required' >= 0.7, 'expected' 0.4-0.7, 'optional' 0.3-0.4
+-- ~44K rows at association >= 0.3 threshold.
+-- ============================================================================
+create table if not exists episode_components (
+  id uuid primary key default gen_random_uuid(),
+  episode_id uuid not null references episode_definitions(id) on delete cascade,
+  code text not null,                      -- Component billing code
+  code_type text not null,                 -- 'cpt', 'hcpcs', 'revenue_code'
+  tier text not null,                      -- 'required', 'expected', 'optional'
+  billing_class text,                      -- 'facility', 'professional'
+  association float not null,              -- 0.0-1.0+ frequency ratio
+  charge_weight float,                     -- % of total episode charge (future)
+  total_count integer,                     -- Claim count from SSP data
+  resolved_from text[],                    -- NCCI PTP merged codes
+  constraint uq_episode_component unique (episode_id, code)
+);
+
+create index if not exists idx_episode_components_episode on episode_components (episode_id);
+create index if not exists idx_episode_components_code on episode_components (code);
+
+alter table episode_components enable row level security;
+create policy "Anyone can view episode components"
+  on episode_components for select using (true);
+
+-- ============================================================================
+-- RPC: lookup_episode_component_charges()
+-- Batch lookup: given a principal procedure code and a set of provider IDs,
+-- returns charge data for all episode components at those providers.
+-- Used by the episode enrichment step in the search pipeline.
+-- Avoids N+1 queries by joining components → charges in a single call.
+-- ============================================================================
+create or replace function lookup_episode_component_charges(
+  p_principal_code text,
+  p_provider_ids uuid[],
+  p_min_association float default 0.4
+)
+returns table (
+  provider_id uuid,
+  component_code text,
+  component_code_type text,
+  component_tier text,
+  component_association float,
+  cash_price numeric,
+  gross_charge numeric,
+  avg_negotiated_rate numeric,
+  min_price numeric,
+  max_price numeric
+)
+language sql
+stable
+as $$
+  with episode as (
+    select id from episode_definitions
+    where principal_code = p_principal_code
+    limit 1
+  ),
+  components as (
+    select ec.code, ec.code_type, ec.tier, ec.association
+    from episode_components ec
+    join episode e on e.id = ec.episode_id
+    where ec.association >= p_min_association
+      and ec.code_type in ('cpt', 'hcpcs')
+  )
+  select
+    c.provider_id,
+    comp.code as component_code,
+    comp.code_type as component_code_type,
+    comp.tier as component_tier,
+    comp.association as component_association,
+    c.cash_price,
+    c.gross_charge,
+    c.avg_negotiated_rate,
+    c.min_price,
+    c.max_price
+  from components comp
+  join charges c on (
+    (comp.code_type = 'cpt' and (c.cpt = comp.code or c.hcpcs = comp.code))
+    or (comp.code_type = 'hcpcs' and c.hcpcs = comp.code)
+  )
+  where c.provider_id = any(p_provider_ids);
+$$;

@@ -363,13 +363,35 @@ export function ResultCard({
                           {formatPrice(result.maxPrice)}
                         </p>
                       )}
-                    {result.estimatedTotalMedian != null && (
-                      <p
-                        className="text-xs mt-1.5"
-                        style={{ color: "var(--cc-text-secondary)" }}
-                      >
-                        Est. total: {formatPrice(result.estimatedTotalMedian)}
-                      </p>
+                    {result.episodeEstimate?.estimatedAllInMedian != null ? (
+                      <div className="mt-1.5">
+                        <p
+                          className="text-xs font-medium"
+                          style={{ color: "var(--cc-text-secondary)" }}
+                        >
+                          Est. all-in:{" "}
+                          {formatPrice(
+                            result.episodeEstimate.estimatedAllInMedian
+                          )}
+                        </p>
+                        <p
+                          className="text-[11px]"
+                          style={{ color: "var(--cc-text-tertiary)" }}
+                        >
+                          {result.episodeEstimate.label} episode
+                          {result.episodeEstimate.coverageRatio < 1 &&
+                            ` (${Math.round(result.episodeEstimate.coverageRatio * 100)}% of components priced)`}
+                        </p>
+                      </div>
+                    ) : (
+                      result.estimatedTotalMedian != null && (
+                        <p
+                          className="text-xs mt-1.5"
+                          style={{ color: "var(--cc-text-secondary)" }}
+                        >
+                          Est. total: {formatPrice(result.estimatedTotalMedian)}
+                        </p>
+                      )
                     )}
                   </div>
                 </div>

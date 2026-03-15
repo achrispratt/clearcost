@@ -154,6 +154,9 @@ export interface ChargeResult {
   medicareFacilityRate?: number;
   medicareMultiplier?: number;
   medicareMultiplierSource?: "cash" | "insured" | "gross";
+
+  // Episode bundling (Turquoise SSP)
+  episodeEstimate?: EpisodeEstimate;
 }
 
 // -- Charge Variant (lightweight subset for grouped display) --
@@ -177,6 +180,21 @@ export interface ChargeVariant {
 export interface GroupedChargeResult extends ChargeResult {
   chargeVariants: ChargeVariant[];
   variantCount: number;
+}
+
+// -- Episode Estimate (Turquoise SSP-based all-in cost estimate) --
+export interface EpisodeEstimate {
+  episodeId: string;
+  principalCode: string;
+  label: string;
+  category?: string;
+  estimatedAllInMedian?: number;
+  estimatedAllInMin?: number;
+  estimatedAllInMax?: number;
+  componentCount: number;
+  priceableCount: number;
+  coverageRatio: number;
+  source: "turquoise_ssp";
 }
 
 // -- Medicare Benchmark (CMS Physician Fee Schedule national rate) --
@@ -218,6 +236,7 @@ export interface SearchResult {
   interpretation?: string;
   pricingPlan?: PricingPlan;
   totalResults: number;
+  hasEpisodeEstimates?: boolean;
 }
 
 // -- Guided Search: Clarification Flow Types --

@@ -363,7 +363,7 @@ function dedupeResultsById(results: ChargeResult[]): ChargeResult[] {
   return Array.from(byId.values());
 }
 
-function median(values: number[]): number {
+export function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 0) {
@@ -372,7 +372,7 @@ function median(values: number[]): number {
   return sorted[middle];
 }
 
-function buildPriceSummary(values: number[]): PriceSummary | undefined {
+export function buildPriceSummary(values: number[]): PriceSummary | undefined {
   if (values.length === 0) return undefined;
   return {
     estimatePrice: median(values),
