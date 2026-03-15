@@ -87,6 +87,7 @@ export function useResultsSearch() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "map">("list");
   const [radius, setRadius] = useState<number>(25);
+  const [fetchCounter, setFetchCounter] = useState(0);
 
   useEffect(() => {
     if (
@@ -205,6 +206,7 @@ export function useResultsSearch() {
     directCodeType,
     directInterp,
     directPlanParam,
+    fetchCounter,
   ]);
 
   const handleNewSearch = useCallback(
@@ -236,6 +238,12 @@ export function useResultsSearch() {
         if (directCodeDescsParam) params.set("codeDescs", directCodeDescsParam);
 
         router.push(`/results?${params.toString()}`);
+
+        // Force re-fetch only when coordinates haven't changed (same-URL refresh).
+        // When they have changed, router.push updates searchParams → effect fires naturally.
+        if (location.lat === lat && location.lng === lng) {
+          setFetchCounter((c) => c + 1);
+        }
       } else {
         // Query changed or no resolved codes: full re-diagnosis needed
         const params = new URLSearchParams({
@@ -249,6 +257,8 @@ export function useResultsSearch() {
     },
     [
       query,
+      lat,
+      lng,
       directCodeGroups.length,
       directCodes.length,
       directCodeGroupsParam,
