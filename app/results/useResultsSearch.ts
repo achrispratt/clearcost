@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import type {
   ChargeResult,
   CPTCode,
@@ -60,14 +60,15 @@ function parsePricingPlan(raw: string): PricingPlan | undefined {
 
 export function useResultsSearch() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get("q") || "";
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
   const locationDisplay = searchParams.get("loc") || "";
   const directCodeGroupsParam = searchParams.get("codeGroups") || "";
   const directCodeGroups = parseCodeGroups(directCodeGroupsParam);
-  const directCodes =
-    searchParams.get("codes")?.split(",").filter(Boolean) || [];
+  const directCodesParam = searchParams.get("codes") || "";
+  const directCodes = directCodesParam.split(",").filter(Boolean);
   const directCodeType = searchParams.get("codeType") || "";
   const directInterp = searchParams.get("interp") || "";
   const directPlanParam = searchParams.get("plan") || "";
@@ -200,24 +201,65 @@ export function useResultsSearch() {
     lat,
     lng,
     directCodeGroupsParam,
-    directCodes.join(","),
+    directCodesParam,
     directCodeType,
     directInterp,
     directPlanParam,
   ]);
 
-  const handleNewSearch = (
-    newQuery: string,
-    location: { lat: number; lng: number; display: string }
-  ) => {
-    const params = new URLSearchParams({
-      q: newQuery,
-      lat: location.lat.toString(),
-      lng: location.lng.toString(),
-      loc: location.display,
-    });
-    window.location.href = `/guided-search?${params.toString()}`;
-  };
+  const handleNewSearch = useCallback(
+    (
+      newQuery: string,
+      location: { lat: number; lng: number; display: string }
+    ) => {
+      const queryChanged =
+        newQuery.trim().toLowerCase() !== query.trim().toLowerCase();
+      const hasResolvedCodes =
+        directCodeGroups.length > 0 || directCodes.length > 0;
+
+      if (!queryChanged && hasResolvedCodes) {
+        // Location-only change: re-query with existing codes, skip AI
+        const params = new URLSearchParams();
+        params.set("q", newQuery);
+        params.set("lat", location.lat.toString());
+        params.set("lng", location.lng.toString());
+        params.set("loc", location.display);
+
+        if (directCodeGroupsParam)
+          params.set("codeGroups", directCodeGroupsParam);
+        else if (directCodesParam) {
+          params.set("codes", directCodesParam);
+          if (directCodeType) params.set("codeType", directCodeType);
+        }
+        if (directInterp) params.set("interp", directInterp);
+        if (directPlanParam) params.set("plan", directPlanParam);
+        if (directCodeDescsParam) params.set("codeDescs", directCodeDescsParam);
+
+        router.push(`/results?${params.toString()}`);
+      } else {
+        // Query changed or no resolved codes: full re-diagnosis needed
+        const params = new URLSearchParams({
+          q: newQuery,
+          lat: location.lat.toString(),
+          lng: location.lng.toString(),
+          loc: location.display,
+        });
+        window.location.href = `/guided-search?${params.toString()}`;
+      }
+    },
+    [
+      query,
+      directCodeGroups.length,
+      directCodes.length,
+      directCodeGroupsParam,
+      directCodesParam,
+      directCodeType,
+      directInterp,
+      directPlanParam,
+      directCodeDescsParam,
+      router,
+    ]
+  );
 
   const handleFilteredResults = useCallback((filtered: ChargeResult[]) => {
     setFilteredResults(filtered);
