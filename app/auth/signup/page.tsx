@@ -56,7 +56,9 @@ export default function SignUpPage() {
     setLoading(false);
 
     if (authError) {
-      if (authError.message.includes("already registered")) {
+      if (authError.message.includes("rate limit")) {
+        setError("Too many requests. Please wait a few minutes and try again.");
+      } else if (authError.message.includes("already registered")) {
         setError("An account with this email already exists. Try signing in.");
       } else {
         setError(authError.message);

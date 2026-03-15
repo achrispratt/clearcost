@@ -55,7 +55,9 @@ function SignInForm() {
     setLoading(false);
 
     if (authError) {
-      if (authError.message.includes("Email not confirmed")) {
+      if (authError.message.includes("rate limit")) {
+        setError("Too many requests. Please wait a few minutes and try again.");
+      } else if (authError.message.includes("Email not confirmed")) {
         setError(
           "Please confirm your email before signing in. Check your inbox."
         );

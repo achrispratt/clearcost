@@ -48,7 +48,11 @@ function ResetPasswordForm() {
     setLoading(false);
 
     if (resetError) {
-      setError(resetError.message);
+      if (resetError.message.includes("rate limit")) {
+        setError("Too many requests. Please wait a few minutes and try again.");
+      } else {
+        setError(resetError.message);
+      }
       return;
     }
 
