@@ -7,7 +7,8 @@ import { ResultCard } from "./ResultCard";
 interface ResultsListProps {
   results: ChargeResult[];
   loading?: boolean;
-  selectedResultId?: string | null;
+  selectedProviderId?: string | null;
+  onCardSelect?: (providerId: string) => void;
   codeDescriptionMap?: Record<string, string>;
   locationDisplay?: string;
   onExpandRadius?: () => void;
@@ -16,27 +17,34 @@ interface ResultsListProps {
 export function ResultsList({
   results,
   loading,
-  selectedResultId,
+  selectedProviderId,
+  onCardSelect,
   codeDescriptionMap,
   locationDisplay,
   onExpandRadius,
 }: ResultsListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Auto-expand first result on new results, and selected card on marker click
+  // Auto-expand first result on new results, and all provider cards on marker click
   const [prevResults, setPrevResults] = useState(results);
-  const [prevSelectedId, setPrevSelectedId] = useState(selectedResultId);
-  if (results !== prevResults || selectedResultId !== prevSelectedId) {
+  const [prevSelectedProvider, setPrevSelectedProvider] =
+    useState(selectedProviderId);
+  if (results !== prevResults || selectedProviderId !== prevSelectedProvider) {
     setPrevResults(results);
-    setPrevSelectedId(selectedResultId);
+    setPrevSelectedProvider(selectedProviderId);
     const next =
       results !== prevResults
         ? results.length > 0
           ? new Set([results[0].id])
           : new Set<string>()
         : new Set(expandedIds);
-    if (selectedResultId && !next.has(selectedResultId)) {
-      next.add(selectedResultId);
+    // Expand all cards for the selected provider
+    if (selectedProviderId) {
+      for (const r of results) {
+        if (r.provider.id === selectedProviderId && !next.has(r.id)) {
+          next.add(r.id);
+        }
+      }
     }
     setExpandedIds(next);
   }
@@ -177,9 +185,10 @@ export function ResultsList({
           <ResultCard
             result={result}
             rank={i + 1}
-            isSelected={result.id === selectedResultId}
+            isSelected={result.provider.id === selectedProviderId}
             isExpanded={expandedIds.has(result.id)}
             onToggleExpand={() => handleToggleExpand(result.id)}
+            onSelect={() => onCardSelect?.(result.provider.id)}
             codeDescriptionMap={codeDescriptionMap}
           />
         </div>

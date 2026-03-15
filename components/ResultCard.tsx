@@ -21,6 +21,7 @@ interface ResultCardProps {
   isSelected?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  onSelect?: () => void;
   codeDescriptionMap?: Record<string, string>;
 }
 
@@ -56,6 +57,7 @@ export function ResultCard({
   isSelected,
   isExpanded,
   onToggleExpand,
+  onSelect,
   codeDescriptionMap,
 }: ResultCardProps) {
   const billingCode = formatBillingCode(result);
@@ -107,6 +109,7 @@ export function ResultCard({
   return (
     <div
       data-result-id={result.id}
+      data-provider-id={result.provider.id}
       className={`rounded-xl border overflow-hidden transition-all duration-300 ${isExpanded ? "card-hover" : ""}`}
       style={{
         background: isSelected
@@ -132,7 +135,10 @@ export function ResultCard({
             className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
             role="button"
             aria-expanded={isExpanded}
-            onClick={onToggleExpand}
+            onClick={() => {
+              onToggleExpand?.();
+              onSelect?.();
+            }}
           >
             {/* Rank badge */}
             <span
