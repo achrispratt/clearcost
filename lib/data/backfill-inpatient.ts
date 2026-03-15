@@ -273,7 +273,7 @@ async function main() {
              avg_negotiated_rate, min_negotiated_rate, max_negotiated_rate, payer_count
       FROM standard_charges
       WHERE hospital_state = '${state}'
-        AND (cpt IN (${codeList}) OR hcpcs IN (${codeList}))
+        AND (cpt IN (${codeList}) OR hcpcs IN (${codeList}) OR ms_drg IN (${codeList}))
         AND TRIM(LOWER(setting)) = 'inpatient'
       ${limit > 0 ? `LIMIT ${limit - totalInserted}` : ""}
     `)) as unknown as OraStandardCharge[];

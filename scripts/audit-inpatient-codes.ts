@@ -235,7 +235,7 @@ async function main() {
         TRIM(LOWER(COALESCE(setting, 'null'))) AS norm_setting,
         discounted_cash, description, ms_drg
       FROM standard_charges
-      WHERE cpt IN (${codeList}) OR hcpcs IN (${codeList})
+      WHERE cpt IN (${codeList}) OR hcpcs IN (${codeList}) OR ms_drg IN (${codeList})
     )
     SELECT
       code,
