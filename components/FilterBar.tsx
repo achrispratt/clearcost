@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import type { ChargeResult } from "@/types";
 import { getDisplayPrice, getDisplayPriceAmount } from "@/lib/format";
 
-export type PriceTypeFilter = "all" | "cash";
-
 export type SortOption =
   | "price-asc"
   | "price-desc"
@@ -31,7 +29,7 @@ export function FilterBar({
   const radius = controlledRadius ?? internalRadius;
   const setRadius = onRadiusChange ?? setInternalRadius;
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [priceType, setPriceType] = useState<PriceTypeFilter>("all");
+  const [cashOnly, setCashOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   useEffect(() => {
     let filtered = [...results];
@@ -40,7 +38,7 @@ export function FilterBar({
       (r) => r.distanceMiles == null || r.distanceMiles <= radius
     );
 
-    if (priceType === "cash") {
+    if (cashOnly) {
       filtered = filtered.filter((r) => getDisplayPrice(r).type === "cash");
     }
 
@@ -77,13 +75,13 @@ export function FilterBar({
     });
 
     onFilteredResults(filtered);
-  }, [results, sort, radius, maxPrice, priceType, onFilteredResults]);
+  }, [results, sort, radius, maxPrice, cashOnly, onFilteredResults]);
 
   const handleSortChange = (newSort: SortOption) => {
     setSort(newSort);
   };
 
-  const hasFilters = maxPrice != null || radius !== 25 || priceType !== "all";
+  const hasFilters = maxPrice != null || radius !== 25 || cashOnly;
 
   const selectStyles = {
     background: "var(--cc-surface)",
@@ -192,17 +190,15 @@ export function FilterBar({
           </select>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <span style={labelStyles}>Prices</span>
-          <select
-            value={priceType}
-            onChange={(e) => setPriceType(e.target.value as PriceTypeFilter)}
-            style={selectStyles}
-          >
-            <option value="all">All</option>
-            <option value="cash">Cash only</option>
-          </select>
-        </div>
+        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={cashOnly}
+            onChange={(e) => setCashOnly(e.target.checked)}
+            className="checkbox checkbox-sm border-[var(--cc-border)] [--chkbg:var(--cc-primary)] [--chkfg:white]"
+          />
+          <span style={labelStyles}>Cash prices only</span>
+        </label>
 
         <div className="flex items-center gap-1.5">
           <span style={labelStyles}>Max price</span>
@@ -227,7 +223,7 @@ export function FilterBar({
             onClick={() => {
               setRadius(25);
               setMaxPrice(null);
-              setPriceType("all");
+              setCashOnly(false);
             }}
             className="text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-alt)] hover:text-[var(--cc-text-secondary)]"
             style={{
