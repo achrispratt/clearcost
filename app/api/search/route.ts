@@ -18,6 +18,7 @@ import {
 import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
 import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
+import { enrichWithEpisodeEstimates } from "@/lib/cpt/episode";
 import { getDisplayPrice } from "@/lib/format";
 import { handleApiError } from "@/lib/api-helpers";
 import type {
@@ -29,6 +30,19 @@ import type {
 
 const SPARSE_RESULT_THRESHOLD = 3;
 const EXPANDED_RADIUS_MILES = 250;
+
+async function enrichAndGroup(results: ChargeResult[]) {
+  const [withMedicare, withEpisodes] = await Promise.all([
+    enrichWithMedicareBenchmarks(results),
+    enrichWithEpisodeEstimates(results),
+  ]);
+  // Merge: Medicare writes medicareFacilityRate/Multiplier, episodes write episodeEstimate
+  const merged = withMedicare.map((r, i) => ({
+    ...r,
+    episodeEstimate: withEpisodes[i]?.episodeEstimate,
+  }));
+  return groupResultsByProvider(merged);
+}
 
 async function lookupWithAutoExpand(
   params: Parameters<typeof lookupWithPricingPlan>[0]
@@ -272,8 +286,7 @@ export async function POST(request: NextRequest) {
         elapsedMs: Date.now() - startedAt,
       });
 
-      const enriched = await enrichWithMedicareBenchmarks(results);
-      const grouped = groupResultsByProvider(enriched);
+      const grouped = await enrichAndGroup(results);
       return respond({
         query: queryText,
         interpretation: providedInterpretation || "",
@@ -281,6 +294,7 @@ export async function POST(request: NextRequest) {
         cptCodes: [],
         results: grouped,
         totalResults: grouped.length,
+        hasEpisodeEstimates: grouped.some((r) => r.episodeEstimate != null),
       });
     }
 
@@ -322,8 +336,7 @@ export async function POST(request: NextRequest) {
         elapsedMs: Date.now() - startedAt,
       });
 
-      const enriched = await enrichWithMedicareBenchmarks(results);
-      const grouped = groupResultsByProvider(enriched);
+      const grouped = await enrichAndGroup(results);
       return respond({
         query: queryText,
         interpretation: providedInterpretation || "",
@@ -331,6 +344,7 @@ export async function POST(request: NextRequest) {
         cptCodes: [],
         results: grouped,
         totalResults: grouped.length,
+        hasEpisodeEstimates: grouped.some((r) => r.episodeEstimate != null),
       });
     }
 
@@ -398,8 +412,7 @@ export async function POST(request: NextRequest) {
       elapsedMs: Date.now() - startedAt,
     });
 
-    const enriched = await enrichWithMedicareBenchmarks(results);
-    const grouped = groupResultsByProvider(enriched);
+    const grouped = await enrichAndGroup(results);
     return respond({
       query: queryText,
       interpretation: translated.interpretation,
@@ -407,6 +420,7 @@ export async function POST(request: NextRequest) {
       cptCodes: translated.codes,
       results: grouped,
       totalResults: grouped.length,
+      hasEpisodeEstimates: grouped.some((r) => r.episodeEstimate != null),
     });
   } catch (error) {
     const response = handleApiError(error, "POST /api/search");
