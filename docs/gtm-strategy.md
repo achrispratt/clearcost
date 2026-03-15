@@ -3,10 +3,10 @@
 > **Owner:** PM (Chris) · **Source of truth for:** Positioning, messaging, channels, launch plan
 > **Update when:** Market positioning or numbers change · **Live numbers:** see `docs/data-snapshot.md`
 
-**Date:** February 25, 2026
+**Date:** March 15, 2026
 **Product:** ClearCost — "Kayak for Healthcare Pricing"
 **Live URL:** https://clearcost-orcin.vercel.app
-**Stage:** MVP live (Phases 1-5.6 complete), Guided Search + Results polish shipped
+**Stage:** MVP live (Phases 1-5.6 complete), data quality sprint complete, episode bundling + Medicare benchmarks integrated
 
 ---
 
@@ -52,6 +52,10 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 4. **AI makes the UX possible.** Prior attempts at healthcare price tools required users to know billing codes. ClearCost's use of Claude for natural language translation removes the #1 barrier to consumer adoption.
 
 5. **Competitor gap.** Turquoise Health and Healthcare Bluebook focus on B2B/employer markets. FAIR Health provides data but not a consumer shopping experience. GoodRx dominates pharmacy but hasn't moved into procedures. No one owns the consumer procedure pricing search experience at national scale.
+
+6. **State reference-based pricing validates the model.** Thirteen states considered reference-based pricing (RBP) strategies in 2025. Oregon's implementation of a 200% Medicare reimbursement cap resulted in $100M+ in savings over 27 months, demonstrating that price transparency + comparison shopping drives measurable cost reduction. Colorado ($10K/day fines), Oklahoma (can't collect debts during non-compliance), Indiana (nonprofits lose tax status if prices exceed average by 2029), and Vermont (RBP by 2027) are actively enforcing. ClearCost helps consumers do what these states are trying to legislate.
+
+7. **Federal enforcement is escalating sharply.** CMS Schema v3.0 (released January 2026, enforcement April 1, 2026) requires actual prices, median/percentile allowed amounts, and hospital NPI encoding — substantially more granular data than previous versions. The Health Care PRICE Transparency Act 2.0 increases maximum penalties to $10M (up from ~$110K/year), accelerating hospital adherence. Each enforcement wave improves the quality and completeness of the underlying MRF data ClearCost depends on.
 
 ### Market Size
 
@@ -168,9 +172,11 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 - CMS has conducted 5,149 compliance reviews across 3,764 hospitals (~half of all hospitals subject to the rule)
 - Hospital compliance with MRF format requirements is ~91%+, though only ~44% are fully compliant with all requirements
 - CMS raised maximum penalties from ~$110K/year to **$2M/year** — 27 monetary penalties issued to date
-- The **CY 2026 Final Rule** (enforcement starts April 1, 2026) requires actual prices, median/percentile allowed amounts, and hospital NPI encoding
+- **CMS Schema v3.0** (released January 2026, enforcement begins April 1, 2026) requires actual prices, median/percentile allowed amounts, and hospital NPI encoding — substantially more granular data than previous versions
+- The **Health Care PRICE Transparency Act 2.0** increases maximum penalties to **$10M** for non-compliance, up from ~$110K/year pre-2024
 - Trump's Feb 2025 Executive Order directed "rapid implementation and enforcement" of transparency rules
 - Payer MRF Schema 2.0 required as of early February 2026
+- **State enforcement acceleration:** Colorado ($10K/day fines), Oklahoma (can't collect debts during non-compliance), Indiana (nonprofits lose tax status if prices exceed average by 2029), Vermont (reference-based pricing by 2027). 13 states considered RBP strategies in 2025; Oregon's 200% Medicare cap saved $100M+ in 27 months.
 
 **The consumer adoption gap IS the opportunity:**
 
@@ -185,18 +191,19 @@ ClearCost is a consumer healthcare pricing tool that translates plain-English qu
 
 - AI-powered health tech funding reached $10.7B in 2025 (+24.4% YoY)
 - Daffodil Health raised $16M for AI-powered price transparency
-- Turquoise Health raised $30M Series B (a16z-backed)
+- Turquoise Health raised $55M total ($30M Series B, a16z-backed)
 - Healthcare Bluebook was acquired by Valenz Healthcare; ClearCost Health (separate company) was acquired by MacroHealth
 - Full transparency implementation could yield **$17.6-$80.7 billion** in savings
 
 ### Detailed Competitor Profiles
 
-**Turquoise Health** — $30M Series B, a16z-backed, 160+ healthcare org customers
+**Turquoise Health** — $55M total raised (a16z, Adams Street Partners), 160+ healthcare org customers
 
 - B2B-primary: serves providers, payers, employers, life sciences companies
 - Has a consumer search tool but it's secondary to B2B business
 - Pivoting from compliance to "Clear Contracts" (rate negotiation platform)
-- _ClearCost advantage:_ Consumer-first product design vs. Turquoise's B2B afterthought
+- Published open-source Standard Service Packages (SSPs) built from 2.7B Komodo Health claims — maps principal procedures to all associated billing codes in a typical episode. ClearCost integrates SSPs for episode cost estimation (data partnership, not competition).
+- _ClearCost advantage:_ Consumer-first product design vs. Turquoise's B2B afterthought. ClearCost uses Turquoise's open-source SSP data while competing on the UX layer they don't invest in.
 
 **Healthcare Bluebook (now Valenz Bluebook)** — Acquired by Valenz Healthcare
 
@@ -289,16 +296,28 @@ Ada and Buoy validate that the diagnostic Q&A layer is commercially viable even 
 
 ### Competitive Matrix
 
-| Feature                        | ClearCost     | Turquoise Health | Valenz Bluebook | FAIR Health    | GoodRx         | MDsave            | Sesame            | Sidecar Health     |
-| ------------------------------ | ------------- | ---------------- | --------------- | -------------- | -------------- | ----------------- | ----------------- | ------------------ |
-| **Consumer-facing**            | Yes (primary) | No (B2B)         | No (employer)   | Partial        | Yes (pharmacy) | Yes (marketplace) | Yes (marketplace) | Yes (plan funnel)  |
-| **National hospital coverage** | 5,400+        | Yes (data API)   | ~1,000 markets  | Reference only | No             | ~250 facilities   | No                | No (averages only) |
-| **Plain English AI search**    | Yes (Claude)  | No               | No              | No             | No             | No                | No                | No                 |
-| **Guided diagnostic Q&A**      | Yes           | No               | No              | No             | No             | No                | No                | No                 |
-| **Real hospital MRF data**     | Yes           | Yes              | No (survey)     | No (claims)    | No             | No (contracted)   | No                | No (claims-based)  |
-| **Free to consumers**          | Yes           | N/A              | Employer-gated  | Yes            | Yes            | Pay-per-procedure | $10.99/mo         | Yes                |
-| **Map view**                   | Yes           | No consumer UI   | Limited         | No             | No             | No                | No                | No                 |
-| **Booking/transactional**      | No (future)   | No               | No              | No             | No             | Yes               | Yes               | No                 |
+| Feature                        | ClearCost        | Turquoise Health | Valenz Bluebook       | FAIR Health    | GoodRx          | MDsave            | Sesame            | Sidecar Health     |
+| ------------------------------ | ---------------- | ---------------- | --------------------- | -------------- | --------------- | ----------------- | ----------------- | ------------------ |
+| **Consumer-facing**            | Yes (primary)    | No (B2B)         | No (employer)         | Partial        | Yes (pharmacy)  | Yes (marketplace) | Yes (marketplace) | Yes (plan funnel)  |
+| **National hospital coverage** | 5,400+           | Yes (data API)   | ~1,000 markets        | Reference only | No              | ~250 facilities   | No                | No (averages only) |
+| **Plain English AI search**    | Yes (Claude)     | No               | No                    | No             | No              | No                | No                | No                 |
+| **Guided diagnostic Q&A**      | Yes              | No               | No                    | No             | No              | No                | No                | No                 |
+| **Real hospital MRF data**     | Yes              | Yes              | No (survey)           | No (claims)    | No              | No (contracted)   | No                | No (claims-based)  |
+| **Free to consumers**          | Yes              | N/A              | Employer-gated        | Yes            | Yes             | Pay-per-procedure | $10.99/mo         | Yes                |
+| **Map view**                   | Yes              | No consumer UI   | Limited               | No             | No              | No                | No                | No                 |
+| **Booking/transactional**      | No (future)      | No               | No                    | No             | No              | Yes               | Yes               | No                 |
+| **Data source**                | Hospital MRFs    | Hospital MRFs    | Survey-based          | Claims (52B)   | Pharmacy PBMs   | Contracted rates  | Contracted rates  | Claims (insurer)   |
+| **Primary moat**               | Consumer UX + AI | B2B partnerships | Employer distribution | Data scale     | Pharmacy domain | Provider network  | Provider network  | Insurance product  |
+
+### Ecosystem Roles (Not Head-to-Head Competition)
+
+The healthcare pricing transparency market operates in three complementary layers, each with a different moat:
+
+- **Sidecar Health** (claims-based insurer, $1.2B valuation): Moat is being a licensed insurer with actual transaction data via Visa card payments. Shows national/regional claims averages. Cannot be replicated by non-insurers.
+- **Turquoise Health** (B2B data infrastructure, $55M raised): Moat is partnerships with 160+ healthcare organizations. Serves providers, payers, and life sciences. Pivoting toward "Clear Contracts" (rate negotiation), not consumer UX.
+- **ClearCost** (consumer UX + AI): Moat is AI-powered plain-English search + guided diagnostic clarification. Consumer-first design using hospital-specific MRF prices at national scale.
+
+ClearCost's differentiation is not competing for payer relationships or insurer distribution. It's owning the consumer experience gap where 89% of consumers want to shop but only 2-3.5% use available tools. Turquoise and Sidecar validate market demand; ClearCost addresses the adoption gap they don't serve.
 
 ### ClearCost's Unique Advantages
 
@@ -578,6 +597,27 @@ Reddit is where healthcare cost conversations already happen organically. This i
 
 **Success criteria:** 20,000+ MAU, 1,000 email subscribers, 50+ referring domains, 5,000+ monthly organic search visits.
 
+### Data Enrichment Roadmap (Parallel Track)
+
+The GTM phases above are marketing-focused. In parallel, the product's pricing data improves through a phased enrichment strategy. Each phase adds a new data layer that strengthens the consumer value proposition and enables new GTM messaging.
+
+**Phase 1 — Free, engineering-only (current):**
+
+1. **Turquoise SSP integration** — Episode cost estimation using open-source Standard Service Packages (2.7B Komodo Health claims, MIT license). Maps principal procedures to 5-50 co-occurring billing codes, enabling all-in cost estimates that account for separate professional fees (radiology, anesthesia, pathology). Solves the "facility fee only" problem. _Status: integrated._
+2. **Medicare Fee Schedule benchmarking** — CMS Physician Fee Schedule rates for ~1,000 codes (free from cms.gov). Shows "Medicare pays $X for this" alongside hospital charges, giving consumers a reference point for negotiation. _Status: integrated._
+3. **Cash==gross flagging** — Flag the ~29% of charges where cash price equals gross charge (no discount). Signals provider market power or compliance-only pricing. _Status: integrated._
+
+**Phase 2 — Revenue/grant-funded (~$1K/mo):**
+
+4. **Serif Health API** — Payer-specific negotiated rates from cleaned insurer MRF data. $1,000/month per US region. Covers 200+ payers, 4,000+ hospitals, 90%+ of commercially insured lives. Enables "what your plan actually pays" alongside cash prices. _Trigger: when revenue or grant (NSF SBIR Phase I) supports it._
+5. **Medicare Provider Utilization PUF** — Actual Medicare payment amounts by provider and HCPCS code (free from data.cms.gov). Shows "Medicare actually paid $X at this hospital" vs. Fee Schedule theoretical rate. _Trigger: same as above._
+
+**Phase 3 — Post-revenue/post-grant (~$10K+/mo):**
+
+6. **State APCD access** — Colorado CIVHC (most mature, 2-month lag, 880M+ claims), New Hampshire CHIS (free consumer tools), Minnesota (free public use files). Supplementary "what to expect" benchmarking for users in those states. _Caveat: not viable as primary source — separate DUAs per state, $50-200K/yr for 5-10 states. Valuable as supplementary layer only._
+7. **FAIR Health discovery call** — 52B claims database, nonprofit gold standard from NY State settlement. $50K-$500K+/yr licensing. Adds claims-based benchmark visibility. _Trigger: post-revenue scale._
+8. **Self-parse payer TiC MRFs** — Eliminate Serif Health dependency by building own payer MRF parsing pipeline. 5-50 TB per insurer; requires selective stream processing filtered by curated code list + geography. _Trigger: NSF SBIR Phase I funding or equivalent._
+
 ---
 
 ## 8. SEO & Content Strategy (Deep Dive)
@@ -803,15 +843,16 @@ ClearCost's current infrastructure costs ~$25/month. The GTM strategy is designe
 
 ## 13. Risk Mitigation
 
-| Risk                                       | Likelihood | Impact | Mitigation                                                                                                                                                        |
-| ------------------------------------------ | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Data accuracy concerns**                 | Medium     | High   | Prominent disclaimers, source attribution on every result, "report an issue" link, blog post explaining methodology                                               |
-| **Hospital/industry pushback**             | Low        | Medium | Data is federally mandated and public; ClearCost is exercising consumer rights. Prepare a legal FAQ.                                                              |
-| **Claude API cost escalation**             | Medium     | Medium | Implement caching for common query translations, batch similar queries, monitor per-search costs weekly                                                           |
-| **SEO penalty for thin/duplicate content** | Low        | High   | Ensure programmatic pages have unique, valuable content (not just template fill-in). Add real price data, FAQ, and internal links.                                |
-| **Competitor copies AI search**            | Medium     | Medium | Guided diagnostic clarification (clinical triage protocols) is the moat. Continue deepening the AI conversation quality. First-mover advantage in consumer brand. |
-| **Low retention / one-time use**           | Medium     | High   | Price alerts, email newsletter, saved searches, educational content bring users back. Healthcare decisions recur — build the habit.                               |
-| **Scaling issues under traffic**           | Low        | Medium | Vercel auto-scales. Supabase may need upgrade at high query volumes. Monitor and plan migration path.                                                             |
+| Risk                                       | Likelihood | Impact | Mitigation                                                                                                                                                                                                                                             |
+| ------------------------------------------ | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Data accuracy concerns**                 | Medium     | High   | Prominent disclaimers, source attribution on every result, "report an issue" link, blog post explaining methodology                                                                                                                                    |
+| **Hospital/industry pushback**             | Low        | Medium | Data is federally mandated and public; ClearCost is exercising consumer rights. Prepare a legal FAQ.                                                                                                                                                   |
+| **Claude API cost escalation**             | Medium     | Medium | Implement caching for common query translations, batch similar queries, monitor per-search costs weekly                                                                                                                                                |
+| **SEO penalty for thin/duplicate content** | Low        | High   | Ensure programmatic pages have unique, valuable content (not just template fill-in). Add real price data, FAQ, and internal links.                                                                                                                     |
+| **Competitor copies AI search**            | Medium     | Medium | Guided diagnostic clarification (clinical triage protocols) is the moat. Continue deepening the AI conversation quality. First-mover advantage in consumer brand.                                                                                      |
+| **Low retention / one-time use**           | Medium     | High   | Price alerts, email newsletter, saved searches, educational content bring users back. Healthcare decisions recur — build the habit.                                                                                                                    |
+| **Scaling issues under traffic**           | Low        | Medium | Vercel auto-scales. Supabase may need upgrade at high query volumes. Monitor and plan migration path.                                                                                                                                                  |
+| **Trilliant Oria data dependency**         | Medium     | High   | Single vendor for hospital MRF data. Mitigated by: (1) NSF SBIR Phase I targets independent MRF crawler via CMS TPAFS, (2) Turquoise SSPs + Medicare Fee Schedule are already vendor-independent, (3) Phase 3 roadmap includes self-parsed payer MRFs. |
 
 ---
 
