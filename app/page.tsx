@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/SearchBar";
+import { formatApproxCount } from "@/lib/format";
 
 export default function Home() {
   const router = useRouter();
@@ -62,8 +63,8 @@ export default function Home() {
               animationDelay: "0.16s",
             }}
           >
-            Compare real hospital prices across 5,200+ providers. Search in
-            plain English. No insurance required.
+            Compare real hospital prices across {formatApproxCount(5400)}{" "}
+            providers. Search in plain English. No insurance required.
           </p>
 
           {/* Search Bar */}
@@ -80,9 +81,9 @@ export default function Home() {
             style={{ animationDelay: "0.32s" }}
           >
             {[
-              { value: "5,200+", label: "hospitals" },
-              { value: "12.5M", label: "prices" },
-              { value: "1,010", label: "procedures" },
+              { value: formatApproxCount(5400), label: "hospitals" },
+              { value: formatApproxCount(10_000_000), label: "prices" },
+              { value: formatApproxCount(1000), label: "procedures" },
             ].map((stat, i) => (
               <div key={i} className="flex items-baseline gap-1.5">
                 <span

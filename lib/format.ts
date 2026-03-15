@@ -82,3 +82,8 @@ export function formatBillingCode(result: {
   if (result.msDrg) return `MS-DRG ${result.msDrg}`;
   return "";
 }
+
+export function formatApproxCount(n: number): string {
+  if (n >= 1_000_000) return `${Math.floor(n / 1_000_000)}M+`;
+  return `${n.toLocaleString()}+`;
+}
