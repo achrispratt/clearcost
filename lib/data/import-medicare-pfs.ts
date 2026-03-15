@@ -2,11 +2,13 @@
  * Import CMS Physician Fee Schedule (PFS) national rates into medicare_benchmarks.
  *
  * Downloads: https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files
- * File format: pipe-delimited CSV (e.g., PFRVS_2025A.csv)
+ * File: PPRRVU2025_Jul.csv (inside the RVU25C.zip download)
+ * Format: Comma-delimited CSV with 9-row multi-line header, data starts at row 10.
+ * Payment = Total RVU × Conversion Factor (computed during import).
  *
  * Run with:
  *   npx tsx --env-file=.env.local lib/data/import-medicare-pfs.ts \
- *     --file ~/Downloads/PFRVS_2025A.csv --year 2025
+ *     --file /tmp/pfs/PPRRVU2025_Jul.csv --year 2025
  *
  * Options:
  *   --file <path>     Path to downloaded PFS CSV (required)
@@ -23,9 +25,25 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createReadStream } from "fs";
 import { createInterface } from "readline";
+import { parse as csvParse } from "csv-parse/sync";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// ---------------------------------------------------------------------------
+// CMS PFS CSV column indices (from PPRRVU multi-line header)
+// ---------------------------------------------------------------------------
+const COL = {
+  HCPCS: 0,
+  MOD: 1,
+  DESCRIPTION: 2,
+  STATUS_CODE: 3,
+  NON_FAC_TOTAL_RVU: 11,
+  FAC_TOTAL_RVU: 12,
+  CONV_FACTOR: 24,
+} as const;
+
+const HEADER_ROWS = 10; // rows 0-9 are header/metadata, data starts at row 10
 
 // ---------------------------------------------------------------------------
 // CLI args
@@ -73,54 +91,12 @@ function parseArgs() {
   if (!opts.file) {
     console.error("Error: --file <path> is required");
     console.error(
-      "  npx tsx --env-file=.env.local lib/data/import-medicare-pfs.ts --file ~/Downloads/PFRVS_2025A.csv"
+      "  npx tsx --env-file=.env.local lib/data/import-medicare-pfs.ts --file /tmp/pfs/PPRRVU2025_Jul.csv"
     );
     process.exit(1);
   }
 
   return opts;
-}
-
-// ---------------------------------------------------------------------------
-// PFS CSV parser (pipe-delimited)
-// ---------------------------------------------------------------------------
-
-interface PfsRow {
-  code: string;
-  modifier: string;
-  description: string;
-  statusCode: string;
-  facilityRate: number;
-  nonFacilityRate: number;
-  conversionFactor: number;
-}
-
-function parsePfsLine(
-  line: string,
-  headerIndex: Map<string, number>
-): PfsRow | null {
-  const fields = line.split("|").map((f) => f.trim().replace(/^"|"$/g, ""));
-
-  const get = (name: string): string => {
-    const idx = headerIndex.get(name);
-    return idx != null ? (fields[idx] ?? "") : "";
-  };
-
-  const code = get("HCPCS");
-  if (!code) return null;
-
-  const facilityRate = parseFloat(get("FAC_PRICING_AMOUNT")) || 0;
-  const nonFacilityRate = parseFloat(get("NON_FAC_PRICING_AMOUNT")) || 0;
-
-  return {
-    code,
-    modifier: get("MOD"),
-    description: get("DESCRIPTION"),
-    statusCode: get("STATUS_CODE"),
-    facilityRate,
-    nonFacilityRate,
-    conversionFactor: parseFloat(get("CONVERSION_FACTOR")) || 0,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -143,13 +119,14 @@ async function main() {
   const targetCodes = new Set<string>(JSON.parse(codesJson) as string[]);
   console.log(`Target codes: ${targetCodes.size}`);
 
-  // Parse header line to build column index
-  const rl = createInterface({
-    input: createReadStream(filePath, { encoding: "utf-8" }),
-    crlfDelay: Infinity,
+  // Parse CSV — read entire file, parse with csv-parse
+  const csvContent = readFileSync(filePath, "utf-8");
+  const allRows: string[][] = csvParse(csvContent, {
+    relax_column_count: true,
   });
 
-  let headerIndex: Map<string, number> | null = null;
+  console.log(`Total CSV rows: ${allRows.length} (${HEADER_ROWS} header rows)`);
+
   const matched: Map<
     string,
     {
@@ -166,48 +143,49 @@ async function main() {
   let skippedModifier = 0;
   let skippedNoRate = 0;
 
-  for await (const line of rl) {
-    if (!headerIndex) {
-      // First line is the header
-      const headers = line
-        .split("|")
-        .map((h) => h.trim().replace(/^"|"$/g, ""));
-      headerIndex = new Map(headers.map((h, i) => [h, i]));
-      console.log(`CSV columns: ${headers.length}`);
-      continue;
-    }
-
+  for (let i = HEADER_ROWS; i < allRows.length; i++) {
+    const row = allRows[i];
     totalLines++;
-    const row = parsePfsLine(line, headerIndex);
-    if (!row) continue;
+
+    const code = (row[COL.HCPCS] ?? "").trim();
+    if (!code) continue;
 
     // Filter: code must be in our target set
-    if (!targetCodes.has(row.code)) {
+    if (!targetCodes.has(code)) {
       skippedNotInCodes++;
       continue;
     }
 
     // Filter: skip modifier variants (keep only base/global rate where MOD is blank)
-    if (row.modifier !== "") {
+    const modifier = (row[COL.MOD] ?? "").trim();
+    if (modifier !== "") {
       skippedModifier++;
       continue;
     }
 
-    // Filter: must have at least one pricing amount
-    if (row.facilityRate === 0 && row.nonFacilityRate === 0) {
+    // Compute payment amounts: Total RVU × Conversion Factor
+    const nfTotalRvu = parseFloat(row[COL.NON_FAC_TOTAL_RVU] ?? "") || 0;
+    const facTotalRvu = parseFloat(row[COL.FAC_TOTAL_RVU] ?? "") || 0;
+    const convFactor = parseFloat(row[COL.CONV_FACTOR] ?? "") || 0;
+
+    const nonFacilityRate = Math.round(nfTotalRvu * convFactor * 100) / 100;
+    const facilityRate = Math.round(facTotalRvu * convFactor * 100) / 100;
+
+    // Filter: must have at least one nonzero rate
+    if (facilityRate === 0 && nonFacilityRate === 0) {
       skippedNoRate++;
       continue;
     }
 
-    // Keep first match per code (some files may have duplicates)
-    if (!matched.has(row.code)) {
-      matched.set(row.code, {
-        code: row.code,
-        description: row.description,
-        facilityRate: row.facilityRate,
-        nonFacilityRate: row.nonFacilityRate,
-        conversionFactor: row.conversionFactor,
-        statusCode: row.statusCode,
+    // Keep first match per code
+    if (!matched.has(code)) {
+      matched.set(code, {
+        code,
+        description: (row[COL.DESCRIPTION] ?? "").trim(),
+        facilityRate,
+        nonFacilityRate,
+        conversionFactor: convFactor,
+        statusCode: (row[COL.STATUS_CODE] ?? "").trim(),
       });
     }
   }
@@ -220,16 +198,26 @@ async function main() {
   console.log(`Skipped (no rate): ${skippedNoRate}`);
 
   // Stats on what we found
-  const rates = [...matched.values()]
-    .map((r) => r.facilityRate)
+  const nfRates = [...matched.values()]
+    .map((r) => r.nonFacilityRate)
     .filter((r) => r > 0);
-  if (rates.length > 0) {
-    rates.sort((a, b) => a - b);
+  if (nfRates.length > 0) {
+    nfRates.sort((a, b) => a - b);
     console.log(
-      `\nFacility rate range: $${rates[0].toFixed(2)} – $${rates[rates.length - 1].toFixed(2)}`
+      `\nNon-facility rate range: $${nfRates[0].toFixed(2)} – $${nfRates[nfRates.length - 1].toFixed(2)}`
     );
     console.log(
-      `Median facility rate: $${rates[Math.floor(rates.length / 2)].toFixed(2)}`
+      `Median non-facility rate: $${nfRates[Math.floor(nfRates.length / 2)].toFixed(2)}`
+    );
+  }
+
+  const facRates = [...matched.values()]
+    .map((r) => r.facilityRate)
+    .filter((r) => r > 0);
+  if (facRates.length > 0) {
+    facRates.sort((a, b) => a - b);
+    console.log(
+      `Facility rate range: $${facRates[0].toFixed(2)} – $${facRates[facRates.length - 1].toFixed(2)}`
     );
   }
 

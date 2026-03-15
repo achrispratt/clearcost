@@ -169,18 +169,21 @@ async function enrichWithMedicareBenchmarks(
     const code = result.cpt || result.hcpcs;
     if (!code) return result;
     const bm = benchmarks.get(code.trim().toUpperCase());
-    if (!bm?.facilityRate) return result;
+    // Use non-facility rate (total service value: work + PE + MP).
+    // Facility rate only covers the physician component — not a fair comparison to hospital all-in charges.
+    const benchmarkRate = bm?.nonFacilityRate ?? bm?.facilityRate;
+    if (!benchmarkRate) return result;
 
     const dp = getDisplayPrice(result);
     const priceSource = dp.type === "unavailable" ? undefined : dp.type;
     const multiplier =
-      dp.amount && bm.facilityRate > 0
-        ? Math.round((dp.amount / bm.facilityRate) * 10) / 10
+      dp.amount && benchmarkRate > 0
+        ? Math.round((dp.amount / benchmarkRate) * 10) / 10
         : undefined;
 
     return {
       ...result,
-      medicareFacilityRate: bm.facilityRate,
+      medicareFacilityRate: benchmarkRate,
       medicareMultiplier: multiplier,
       medicareMultiplierSource: priceSource,
     };
