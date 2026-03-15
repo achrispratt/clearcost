@@ -491,8 +491,12 @@ async function verifyImport(pool: PgPool): Promise<void> {
   const hcpcsRes = await pool.query(
     "SELECT COUNT(DISTINCT hcpcs) as cnt FROM charges WHERE hcpcs IS NOT NULL"
   );
+  const drgRes = await pool.query(
+    "SELECT COUNT(DISTINCT ms_drg) as cnt FROM charges WHERE ms_drg IS NOT NULL"
+  );
   console.log(`  Distinct CPT codes: ${cptRes.rows[0].cnt}`);
   console.log(`  Distinct HCPCS codes: ${hcpcsRes.rows[0].cnt}`);
+  console.log(`  Distinct MS-DRG codes: ${drgRes.rows[0].cnt}`);
 
   // Orphan check
   const orphanRes = await pool.query(`
@@ -663,10 +667,10 @@ async function importCharges(
   // Build the SQL IN list from our curated codes
   const codeList = codes.map((c) => `'${c}'`).join(",");
 
-  // The WHERE clause: match our curated codes in either column
+  // The WHERE clause: match our curated codes in any billing code column
   // Setting (inpatient/outpatient/both) is kept as metadata, not used as a filter —
   // the code list itself defines shoppability.
-  const codeFilter = `(cpt IN (${codeList}) OR hcpcs IN (${codeList}))`;
+  const codeFilter = `(cpt IN (${codeList}) OR hcpcs IN (${codeList}) OR ms_drg IN (${codeList}))`;
 
   // Get list of states to process one at a time (keeps Parquet scans small)
   let states: string[];
@@ -789,7 +793,7 @@ async function importCharges(
        WHERE c.provider_id = p.id
          AND UPPER(TRIM(p.state)) = $1
          AND c.source = 'trilliant_oria'
-         AND ($2::text[] IS NULL OR c.cpt = ANY($2) OR c.hcpcs = ANY($2))`,
+         AND ($2::text[] IS NULL OR c.cpt = ANY($2) OR c.hcpcs = ANY($2) OR c.ms_drg = ANY($2))`,
       [state, config.codesFile ? codes : null]
     );
     const deletedCount = parseInt(deleteRes.rowCount?.toString() || "0", 10);
