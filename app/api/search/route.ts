@@ -17,6 +17,7 @@ import {
 } from "@/lib/cpt/cache";
 import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
 import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
+import { groupResultsByProvider } from "@/lib/cpt/group-results";
 import { getDisplayPrice } from "@/lib/format";
 import { handleApiError } from "@/lib/api-helpers";
 import type {
@@ -272,13 +273,14 @@ export async function POST(request: NextRequest) {
       });
 
       const enriched = await enrichWithMedicareBenchmarks(results);
+      const grouped = groupResultsByProvider(enriched);
       return respond({
         query: queryText,
         interpretation: providedInterpretation || "",
         pricingPlan,
         cptCodes: [],
-        results: enriched,
-        totalResults: enriched.length,
+        results: grouped,
+        totalResults: grouped.length,
       });
     }
 
@@ -321,13 +323,14 @@ export async function POST(request: NextRequest) {
       });
 
       const enriched = await enrichWithMedicareBenchmarks(results);
+      const grouped = groupResultsByProvider(enriched);
       return respond({
         query: queryText,
         interpretation: providedInterpretation || "",
         pricingPlan,
         cptCodes: [],
-        results: enriched,
-        totalResults: enriched.length,
+        results: grouped,
+        totalResults: grouped.length,
       });
     }
 
@@ -396,13 +399,14 @@ export async function POST(request: NextRequest) {
     });
 
     const enriched = await enrichWithMedicareBenchmarks(results);
+    const grouped = groupResultsByProvider(enriched);
     return respond({
       query: queryText,
       interpretation: translated.interpretation,
       pricingPlan,
       cptCodes: translated.codes,
-      results: enriched,
-      totalResults: enriched.length,
+      results: grouped,
+      totalResults: grouped.length,
     });
   } catch (error) {
     const response = handleApiError(error, "POST /api/search");
