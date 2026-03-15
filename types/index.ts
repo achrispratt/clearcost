@@ -156,6 +156,29 @@ export interface ChargeResult {
   medicareMultiplierSource?: "cash" | "insured" | "gross";
 }
 
+// -- Charge Variant (lightweight subset for grouped display) --
+export interface ChargeVariant {
+  id: string;
+  description?: string;
+  billingClass?: string;
+  setting?: ChargeSetting;
+  laterality?: Laterality;
+  bodySite?: BodySite;
+  cashPrice?: number;
+  grossCharge?: number;
+  avgNegotiatedRate?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  payerCount?: number;
+  isDiscounted?: boolean;
+}
+
+// -- Grouped Charge Result (multiple charges at same provider collapsed into one card) --
+export interface GroupedChargeResult extends ChargeResult {
+  chargeVariants: ChargeVariant[];
+  variantCount: number;
+}
+
 // -- Medicare Benchmark (CMS Physician Fee Schedule national rate) --
 export interface MedicareBenchmark {
   code: string;

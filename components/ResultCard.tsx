@@ -8,7 +8,7 @@ import {
   getDisplayPrice,
   formatDisplayPrice,
 } from "@/lib/format";
-import type { ChargeResult } from "@/types";
+import type { ChargeResult, GroupedChargeResult } from "@/types";
 import { InfoCircleIcon } from "./InfoCircleIcon";
 import { Tooltip } from "./Tooltip";
 
@@ -42,6 +42,14 @@ function formatAdderPriceRange(
   return "N/A";
 }
 
+function billingClassLabel(bc: string | undefined): string {
+  const normalized = bc?.toLowerCase();
+  if (normalized === "facility") return "Facility fee";
+  if (normalized === "professional") return "Professional fee";
+  if (normalized === "both") return "Global fee";
+  return "Full charge";
+}
+
 export function ResultCard({
   result,
   rank,
@@ -54,6 +62,11 @@ export function ResultCard({
   const distance = formatDistance(result.distanceMiles);
   const lastUpdated = formatDate(result.lastUpdated);
   const displayPrice = getDisplayPrice(result);
+
+  const isGrouped = "chargeVariants" in result;
+  const grouped = isGrouped ? (result as GroupedChargeResult) : undefined;
+  const variants = grouped?.chargeVariants;
+  const hasVariants = (grouped?.variantCount ?? 1) > 1;
 
   const resultCode = result.cpt || result.hcpcs || result.msDrg;
   const canonicalDescription = resultCode
@@ -70,14 +83,17 @@ export function ResultCard({
     .filter(notNull)
     .join(", ");
 
-  const billingClassCallout = (() => {
-    const bc = result.billingClass?.toLowerCase();
-    if (bc === "facility")
-      return "Facility fee only — professional fees may apply separately";
-    if (bc === "professional")
-      return "Professional fee only — facility charges may apply separately";
-    return null;
-  })();
+  // Suppress single-charge billing class callout when variant breakdown is shown
+  const billingClassCallout = hasVariants
+    ? null
+    : (() => {
+        const bc = result.billingClass?.toLowerCase();
+        if (bc === "facility")
+          return "Facility fee only — professional fees may apply separately";
+        if (bc === "professional")
+          return "Professional fee only — facility charges may apply separately";
+        return null;
+      })();
 
   const priceColor =
     displayPrice.type === "cash"
@@ -366,6 +382,87 @@ export function ResultCard({
                   >
                     <InfoCircleIcon className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     <span className="text-xs">{billingClassCallout}</span>
+                  </div>
+                )}
+
+                {/* Price variants breakdown */}
+                {hasVariants && variants && (
+                  <div
+                    className="mt-3 p-3 rounded-lg border"
+                    style={{
+                      background: "var(--cc-surface-alt)",
+                      borderColor: "var(--cc-border)",
+                    }}
+                  >
+                    <p
+                      className="text-xs font-semibold"
+                      style={{ color: "var(--cc-text-secondary)" }}
+                    >
+                      Price variants at this facility
+                    </p>
+                    <div className="mt-2 space-y-1">
+                      {variants.map((v) => {
+                        const vp = getDisplayPrice(v as ChargeResult);
+                        const isPrimary = v.id === result.id;
+                        return (
+                          <div
+                            key={v.id}
+                            className="flex items-center gap-2 py-1 px-2 rounded"
+                            style={{
+                              borderLeft: isPrimary
+                                ? "2px solid var(--cc-primary)"
+                                : "2px solid transparent",
+                              background: isPrimary
+                                ? "var(--cc-primary-light)"
+                                : undefined,
+                            }}
+                          >
+                            <span
+                              className="text-[11px] font-medium px-1.5 py-0.5 rounded shrink-0"
+                              style={{
+                                background: "var(--cc-surface)",
+                                color: "var(--cc-text-secondary)",
+                                border: "1px solid var(--cc-border)",
+                              }}
+                            >
+                              {billingClassLabel(v.billingClass)}
+                            </span>
+                            <span
+                              className="text-xs truncate min-w-0"
+                              style={{
+                                color: isPrimary
+                                  ? "var(--cc-text)"
+                                  : "var(--cc-text-tertiary)",
+                              }}
+                              title={v.description}
+                            >
+                              {v.description || "—"}
+                            </span>
+                            <span className="flex-1" />
+                            <span
+                              className="text-xs font-semibold shrink-0"
+                              style={{
+                                color: isPrimary
+                                  ? "var(--cc-primary)"
+                                  : "var(--cc-text-secondary)",
+                              }}
+                            >
+                              {formatDisplayPrice(vp)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div
+                      className="flex items-start gap-1 mt-2"
+                      style={{ color: "var(--cc-text-tertiary)" }}
+                    >
+                      <InfoCircleIcon className="w-3 h-3 shrink-0 mt-0.5" />
+                      <span className="text-[11px]">
+                        Different billing contexts for the same procedure. The
+                        highlighted row is shown above.
+                      </span>
+                    </div>
                   </div>
                 )}
 
