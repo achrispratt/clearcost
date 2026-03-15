@@ -240,6 +240,31 @@ create table if not exists translation_cache (
 create index if not exists idx_translation_cache_updated_at on translation_cache (updated_at desc);
 
 -- ============================================================================
+-- MEDICARE BENCHMARKS (CMS Physician Fee Schedule national rates)
+-- One row per billing code. Used as anchor pricing — "this hospital charges 3.2× Medicare."
+-- ~800-1,000 rows (subset of our 1,002 curated codes that appear in the PFS).
+-- MS-DRG codes use a different CMS dataset (IPPS) and are not included here.
+-- ============================================================================
+create table if not exists medicare_benchmarks (
+  code              text primary key,
+  description       text,
+  facility_rate     numeric(10, 2),
+  non_facility_rate numeric(10, 2),
+  conversion_factor numeric(8, 4),
+  pfs_year          smallint not null,
+  status_code       text,
+  created_at        timestamptz default now(),
+  updated_at        timestamptz default now()
+);
+
+create index if not exists idx_medicare_benchmarks_code
+  on medicare_benchmarks (code);
+
+alter table medicare_benchmarks enable row level security;
+create policy "Anyone can view medicare benchmarks"
+  on medicare_benchmarks for select using (true);
+
+-- ============================================================================
 -- RPC: search_charges_nearby()
 -- Main search function. Finds charges near a geographic point by billing code.
 -- Supports CPT, HCPCS, and MS-DRG code types.

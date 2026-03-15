@@ -149,6 +149,20 @@ export interface ChargeResult {
   estimatedTotalMedian?: number;
   estimatedTotalMin?: number;
   estimatedTotalMax?: number;
+
+  // Medicare benchmark (CMS Physician Fee Schedule)
+  medicareFacilityRate?: number;
+  medicareMultiplier?: number;
+  medicareMultiplierSource?: "cash" | "insured" | "gross";
+}
+
+// -- Medicare Benchmark (CMS Physician Fee Schedule national rate) --
+export interface MedicareBenchmark {
+  code: string;
+  description?: string;
+  facilityRate?: number;
+  nonFacilityRate?: number;
+  pfsYear: number;
 }
 
 // -- Payer Rate (insurance-specific negotiated rate for a charge) --

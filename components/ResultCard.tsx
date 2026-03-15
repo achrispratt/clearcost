@@ -374,7 +374,56 @@ export function ResultCard({
                   className="mt-3 pt-3 flex items-center justify-between flex-wrap gap-2"
                   style={{ borderTop: "1px solid var(--cc-border)" }}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {result.medicareFacilityRate != null && (
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="text-xs"
+                          style={{ color: "var(--cc-text-tertiary)" }}
+                        >
+                          Medicare:
+                        </span>
+                        <span
+                          className="text-sm font-semibold"
+                          style={{ color: "var(--cc-success)" }}
+                        >
+                          {formatPrice(result.medicareFacilityRate)}
+                        </span>
+                        <Tooltip
+                          text="What Medicare pays for this service (CMS Physician Fee Schedule, national rate). Hospitals often charge significantly more."
+                          className="inline-block cursor-help"
+                        >
+                          <InfoCircleIcon
+                            className="w-3 h-3"
+                            style={{ color: "var(--cc-text-tertiary)" }}
+                          />
+                        </Tooltip>
+                        {result.medicareMultiplier != null &&
+                          result.medicareMultiplier > 1 && (
+                            <span
+                              className="text-[11px] font-medium px-1.5 py-0.5 rounded-md"
+                              style={{
+                                background:
+                                  result.medicareMultiplier >= 5
+                                    ? "var(--cc-error-light)"
+                                    : result.medicareMultiplier >= 3
+                                      ? "var(--cc-accent-light)"
+                                      : "var(--cc-surface-alt)",
+                                color:
+                                  result.medicareMultiplier >= 5
+                                    ? "var(--cc-error)"
+                                    : result.medicareMultiplier >= 3
+                                      ? "var(--cc-accent)"
+                                      : "var(--cc-text-secondary)",
+                              }}
+                            >
+                              {result.medicareMultiplier}× Medicare
+                              {result.medicareMultiplierSource === "gross" &&
+                                " (list price)"}
+                            </span>
+                          )}
+                      </div>
+                    )}
                     {displayPrice.type !== "insured" &&
                       result.avgNegotiatedRate != null && (
                         <div className="flex items-center gap-1.5">

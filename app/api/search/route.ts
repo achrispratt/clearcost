@@ -16,8 +16,15 @@ import {
   setCachedTranslation,
 } from "@/lib/cpt/cache";
 import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
+import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
+import { getDisplayPrice } from "@/lib/format";
 import { handleApiError } from "@/lib/api-helpers";
-import type { BillingCodeType, CPTCode, PricingPlan } from "@/types";
+import type {
+  BillingCodeType,
+  ChargeResult,
+  CPTCode,
+  PricingPlan,
+} from "@/types";
 
 const SPARSE_RESULT_THRESHOLD = 3;
 const EXPANDED_RADIUS_MILES = 250;
@@ -147,6 +154,39 @@ function maybeLogSearchDiagnostics({
   });
 }
 
+async function enrichWithMedicareBenchmarks(
+  results: ChargeResult[]
+): Promise<ChargeResult[]> {
+  const codes = results.flatMap(
+    (r) => [r.cpt, r.hcpcs].filter(Boolean) as string[]
+  );
+  if (codes.length === 0) return results;
+
+  const benchmarks = await lookupMedicareBenchmarks(codes);
+  if (benchmarks.size === 0) return results;
+
+  return results.map((result) => {
+    const code = result.cpt || result.hcpcs;
+    if (!code) return result;
+    const bm = benchmarks.get(code.trim().toUpperCase());
+    if (!bm?.facilityRate) return result;
+
+    const dp = getDisplayPrice(result);
+    const priceSource = dp.type === "unavailable" ? undefined : dp.type;
+    const multiplier =
+      dp.amount && bm.facilityRate > 0
+        ? Math.round((dp.amount / bm.facilityRate) * 10) / 10
+        : undefined;
+
+    return {
+      ...result,
+      medicareFacilityRate: bm.facilityRate,
+      medicareMultiplier: multiplier,
+      medicareMultiplierSource: priceSource,
+    };
+  });
+}
+
 export async function POST(request: NextRequest) {
   const traceId = randomUUID();
   const startedAt = Date.now();
@@ -228,13 +268,14 @@ export async function POST(request: NextRequest) {
         elapsedMs: Date.now() - startedAt,
       });
 
+      const enriched = await enrichWithMedicareBenchmarks(results);
       return respond({
         query: queryText,
         interpretation: providedInterpretation || "",
         pricingPlan,
         cptCodes: [],
-        results,
-        totalResults: results.length,
+        results: enriched,
+        totalResults: enriched.length,
       });
     }
 
@@ -276,13 +317,14 @@ export async function POST(request: NextRequest) {
         elapsedMs: Date.now() - startedAt,
       });
 
+      const enriched = await enrichWithMedicareBenchmarks(results);
       return respond({
         query: queryText,
         interpretation: providedInterpretation || "",
         pricingPlan,
         cptCodes: [],
-        results,
-        totalResults: results.length,
+        results: enriched,
+        totalResults: enriched.length,
       });
     }
 
@@ -350,13 +392,14 @@ export async function POST(request: NextRequest) {
       elapsedMs: Date.now() - startedAt,
     });
 
+    const enriched = await enrichWithMedicareBenchmarks(results);
     return respond({
       query: queryText,
       interpretation: translated.interpretation,
       pricingPlan,
       cptCodes: translated.codes,
-      results,
-      totalResults: results.length,
+      results: enriched,
+      totalResults: enriched.length,
     });
   } catch (error) {
     const response = handleApiError(error, "POST /api/search");
