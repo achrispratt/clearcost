@@ -48,16 +48,6 @@ export function AuthButton() {
     return () => document.removeEventListener("click", handleClick);
   }, [open]);
 
-  const handleSignIn = async () => {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  };
-
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -126,12 +116,12 @@ export function AuthButton() {
   }
 
   return (
-    <button
-      onClick={handleSignIn}
+    <Link
+      href="/auth/signin"
       className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-white transition-colors hover:bg-[var(--cc-primary-hover)]"
       style={{ background: "var(--cc-primary)" }}
     >
       Sign In
-    </button>
+    </Link>
   );
 }
