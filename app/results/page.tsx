@@ -46,7 +46,8 @@ function ResultsContent() {
     handleRadiusChange(nextRadius);
   }, [radius, handleRadiusChange]);
 
-  const { selectedResultId, handleMarkerClick } = useResultSelection();
+  const { selectedProviderId, handleMarkerClick, handleCardSelect } =
+    useResultSelection();
 
   const codeDescriptionMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -192,7 +193,8 @@ function ResultsContent() {
             <ResultsList
               results={filteredResults}
               loading={loading}
-              selectedResultId={selectedResultId}
+              selectedProviderId={selectedProviderId}
+              onCardSelect={handleCardSelect}
               codeDescriptionMap={codeDescriptionMap}
               locationDisplay={locationDisplay}
               onExpandRadius={radius < 250 ? handleExpandRadius : undefined}
@@ -210,7 +212,7 @@ function ResultsContent() {
               results={filteredResults}
               center={{ lat, lng }}
               onMarkerClick={handleMarkerClick}
-              selectedResultId={selectedResultId}
+              selectedProviderId={selectedProviderId}
               className="h-full"
             />
           </div>
