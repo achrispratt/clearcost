@@ -137,7 +137,7 @@ export function ResultCard({
             aria-expanded={isExpanded}
             onClick={() => {
               onToggleExpand?.();
-              onSelect?.();
+              if (!isExpanded) onSelect?.();
             }}
           >
             {/* Rank badge */}

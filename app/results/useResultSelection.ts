@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 export function useResultSelection() {
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null
   );
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
+    };
+  }, []);
 
   const resetTimer = useCallback(() => {
     if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
