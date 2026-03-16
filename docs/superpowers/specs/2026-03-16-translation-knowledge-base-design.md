@@ -69,6 +69,24 @@ One row per step in a conversation tree. The `path_hash` encodes the canonical q
 
 **Path hash construction:** `SHA-256(canonical_query + "|" + answers.join("|"))`. Root node: `SHA-256("knee mri|")`. After first answer: `SHA-256("knee mri|right")`. Pipe delimiter chosen because it doesn't appear in natural language queries.
 
+**Answer path segment mapping from `ClarificationTurn`:**
+
+Each `ClarificationTurn` has `{ questionId, selectedOption, freeText }`. The path segment is derived as:
+
+- If `selectedOption` is a label (not `"other"`): use `selectedOption.toLowerCase().trim()` as the segment.
+- If `selectedOption` is `"other"` with `freeText`: **do not write to the KB**. Free-text answers are too unique to cache — the Claude response for this step is returned but not persisted. The next user who reaches the same question node will see the same options and can still get a KB hit if they pick a structured option.
+- `questionId` is not included in the path hash — the path is defined by the sequence of answers, not the sequence of question IDs (which are implementation details and may change across versions).
+
+**Root node ambiguity (high vs low confidence):**
+
+The same canonical query can resolve to different node types at depth 0. For example, "colonoscopy" might get high confidence (resolution node) while "knee MRI" gets low confidence (question node). This is correct — different queries have different trees.
+
+The potential issue is when the _same_ query gets different confidence levels across Claude calls (Claude is not perfectly deterministic). Resolution: **first-write-wins**. The first Claude response for a canonical query at depth 0 establishes the node type. Subsequent Claude calls for the same query (via different synonym phrasings in Scenario 2) do not overwrite. If the first write was wrong, admin override corrects it. The `version` field tracks corrections.
+
+**Query normalization function:**
+
+Reuse the existing `normalizeQueryForCache()` from `lib/cpt/cache.ts` (moved to `lib/kb/path-hash.ts`): `query.trim().toLowerCase().replace(/\s+/g, " ")`. This determines hash identity — `"MRI of my Knee"` and `"mri of my knee"` produce the same hash.
+
 ### kb_events — Raw interaction log (30-day TTL)
 
 Lightweight event stream recording user behavior after KB-served results.
@@ -87,11 +105,13 @@ Lightweight event stream recording user behavior after KB-served results.
 
 **Event definitions:**
 
-- `walk` — A KB node was served to a user (logged on every node hit).
-- `result_click` — User clicked a provider card on the results page.
-- `save` — User saved the search.
-- `bounce` — User returned to search from results without clicking a provider (navigated back or started a new search within 30 seconds).
-- `skip` — User skipped clarification (clicked "Show results anyway").
+- `walk` — A KB node was served to a user. `path_hash` points to the **question or resolution node** that was served. Logged server-side in `/api/clarify` on every KB hit.
+- `result_click` — User clicked a provider card on the results page. `path_hash` points to the **resolution node** that produced the results.
+- `save` — User saved the search. `path_hash` points to the **resolution node**.
+- `bounce` — User navigated away from results without clicking a provider. Best-effort detection: logged when the user navigates back within the app (via `popstate` or starting a new search). Tab close / browser exit cannot reliably fire events and is not tracked. `path_hash` points to the **resolution node**.
+- `skip` — User skipped clarification (clicked "Show results anyway"). `path_hash` points to the **last question node** the user saw before skipping.
+
+**Event path_hash rule of thumb:** `walk` and `skip` reference the node the user was on. `result_click`, `save`, and `bounce` reference the resolution node that produced the displayed results.
 
 ### kb_path_stats — Permanent monthly summaries
 
@@ -127,14 +147,14 @@ Aggregated from `kb_events` before raw data is deleted. One row per path per mon
 ### Scenario 2: New phrasing, known tree (synonym miss, node hit)
 
 1. Synonym lookup → **MISS** (new phrasing).
-2. Call Claude (`assessQuery` or `clarifyQuery`) as today.
-3. **Synonym clustering check:** Include in the Claude call (or as a lightweight follow-up): "Is this query semantically equivalent to any of these canonical forms?" Pass a list of existing canonical queries.
-4. **Match found:** Write new `kb_synonyms` entry mapping this phrasing to the existing canonical. Serve from existing KB tree from this point forward.
+2. Call Claude (`assessQuery`) as today — this is required anyway to handle the query.
+3. **Synonym clustering check (combined into the assessQuery call):** The `assessQuery` system prompt is extended with a small addition: "Here are known canonical queries: [list]. If the user's query is semantically equivalent to one, return `canonicalMatch: "knee mri"` in your response." This adds no extra API call — it's a few extra lines in the existing prompt.
+4. **Match found:** Write new `kb_synonyms` entry mapping this phrasing to the matched canonical. Serve from existing KB tree from this point forward.
 5. **No match:** This is actually Scenario 3 (novel query).
 
-**Result:** 1 Claude API call (classification). All future identical phrasings → Scenario 1.
+**Result:** 1 Claude API call (same call that would happen anyway, with synonym check piggybacked). All future identical phrasings → Scenario 1.
 
-**Synonym candidate list:** Query `SELECT DISTINCT canonical_query FROM kb_synonyms` — cached in-memory with a short TTL (5 minutes) to avoid hitting the DB on every miss. At 5,000 unique canonical queries, this is ~50KB of strings.
+**Synonym candidate list:** Query `SELECT DISTINCT canonical_query FROM kb_synonyms` — cached in-memory with a short TTL (5 minutes) to avoid hitting the DB on every miss. At 5,000 unique canonical queries, this is ~50KB of strings added to the prompt. If the list grows beyond ~10,000 entries (prompt becomes unwieldy), switch to passing only the top 2,000 by hit count + any entries whose canonical_query shares a keyword with the incoming query. This is a Stage 2+ optimization — at launch the list will be small.
 
 ### Scenario 3: Completely novel query (full KB miss)
 
@@ -172,13 +192,13 @@ This means if a user abandons mid-clarification, the partial tree is still saved
 
 ### Modified files
 
-| File                              | Change                                                                                                                     |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `app/api/clarify/route.ts`        | KB lookup before Claude call. Write-back on miss. Primary integration point.                                               |
-| `app/api/cpt/route.ts`            | KB lookup for single-shot high-confidence queries.                                                                         |
-| `app/api/search/route.ts`         | Pass `path_hash` + `session_id` through to response for client-side event logging. Remove old cache logic (lines 356-403). |
-| `app/results/useResultsSearch.ts` | Emit `result_click`, `save`, `bounce` events to `POST /api/kb/events`.                                                     |
-| `types/index.ts`                  | Add KB-related types (KBNode, KBSynonym, KBEvent, etc.).                                                                   |
+| File                              | Change                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/api/clarify/route.ts`        | KB lookup before Claude call. Write-back on miss. Primary integration point.                                                                                                                                                                                                                                                                                               |
+| `app/api/cpt/route.ts`            | Add KB lookup. On hit, return cached `TranslationResponse`. On miss, call `translateQueryToCPT()` as today, then write result to KB as a depth-0 resolution node. The payload is normalized to `TranslationResponse` shape (adding `confidence: "high"`, `conversationComplete: true`) so both paths write the same format.                                                |
+| `app/api/search/route.ts`         | Pass `path_hash` + `session_id` through to response for client-side event logging. Remove old cache logic (lines 356-403). Add KB lookup to the legacy standard path (no direct codes) — same pattern as `/api/clarify`: check KB first, fall through to `translateQueryToCPT()` on miss, write back on success. This ensures the legacy path still benefits from caching. |
+| `app/results/useResultsSearch.ts` | Emit `result_click`, `save`, `bounce` events to `POST /api/kb/events`.                                                                                                                                                                                                                                                                                                     |
+| `types/index.ts`                  | Add KB-related types (KBNode, KBSynonym, KBEvent, etc.).                                                                                                                                                                                                                                                                                                                   |
 
 ### Deprecated
 
@@ -197,15 +217,23 @@ Each existing `translation_cache` row becomes:
 
 One-time migration script. Existing cache data is flat (query → codes, no conversation trees), so each row maps to exactly one synonym + one resolution node.
 
+**Migration details:**
+
+- `canonical_query` for migrated rows: use the existing `normalized_query` value. These are already lowercased/trimmed by the same normalization function. Since these were exact-match cached (no synonym clustering was done), each migrated entry is self-referencing — the normalized query IS the canonical form.
+- Migrated synonym entries bypass synonym clustering (no Claude call needed — they're already 1:1 mappings).
+- The migration script also drops the three existing RLS policies on `translation_cache` (`select`, `insert`, `update`) before dropping the table.
+
 ### Session ID for event tracking
 
 The `/api/search` response includes a `kb_session_id` (random UUID generated per search request) and `kb_path_hash` (if the result came from a KB-resolved path). The client stores these and passes them back when logging events.
 
 The session ID is:
 
-- Generated server-side in `/api/search` or `/api/clarify`.
+- Generated server-side in `/api/clarify` (on the first call of a session) and carried through to `/api/search`.
 - Anonymous — no link to user identity or Supabase auth.
 - Short-lived — only meaningful for grouping events within one search session.
+
+**Passing KB metadata to the results page:** The guided search flow navigates to `/results` with URL params (codes, interpretation, etc.). Two new params are added: `kbSessionId` and `kbPathHash`. The results page reads these and passes them to event logging calls. If the search didn't go through the KB (direct URL entry, bookmark), these params are absent and no events are logged.
 
 ## Growth Path: Confidence-Based Scoring (Phase B)
 
@@ -302,5 +330,21 @@ Trees grow organically (only paths users walk are stored), not combinatorially. 
 - **The clarification UX** — Users still see the same questions, answer them the same way. The experience is identical, just faster.
 - **The results page** — No changes to how results are displayed or filtered.
 - **The `/api/search` price lookup** — Still does the same PostGIS charge lookup. KB only affects how codes are resolved, not how prices are found.
-- **Auth/RLS on saved_searches** — Unrelated. KB tables have public read, service-role write.
+- **Auth/RLS on saved_searches** — Unrelated.
+
+## RLS Policies
+
+KB tables need permissive policies since anonymous (unauthenticated) users can search and their interactions seed the KB. The server Supabase client (`lib/supabase/server.ts`) may be unauthenticated for anonymous visitors.
+
+| Table           | SELECT                   | INSERT                                      | UPDATE                                                   |
+| --------------- | ------------------------ | ------------------------------------------- | -------------------------------------------------------- |
+| `kb_synonyms`   | Public (anyone can read) | Public (anonymous searches create synonyms) | Public (not expected, but safe — rows are append-mostly) |
+| `kb_nodes`      | Public                   | Public                                      | Public (hit_count bumps, version updates)                |
+| `kb_events`     | Public                   | Public                                      | None needed (events are write-once)                      |
+| `kb_path_stats` | Public                   | Service-role only (cron job writes)         | Service-role only (cron job upserts)                     |
+
+`kb_path_stats` is the only table restricted to service-role writes — the monthly roll-up cron runs as a Supabase database function (not an API route), so it uses the service role implicitly.
+
+For `kb_synonyms`, `kb_nodes`, and `kb_events`: the pattern matches the existing `translation_cache` policies (permissive SELECT/INSERT/UPDATE for all). These tables contain no user-identifiable data.
+
 - **The client-side `responseCache` useRef** — Still useful for same-session back/forward navigation within the guided search. KB handles cross-session persistence.
