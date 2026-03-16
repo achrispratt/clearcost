@@ -57,21 +57,22 @@ create index if not exists idx_kb_events_path_hash  on kb_events (path_hash);
 -- after enabling the pg_cron extension:
 --
 --   select cron.schedule(
---     'kb-stats-rollup-hourly',
---     '0 * * * *',
+--     'kb-stats-rollup-monthly',
+--     '0 4 1 * *',
 --     $$
 --       insert into kb_path_stats (path_hash, period, walk_count, click_count, save_count, bounce_count, skip_count)
 --       select
 --         path_hash,
---         date_trunc('hour', created_at) as period,
+--         date_trunc('month', created_at)::date as period,
 --         count(*) filter (where event_type = 'walk')         as walk_count,
 --         count(*) filter (where event_type = 'result_click') as click_count,
 --         count(*) filter (where event_type = 'save')         as save_count,
 --         count(*) filter (where event_type = 'bounce')       as bounce_count,
 --         count(*) filter (where event_type = 'skip')         as skip_count
 --       from kb_events
---       where created_at >= now() - interval '2 hours'
---       group by path_hash, date_trunc('hour', created_at)
+--       where created_at >= date_trunc('month', NOW() - INTERVAL '1 month')
+--         and created_at < date_trunc('month', NOW())
+--       group by path_hash, date_trunc('month', created_at)::date
 --       on conflict (path_hash, period) do update set
 --         walk_count   = excluded.walk_count,
 --         click_count  = excluded.click_count,
@@ -81,10 +82,13 @@ create index if not exists idx_kb_events_path_hash  on kb_events (path_hash);
 --     $$
 --   );
 --
+-- Daily: delete kb_events older than 30 days
+-- select cron.schedule('kb-events-ttl-daily', '0 3 * * *', $$DELETE FROM kb_events WHERE created_at < NOW() - INTERVAL '30 days';$$);
+--
 -- ============================================================================
 create table if not exists kb_path_stats (
   path_hash    text not null,
-  period       timestamptz not null,        -- truncated to hour by rollup job
+  period       date not null,               -- truncated to month by rollup job
   walk_count   integer not null default 0,
   click_count  integer not null default 0,
   save_count   integer not null default 0,

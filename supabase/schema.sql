@@ -295,10 +295,42 @@ create index if not exists idx_kb_events_path_hash  on kb_events (path_hash);
 -- ============================================================================
 -- KB: PATH STATS (materialized aggregates per path × calendar period)
 -- Populated by pg_cron rollup job — see migration for setup instructions.
+--
+-- Rollup job (run in Supabase SQL Editor after enabling pg_cron):
+--
+--   select cron.schedule(
+--     'kb-stats-rollup-monthly',
+--     '0 4 1 * *',
+--     $$
+--       insert into kb_path_stats (path_hash, period, walk_count, click_count, save_count, bounce_count, skip_count)
+--       select
+--         path_hash,
+--         date_trunc('month', created_at)::date as period,
+--         count(*) filter (where event_type = 'walk')         as walk_count,
+--         count(*) filter (where event_type = 'result_click') as click_count,
+--         count(*) filter (where event_type = 'save')         as save_count,
+--         count(*) filter (where event_type = 'bounce')       as bounce_count,
+--         count(*) filter (where event_type = 'skip')         as skip_count
+--       from kb_events
+--       where created_at >= date_trunc('month', NOW() - INTERVAL '1 month')
+--         and created_at < date_trunc('month', NOW())
+--       group by path_hash, date_trunc('month', created_at)::date
+--       on conflict (path_hash, period) do update set
+--         walk_count   = excluded.walk_count,
+--         click_count  = excluded.click_count,
+--         save_count   = excluded.save_count,
+--         bounce_count = excluded.bounce_count,
+--         skip_count   = excluded.skip_count;
+--     $$
+--   );
+--
+-- Daily: delete kb_events older than 30 days
+-- select cron.schedule('kb-events-ttl-daily', '0 3 * * *', $$DELETE FROM kb_events WHERE created_at < NOW() - INTERVAL '30 days';$$);
+--
 -- ============================================================================
 create table if not exists kb_path_stats (
   path_hash    text not null,
-  period       timestamptz not null,
+  period       date not null,
   walk_count   integer not null default 0,
   click_count  integer not null default 0,
   save_count   integer not null default 0,

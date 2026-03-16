@@ -32,6 +32,8 @@ function ResultsContent() {
     handleFilteredResults,
     radius,
     handleRadiusChange,
+    logResultClick,
+    logSaveSearch,
   } = useResultsSearch();
 
   const handleExpandRadius = useCallback(() => {
@@ -164,6 +166,7 @@ function ResultsContent() {
                 cptCodes={cptCodes.map((c) => c.code)}
                 lat={lat}
                 lng={lng}
+                onSave={logSaveSearch}
               />
             )}
           </div>
@@ -195,6 +198,7 @@ function ResultsContent() {
               loading={loading}
               selectedProviderId={selectedProviderId}
               onCardSelect={handleCardSelect}
+              onResultClick={logResultClick}
               codeDescriptionMap={codeDescriptionMap}
               locationDisplay={locationDisplay}
               onExpandRadius={radius < 250 ? handleExpandRadius : undefined}
