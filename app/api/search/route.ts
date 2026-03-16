@@ -10,11 +10,9 @@ import {
   buildPricingPlan,
   normalizePricingPlanInput,
 } from "@/lib/cpt/pricing-plan";
-import {
-  getCachedTranslation,
-  getTranslationCacheKey,
-  setCachedTranslation,
-} from "@/lib/cpt/cache";
+import { kbLookup } from "@/lib/kb/lookup";
+import { writeSynonym, writeNode } from "@/lib/kb/write-back";
+import { normalizeQuery, computeQueryHash } from "@/lib/kb/path-hash";
 import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
 import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
@@ -25,6 +23,7 @@ import type {
   BillingCodeType,
   ChargeResult,
   CPTCode,
+  KBResolutionPayload,
   PricingPlan,
 } from "@/types";
 
@@ -277,7 +276,7 @@ export async function POST(request: NextRequest) {
       maybeLogSearchDiagnostics({
         traceId,
         queryHash: queryText
-          ? getTranslationCacheKey(queryText).queryHash
+          ? computeQueryHash(queryText).queryHash
           : undefined,
         cacheStatus: "skip",
         pricingPlan,
@@ -327,7 +326,7 @@ export async function POST(request: NextRequest) {
       maybeLogSearchDiagnostics({
         traceId,
         queryHash: queryText
-          ? getTranslationCacheKey(queryText).queryHash
+          ? computeQueryHash(queryText).queryHash
           : undefined,
         cacheStatus: "skip",
         pricingPlan,
@@ -353,12 +352,28 @@ export async function POST(request: NextRequest) {
       return respond({ error: "Query or codes are required" }, 400);
     }
 
-    const cacheLookup = await getCachedTranslation(queryText);
-    const cacheStatus: CacheStatus = cacheLookup.hit ? "hit" : "miss";
-    const translated =
-      cacheLookup.hit && cacheLookup.payload
-        ? cacheLookup.payload
-        : await translateQueryToCPT(queryText);
+    const kbResult = await kbLookup(queryText, []);
+    const { queryHash } = computeQueryHash(queryText);
+    const cacheStatus: CacheStatus = kbResult.hit ? "hit" : "miss";
+
+    let translated;
+    if (kbResult.hit && kbResult.node) {
+      const payload = kbResult.node.payload as KBResolutionPayload;
+      if (payload.type === "resolution") {
+        translated = {
+          codes: payload.codes,
+          interpretation: payload.interpretation,
+          searchTerms: payload.searchTerms,
+          queryType: payload.queryType,
+          pricingPlan: payload.pricingPlan,
+          laterality: payload.laterality,
+          bodySite: payload.bodySite,
+        };
+      }
+    }
+    if (!translated) {
+      translated = await translateQueryToCPT(queryText);
+    }
 
     const pricingPlan = buildPricingPlan({
       query: queryText,
@@ -390,21 +405,35 @@ export async function POST(request: NextRequest) {
       diagnostics: lookupDiagnostics,
     });
 
-    if (!cacheLookup.hit && results.length > 0) {
-      await setCachedTranslation(queryText, {
-        codes: translated.codes,
-        interpretation: translated.interpretation,
-        searchTerms: translated.searchTerms,
-        queryType: translated.queryType,
-        pricingPlan: translated.pricingPlan,
-        laterality: translated.laterality,
-        bodySite: translated.bodySite,
-      });
+    if (!kbResult.hit && results.length > 0) {
+      const canonicalQuery =
+        kbResult.canonical_query || normalizeQuery(queryText);
+      writeSynonym(queryText, canonicalQuery).catch((err) =>
+        console.error("KB synonym write failed:", err)
+      );
+      writeNode({
+        canonicalQuery,
+        answerSegments: [],
+        depth: 0,
+        nodeType: "resolution",
+        payload: {
+          type: "resolution",
+          codes: translated.codes,
+          interpretation: translated.interpretation,
+          searchTerms: translated.searchTerms,
+          queryType: translated.queryType,
+          pricingPlan: translated.pricingPlan,
+          laterality: translated.laterality,
+          bodySite: translated.bodySite,
+          confidence: "high",
+          conversationComplete: true,
+        },
+      }).catch((err) => console.error("KB node write failed:", err));
     }
 
     maybeLogSearchDiagnostics({
       traceId,
-      queryHash: cacheLookup.queryHash,
+      queryHash,
       cacheStatus,
       pricingPlan,
       lookupDiagnostics,
