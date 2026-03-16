@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, DM_Sans } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           <main>{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>
