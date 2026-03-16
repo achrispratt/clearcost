@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   computeQueryHash,
-  normalizeQuery,
   buildPathHashFromSegments,
   turnToSegment,
 } from "./path-hash";
