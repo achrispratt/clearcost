@@ -133,48 +133,28 @@ Based on findings from 1.1-1.3:
 3. **Non-redundant** — each surface says something different; no copy-paste of the same disclaimer everywhere
 4. **Progressive disclosure** — brief in-app notes link to comprehensive legal pages for users who want full detail
 
-### 2.1 — Global Footer Component
+### 2.1 — Footer Enhancement (Existing Component)
 
-**New component:** `components/Footer.tsx`
-**Location:** Added to root layout (`app/layout.tsx`), appears on every page below `<main>`
+**File:** `components/Footer.tsx` (already exists, already wired into `app/layout.tsx`)
+**Change:** Add legal page links and a "Full disclaimers" link to the existing Footer component.
 
-**Content:**
+**Current state:** The Footer already has a three-column layout (Brand, Navigate, About the Data) and a bottom bar that already contains a medical disclaimer: _"ClearCost is a price transparency tool, not a medical device. It does not provide medical advice, diagnosis, or treatment recommendations."_
 
-- Links: Terms of Service · Privacy Policy · Disclaimers · About
-- Copyright: "(c) 2026 ClearCost. Not a medical device."
-- One-liner: "ClearCost helps you compare hospital prices. It does not provide medical advice, diagnosis, or treatment recommendations."
+**Modifications:**
 
-**Design:**
+1. **Add a "Legal" column** (or extend the Navigate column) with links to:
+   - Terms of Service (`/legal/terms`)
+   - Privacy Policy (`/legal/privacy`)
+   - Disclaimers (`/legal/disclaimers`)
+2. **Add a "Full disclaimers" link** to the bottom bar text, pointing to `/legal/disclaimers`
+3. **Review bottom bar text** — adjust wording based on research findings if needed, but the existing language is already strong
 
-- Dark background (#1a1a1a), light text (#999)
-- Links in a horizontal row, centered
-- Small text (11-13px)
-- Replaces/supplements ad-hoc footers on individual pages
-
-**Architecture consideration:** The homepage currently has its own inline footer with data attribution. The global footer sits below it. They serve different purposes — the page-level footer is about data sources; the global footer is about legal identity.
-
-### 2.2 — Homepage Footer Enhancement
-
-**File:** `app/page.tsx` (existing footer section)
-**Change:** Add one line to the existing data attribution footer
-
-**Current:**
-
-> Data sourced from hospital Machine Readable Files (MRFs) as required by CMS. Prices shown are self-pay / cash rates and may not reflect your final cost.
-
-**Add below:**
-
-> ClearCost is a price transparency tool — it does not provide medical advice, diagnosis, or treatment recommendations. [Full disclaimers](/legal/disclaimers)
-
-**Design:**
-
-- New text in teal (#0F766E) with slightly bolder weight (500) to visually distinguish from the data attribution above
-- "Full disclaimers" is a link to `/legal/disclaimers`
+**Design:** Maintain the existing warm aesthetic (`--cc-bg` background, `--cc-text-secondary` text). No dark footer — stay consistent with the editorial design language.
 
 ### 2.3 — Guided Search Info Banner
 
 **File:** `app/guided-search/page.tsx`
-**Location:** Above the breadcrumb trail, below the compact search bar. Appears once at the start of clarification, persists throughout the Q&A flow.
+**Location:** Above the breadcrumb trail, below the compact search bar. Renders inside the `phase === "clarifying"` block only (not during loading or error phases).
 
 **Content:**
 
@@ -190,7 +170,7 @@ Based on findings from 1.1-1.3:
 
 ### 2.4 — Guided Search Existing Disclaimer (Refine)
 
-**File:** `app/guided-search/page.tsx` (lines 136-142)
+**File:** `app/guided-search/page.tsx` (inside the `phase === "clarifying"` block)
 **Change:** Refine language based on research findings
 
 **Current:**
@@ -217,21 +197,13 @@ Based on findings from 1.1-1.3:
 - Light background (#fafaf8), 6px border-radius
 - 12px text, tertiary color (#999)
 - Only visible when the interpretation banner is expanded (progressive disclosure)
+- Only render when `cptCodes.length > 0` — the note references "these codes" so it should not appear when no codes are displayed
 
-### 2.6 — Results Page Footer
+### 2.6 — Results Page Footer (Removed)
 
-**File:** `app/results/page.tsx`
-**Location:** Below the ResultsList/MapView, above the global footer
+~~Originally planned a results-specific footer, but the global `Footer` component (rendered via `app/layout.tsx`) already contains the medical disclaimer and data attribution text. Adding a second disclaimer block on this page would violate Design Principle #3 (non-redundant). The code accuracy note in the InterpretationBanner (Section 2.5) provides the results-specific contextual disclaimer.~~
 
-**Content:**
-
-> Prices sourced from hospital Machine Readable Files (MRFs) required by CMS. Cash/self-pay rates may not reflect your final cost. ClearCost is a price transparency tool — it does not provide medical advice, diagnosis, or treatment recommendations. [Full disclaimers](/legal/disclaimers)
-
-**Design:**
-
-- Border-top separator, centered text
-- 12px, tertiary color
-- "Full disclaimers" link in teal
+**Decision:** No results page footer. The global Footer handles it. The code accuracy note (Section 2.5) and the global Footer together provide sufficient coverage on the results page.
 
 ## Part 3: Legal Pages
 
@@ -255,7 +227,7 @@ app/
 **Design:**
 
 - Clean editorial layout matching ClearCost's warm aesthetic
-- Optional sidebar or top navigation linking between the three legal pages
+- Top navigation bar with pill-style links between the three legal pages (consistent with existing DaisyUI patterns — no sidebar, keeps layout simple)
 - "Last updated: [date]" below each page title
 - Table of contents at the top of each page (anchor links)
 - Max width ~700px for readability
@@ -315,15 +287,13 @@ All legal pages use:
 
 ```
 components/
-  Footer.tsx              — NEW: global footer (legal links + one-liner disclaimer)
+  Footer.tsx              — MODIFY: add legal page links + "Full disclaimers" link
 
 app/
-  layout.tsx              — MODIFY: add <Footer /> after <main>
-  page.tsx                — MODIFY: expand existing footer with medical disclaimer line
   guided-search/page.tsx  — MODIFY: add info banner + refine existing disclaimer
-  results/page.tsx        — MODIFY: add code accuracy note in InterpretationBanner + results footer
+  results/page.tsx        — MODIFY: add code accuracy note in InterpretationBanner expanded area
   legal/
-    layout.tsx            — NEW: shared legal page layout
+    layout.tsx            — NEW: shared legal page layout (top nav between pages)
     terms/page.tsx        — NEW: Terms of Service
     privacy/page.tsx      — NEW: Privacy Policy
     disclaimers/page.tsx  — NEW: Medical & Data Disclaimers
@@ -339,35 +309,32 @@ The only dynamic element is the "Last updated" date on legal pages, which can be
 
 1. **Research phase** — produce `docs/regulatory-research.md`
 2. **Finalize disclaimer language** — adjust draft language based on research findings
-3. **Create `Footer.tsx`** — global footer component
-4. **Add Footer to root layout** — `app/layout.tsx`
-5. **Expand homepage footer** — `app/page.tsx`
-6. **Add guided search info banner** — `app/guided-search/page.tsx`
-7. **Refine guided search disclaimer** — same file
-8. **Add results code accuracy note** — `app/results/page.tsx` (InterpretationBanner)
-9. **Add results footer** — `app/results/page.tsx`
-10. **Create legal layout** — `app/legal/layout.tsx`
-11. **Create Terms of Service** — `app/legal/terms/page.tsx`
-12. **Create Privacy Policy** — `app/legal/privacy/page.tsx`
-13. **Create Medical Disclaimers** — `app/legal/disclaimers/page.tsx`
-14. **Verify all pages render correctly** — visual QA
+3. **Create legal layout** — `app/legal/layout.tsx` (top nav between pages)
+4. **Create Terms of Service** — `app/legal/terms/page.tsx`
+5. **Create Privacy Policy** — `app/legal/privacy/page.tsx`
+6. **Create Medical Disclaimers** — `app/legal/disclaimers/page.tsx`
+7. **Update Footer** — `components/Footer.tsx` (add legal page links + "Full disclaimers" link)
+8. **Add guided search info banner** — `app/guided-search/page.tsx`
+9. **Refine guided search disclaimer** — same file
+10. **Add results code accuracy note** — `app/results/page.tsx` (InterpretationBanner expanded area)
+11. **Verify all pages render correctly** — visual QA with gstack browse
 
 ## Success Criteria
 
 - [ ] Research document covers FDA CDS, FTC, state laws, and 10+ competitor disclaimer audits
-- [ ] Global footer appears on all pages with links to legal pages
-- [ ] Homepage footer includes medical disclaimer language
+- [ ] Footer component includes links to all three legal pages and a "Full disclaimers" link
 - [ ] Guided search has contextual info banner explaining purpose of questions
-- [ ] Results page has code accuracy note in expanded interpretation and a footer disclaimer
+- [ ] Results page has code accuracy note in expanded interpretation banner (when codes are present)
 - [ ] All three legal pages are accessible, well-structured, and use ClearCost's design language
 - [ ] All disclaimer language is informed by research findings, not boilerplate
 - [ ] No consent modals or friction-adding patterns — disclaimers are subtle and warm
+- [ ] All legal page links from Footer are navigable (no 404s)
 - [ ] CI passes (lint, type check, build)
 
 ## Out of Scope
 
 - Cookie consent banner (separate issue, depends on analytics/tracking decisions)
-- About page (mentioned in global footer links but not part of this issue)
+- About page (not included in footer links for this issue)
 - Consent modal or checkbox before using guided search (rejected in design phase — too much friction)
 - International regulatory compliance (EU/UK — not needed for US-only MVP)
 
