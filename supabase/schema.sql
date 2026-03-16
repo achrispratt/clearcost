@@ -227,6 +227,7 @@ create index if not exists idx_saved_searches_user on saved_searches (user_id);
 
 -- ============================================================================
 -- TRANSLATION CACHE (query -> deterministic translation payload)
+-- DEPRECATED: replaced by kb_synonyms + kb_nodes. Kept for reference until migration is confirmed.
 -- ============================================================================
 create table if not exists translation_cache (
   query_hash text primary key,
@@ -238,6 +239,73 @@ create table if not exists translation_cache (
 );
 
 create index if not exists idx_translation_cache_updated_at on translation_cache (updated_at desc);
+
+-- ============================================================================
+-- KB: SYNONYMS (query normalization — many surface forms → one canonical query)
+-- ============================================================================
+create table if not exists kb_synonyms (
+  query_hash       text primary key,
+  normalized_query text not null,
+  canonical_query  text not null,
+  created_at       timestamptz default now()
+);
+
+create index if not exists idx_kb_synonyms_canonical on kb_synonyms (canonical_query);
+
+-- ============================================================================
+-- KB: NODES (one node per canonical_query + answer_path combination)
+-- node_type='question'   → AI responded with a clarifying question
+-- node_type='resolution' → AI resolved to billing codes (terminal node)
+-- ============================================================================
+create table if not exists kb_nodes (
+  path_hash       text primary key,
+  canonical_query text not null,
+  answer_path     text[] not null default '{}',
+  depth           integer not null default 0,
+  node_type       text not null,
+  payload         jsonb not null,
+  hit_count       integer not null default 0,
+  version         integer not null default 1,
+  source          text not null default 'claude',
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+  constraint chk_kb_nodes_node_type check (node_type in ('question', 'resolution')),
+  constraint chk_kb_nodes_source     check (source    in ('claude', 'admin', 'migrated'))
+);
+
+create index if not exists idx_kb_nodes_canonical on kb_nodes (canonical_query);
+
+-- ============================================================================
+-- KB: EVENTS (interaction telemetry per session × path)
+-- ============================================================================
+create table if not exists kb_events (
+  id         uuid primary key default gen_random_uuid(),
+  path_hash  text not null,
+  event_type text not null,
+  session_id text not null,
+  created_at timestamptz default now(),
+  constraint chk_kb_events_event_type check (
+    event_type in ('walk', 'result_click', 'save', 'bounce', 'skip')
+  )
+);
+
+create index if not exists idx_kb_events_created_at on kb_events (created_at desc);
+create index if not exists idx_kb_events_path_hash  on kb_events (path_hash);
+
+-- ============================================================================
+-- KB: PATH STATS (materialized aggregates per path × calendar period)
+-- Populated by pg_cron rollup job — see migration for setup instructions.
+-- ============================================================================
+create table if not exists kb_path_stats (
+  path_hash    text not null,
+  period       timestamptz not null,
+  walk_count   integer not null default 0,
+  click_count  integer not null default 0,
+  save_count   integer not null default 0,
+  bounce_count integer not null default 0,
+  skip_count   integer not null default 0,
+  constraint pk_kb_path_stats primary key (path_hash, period)
+);
 
 -- ============================================================================
 -- MEDICARE BENCHMARKS (CMS Physician Fee Schedule national rates)
@@ -640,6 +708,25 @@ create policy "Anyone can view payers" on payers for select using (true);
 create policy "Anyone can view translation cache" on translation_cache for select using (true);
 create policy "Anyone can insert translation cache" on translation_cache for insert with check (true);
 create policy "Anyone can update translation cache" on translation_cache for update using (true) with check (true);
+
+-- KB tables RLS
+alter table kb_synonyms   enable row level security;
+alter table kb_nodes      enable row level security;
+alter table kb_events     enable row level security;
+alter table kb_path_stats enable row level security;
+
+create policy "Anyone can view kb_synonyms"   on kb_synonyms for select using (true);
+create policy "Anyone can insert kb_synonyms" on kb_synonyms for insert with check (true);
+create policy "Anyone can update kb_synonyms" on kb_synonyms for update using (true) with check (true);
+
+create policy "Anyone can view kb_nodes"   on kb_nodes for select using (true);
+create policy "Anyone can insert kb_nodes" on kb_nodes for insert with check (true);
+create policy "Anyone can update kb_nodes" on kb_nodes for update using (true) with check (true);
+
+create policy "Anyone can view kb_events"   on kb_events for select using (true);
+create policy "Anyone can insert kb_events" on kb_events for insert with check (true);
+
+create policy "Anyone can view kb_path_stats" on kb_path_stats for select using (true);
 
 -- ============================================================================
 -- EPISODE DEFINITIONS (Turquoise Health Standard Service Packages)
