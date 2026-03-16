@@ -217,6 +217,8 @@ When possible and optimal, push reference data and logic into SQL (temp tables, 
 - **API Routes**: Feature-organized in `app/api/`; use server Supabase client (async)
 - **Formatting**: Prettier (`.prettierrc`) + ESLint flat config (v9) extending next/core-web-vitals + next/typescript + eslint-config-prettier
 - **CI**: GitHub Actions (`.github/workflows/ci.yml`) — format check, lint, type check, build on every PR
+- **React hooks with setTimeout/setInterval**: always add `useEffect` cleanup on unmount to prevent orphaned timers
+- **Imperative API effects** (Google Maps, D3): split data-creation effects from selection/styling effects — avoid full object recreation on state changes
 
 ## Git Workflow & Development Practices
 

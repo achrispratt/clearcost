@@ -119,6 +119,55 @@ const ENCOUNTER_LABELS: Record<
   urgent_care_proxy: "Urgent care visit estimate (office E/M proxy)",
 };
 
+/** Map encounter type to the expected care setting for row filtering. */
+function preferredSettingForEncounter(
+  encounterType: PricingPlan["encounterType"]
+): ChargeResult["setting"] | undefined {
+  switch (encounterType) {
+    case "office":
+    case "specialist":
+    case "urgent_care_proxy":
+    case "emergency": // ED is outpatient in hospital billing
+      return "outpatient";
+    default:
+      return undefined;
+  }
+}
+
+/** Filter rows to the preferred setting, with fallback to unfiltered. */
+function filterRowsBySetting(
+  rows: ChargeResult[],
+  preferredSetting: ChargeResult["setting"] | undefined
+): ChargeResult[] {
+  if (!preferredSetting) return rows;
+  const filtered = rows.filter(
+    (row) => row.setting === preferredSetting || row.setting === "both"
+  );
+  return filtered.length > 0 ? filtered : rows;
+}
+
+/** Derive provider-level discount status from per-row isDiscounted flags. */
+function deriveDiscountStatusByProvider(
+  rows: ChargeResult[]
+): Map<string, boolean | undefined> {
+  const result = new Map<string, boolean | undefined>();
+  for (const row of rows) {
+    const pid = row.provider.id;
+    const existing = result.get(pid);
+    // Once a provider has a discount, it stays true (optimistic)
+    if (existing === true) continue;
+    if (row.isDiscounted === true) {
+      result.set(pid, true);
+    } else if (row.isDiscounted === false) {
+      result.set(pid, existing === undefined ? false : existing);
+    } else {
+      // isDiscounted is undefined — mark indeterminate if no signal yet
+      if (!result.has(pid)) result.set(pid, undefined);
+    }
+  }
+  return result;
+}
+
 const MAX_PROVIDER_ZIP_DRIFT_MILES = 75;
 const DISTANCE_FILTER_TOLERANCE_MILES = 0.5;
 const RPC_TIMEOUT_CODE = "57014";
@@ -680,14 +729,24 @@ function buildEncounterFirstResults({
     baseResults,
     ...adderResults.map((entry) => entry.rows),
   ]);
-  const baseByProvider = summarizeRowsByProvider(baseResults);
-  const localBase = summarizeRows(baseResults);
+  const preferredSetting = preferredSettingForEncounter(
+    pricingPlan.encounterType
+  );
+  const filteredBaseResults = filterRowsBySetting(
+    baseResults,
+    preferredSetting
+  );
+  const baseByProvider = summarizeRowsByProvider(filteredBaseResults);
+  const localBase = summarizeRows(filteredBaseResults);
   const adderSummaries = buildAdderSummaries(adderResults);
 
   const providerIds = new Set<string>([
     ...Array.from(baseByProvider.keys()),
     ...Array.from(providerCatalog.keys()),
   ]);
+
+  const discountByProvider =
+    deriveDiscountStatusByProvider(filteredBaseResults);
 
   const baseLabel = pricingPlan.encounterType
     ? ENCOUNTER_LABELS[pricingPlan.encounterType]
@@ -721,7 +780,7 @@ function buildEncounterFirstResults({
       baseSource: facilityBase ? "facility" : "local_fallback",
       proxyLabel: pricingPlan.proxyLabel,
       cashPrice: baseSummary.estimatePrice,
-      isDiscounted: undefined,
+      isDiscounted: discountByProvider.get(providerId),
       minPrice: baseSummary.minPrice,
       maxPrice: baseSummary.maxPrice,
       optionalAdders,
