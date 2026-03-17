@@ -341,6 +341,19 @@ function InterpretationBanner({
                 ))}
               </div>
             )}
+            {cptCodes.length > 0 && (
+              <p
+                className="text-xs mt-2 px-2.5 py-2 rounded-md leading-relaxed"
+                style={{
+                  background: "var(--cc-bg)",
+                  color: "var(--cc-text-tertiary)",
+                }}
+              >
+                These codes are our interpretation of your search. Your provider
+                may bill differently — confirm codes and pricing before your
+                visit.
+              </p>
+            )}
           </div>
         </div>
       </div>
