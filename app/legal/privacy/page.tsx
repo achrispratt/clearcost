@@ -197,7 +197,7 @@ export default function PrivacyPage() {
             </p>
             <p
               className="text-sm leading-relaxed mb-3"
-              style={{ color: "#134e4a" }}
+              style={{ color: "var(--cc-primary)" }}
             >
               ClearCost is not a healthcare provider, health plan, or healthcare
               clearinghouse, and is not subject to HIPAA as a covered entity or
@@ -205,7 +205,7 @@ export default function PrivacyPage() {
               Health Information as defined under the Health Insurance Portability
               and Accountability Act (HIPAA).
             </p>
-            <p className="text-sm leading-relaxed" style={{ color: "#134e4a" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--cc-primary)" }}>
               <strong>
                 Your search queries are price research — not medical records.
               </strong>{" "}

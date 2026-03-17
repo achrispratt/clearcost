@@ -160,7 +160,7 @@ export default function TermsPage() {
 
           {/* Teal callout box */}
           <div
-            className="bg-[#f0fdf9] border-l-4 p-4 rounded-r-lg mb-4"
+            className="bg-[var(--cc-primary-light)] border-l-4 p-4 rounded-r-lg mb-4"
             style={{ borderColor: "var(--cc-primary)" }}
           >
             <p
@@ -169,7 +169,7 @@ export default function TermsPage() {
             >
               Important Notice
             </p>
-            <p className="text-sm leading-relaxed" style={{ color: "#134e4a" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--cc-primary)" }}>
               ClearCost provides healthcare pricing information{" "}
               <strong>for informational purposes only</strong>. The Service is
               not a substitute for professional medical advice, diagnosis, or

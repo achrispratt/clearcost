@@ -16,7 +16,7 @@ const TABLE_OF_CONTENTS = [
 
 export default function DisclaimersPage() {
   return (
-    <div>
+    <article>
       {/* Title */}
       <div className="mb-8">
         <h1
@@ -283,6 +283,6 @@ export default function DisclaimersPage() {
           </p>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

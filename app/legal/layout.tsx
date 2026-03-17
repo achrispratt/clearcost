@@ -37,7 +37,7 @@ export default function LegalLayout({
                 color: isActive
                   ? "var(--cc-primary)"
                   : "var(--cc-text-secondary)",
-                background: isActive ? "#f0fdf9" : "transparent",
+                background: isActive ? "var(--cc-primary-light)" : "transparent",
               }}
             >
               {page.label}

@@ -101,8 +101,8 @@ function GuidedSearchContent() {
           <div
             className="flex items-start gap-2 rounded-lg border px-3 py-2.5 mb-4"
             style={{
-              background: "#f0fdf9",
-              borderColor: "#99f6e4",
+              background: "var(--cc-primary-light)",
+              borderColor: "var(--cc-primary-muted)",
             }}
           >
             <svg
