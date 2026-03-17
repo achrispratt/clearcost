@@ -274,6 +274,63 @@ export interface TranslationResponse {
   bodySite?: BodySite;
   nextQuestion?: ClarificationQuestion;
   conversationComplete?: boolean;
+  kbSessionId?: string; // KB session ID for event tracking
+  kbPathHash?: string; // KB path hash for event tracking
+}
+
+// -- Knowledge Base (Translation KB) --
+export type KBNodeType = "question" | "resolution";
+export type KBSource = "claude" | "admin" | "migrated";
+export type KBEventType = "walk" | "result_click" | "save" | "bounce" | "skip";
+
+export interface KBSynonym {
+  query_hash: string;
+  normalized_query: string;
+  canonical_query: string;
+  created_at: string;
+}
+
+export interface KBNode {
+  path_hash: string;
+  canonical_query: string;
+  answer_path: string[];
+  depth: number;
+  node_type: KBNodeType;
+  payload: KBQuestionPayload | KBResolutionPayload;
+  hit_count: number;
+  version: number;
+  source: KBSource;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KBQuestionPayload {
+  type: "question";
+  question: ClarificationQuestion;
+  interpretation?: string;
+  codes?: CPTCode[];
+  pricingPlan?: PricingPlan;
+  confidence: ConfidenceLevel;
+}
+
+export interface KBResolutionPayload {
+  type: "resolution";
+  codes: CPTCode[];
+  interpretation: string;
+  searchTerms?: string;
+  queryType?: QueryType;
+  pricingPlan?: PricingPlan;
+  laterality?: Laterality;
+  bodySite?: BodySite;
+  confidence: ConfidenceLevel;
+  conversationComplete: boolean;
+}
+
+export interface KBLookupResult {
+  hit: boolean;
+  canonical_query?: string;
+  path_hash?: string;
+  node?: KBNode;
 }
 
 // -- Saved Search (user bookmark) --

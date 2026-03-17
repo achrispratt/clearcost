@@ -10,6 +10,7 @@ interface SaveButtonProps {
   cptCodes: string[];
   lat?: number;
   lng?: number;
+  onSave?: () => void;
 }
 
 export function SaveButton({
@@ -18,6 +19,7 @@ export function SaveButton({
   cptCodes,
   lat,
   lng,
+  onSave,
 }: SaveButtonProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -44,6 +46,7 @@ export function SaveButton({
       if (!response.ok) throw new Error("Failed to save");
 
       setSaved(true);
+      onSave?.();
       toast.success("Search saved!");
     } catch {
       toast.error("Failed to save search");

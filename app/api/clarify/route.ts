@@ -1,30 +1,58 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   assessQuery,
   clarifyQuery,
   translateQueryToCPT,
 } from "@/lib/cpt/translate";
-import type { ClarificationTurn } from "@/types";
+import { kbLookup } from "@/lib/kb/lookup";
+import { writeBackClarifyResponse } from "@/lib/kb/write-back";
+import { logKBEvent } from "@/lib/kb/events";
+import { normalizeQuery } from "@/lib/kb/path-hash";
+import type {
+  ClarificationTurn,
+  KBQuestionPayload,
+  KBResolutionPayload,
+  TranslationResponse,
+} from "@/types";
 
-/**
- * POST /api/clarify
- *
- * Multi-turn clarification endpoint for guided search.
- *
- * Body:
- *   - query: string (the user's original search query)
- *   - turns: ClarificationTurn[] (conversation history, empty for initial assessment)
- *
- * Returns: TranslationResponse
- *   - If confidence "high" or conversationComplete: codes are ready for price lookup
- *   - If confidence "low" with nextQuestion: client should display the question
- */
+function nodeToResponse(
+  payload: KBQuestionPayload | KBResolutionPayload
+): TranslationResponse {
+  if (payload.type === "resolution") {
+    return {
+      codes: payload.codes,
+      interpretation: payload.interpretation,
+      searchTerms: payload.searchTerms,
+      queryType: payload.queryType,
+      pricingPlan: payload.pricingPlan,
+      laterality: payload.laterality,
+      bodySite: payload.bodySite,
+      confidence: payload.confidence,
+      conversationComplete: true,
+    };
+  }
+  return {
+    codes: payload.codes || [],
+    interpretation: payload.interpretation || "",
+    pricingPlan: payload.pricingPlan,
+    confidence: payload.confidence,
+    nextQuestion: payload.question,
+    conversationComplete: false,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, turns = [] } = body as {
+    const {
+      query,
+      turns = [],
+      kbSessionId,
+    } = body as {
       query: string;
       turns?: ClarificationTurn[];
+      kbSessionId?: string;
     };
     const queryText = typeof query === "string" ? query : "";
 
@@ -32,19 +60,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
+    const sessionId = kbSessionId || randomUUID();
+
+    // --- KB LOOKUP ---
+    const kbResult = await kbLookup(queryText, turns);
+
+    if (kbResult.hit && kbResult.node) {
+      if (kbResult.path_hash) {
+        logKBEvent({
+          pathHash: kbResult.path_hash,
+          eventType: "walk",
+          sessionId,
+        });
+      }
+
+      const response = nodeToResponse(
+        kbResult.node.payload as KBQuestionPayload | KBResolutionPayload
+      );
+
+      return NextResponse.json({
+        ...response,
+        kbSessionId: sessionId,
+        kbPathHash: kbResult.path_hash,
+      });
+    }
+
+    // --- KB MISS — fall through to Claude ---
     try {
-      // Initial assessment (no turns) or follow-up (with turns)
-      // NOTE: No translation cache here — the guided search conversation IS
-      // the product. "knee pain" means different things for different users;
-      // skipping clarification would defeat the diagnostic purpose.
       const result =
         turns.length === 0
           ? await assessQuery(queryText)
           : await clarifyQuery(queryText, turns);
 
-      return NextResponse.json(result);
+      const canonicalQuery =
+        kbResult.canonical_query || normalizeQuery(queryText);
+
+      writeBackClarifyResponse({
+        originalQuery: queryText,
+        canonicalQuery,
+        turns,
+        response: result,
+      }).catch((err) => console.error("KB write-back failed:", err));
+
+      return NextResponse.json({
+        ...result,
+        kbSessionId: sessionId,
+        kbPathHash: kbResult.path_hash || null,
+      });
     } catch (parseError) {
-      // If guided search fails (malformed response, etc.), fall back to single-shot
       console.error(
         "Guided search error, falling back to single-shot:",
         parseError
@@ -54,6 +117,7 @@ export async function POST(request: NextRequest) {
         ...fallback,
         confidence: "high" as const,
         conversationComplete: true,
+        kbSessionId: sessionId,
       });
     }
   } catch (error) {

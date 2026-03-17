@@ -9,6 +9,7 @@ interface ResultsListProps {
   loading?: boolean;
   selectedProviderId?: string | null;
   onCardSelect?: (providerId: string) => void;
+  onResultClick?: () => void;
   codeDescriptionMap?: Record<string, string>;
   locationDisplay?: string;
   onExpandRadius?: () => void;
@@ -19,6 +20,7 @@ export function ResultsList({
   loading,
   selectedProviderId,
   onCardSelect,
+  onResultClick,
   codeDescriptionMap,
   locationDisplay,
   onExpandRadius,
@@ -188,7 +190,10 @@ export function ResultsList({
             isSelected={result.provider.id === selectedProviderId}
             isExpanded={expandedIds.has(result.id)}
             onToggleExpand={() => handleToggleExpand(result.id)}
-            onSelect={() => onCardSelect?.(result.provider.id)}
+            onSelect={() => {
+              onCardSelect?.(result.provider.id);
+              onResultClick?.();
+            }}
             codeDescriptionMap={codeDescriptionMap}
           />
         </div>

@@ -41,6 +41,10 @@ export function useClarificationState() {
   const [freeText, setFreeText] = useState("");
 
   const responseCache = useRef<Map<string, TranslationResponse>>(new Map());
+  const kbMeta = useRef<{ sessionId: string | null; pathHash: string | null }>({
+    sessionId: null,
+    pathHash: null,
+  });
 
   const navigateToResults = useCallback(
     (params: URLSearchParams) => {
@@ -94,6 +98,10 @@ export function useClarificationState() {
       if (plan) {
         extraParams.plan = JSON.stringify(plan);
       }
+      if (kbMeta.current.sessionId)
+        extraParams.kbSessionId = kbMeta.current.sessionId;
+      if (kbMeta.current.pathHash)
+        extraParams.kbPathHash = kbMeta.current.pathHash;
 
       navigateToResults(buildResultsParams(extraParams));
     },
@@ -119,6 +127,10 @@ export function useClarificationState() {
           if (data.pricingPlan) {
             extra.plan = JSON.stringify(data.pricingPlan);
           }
+          if (kbMeta.current.sessionId)
+            extra.kbSessionId = kbMeta.current.sessionId;
+          if (kbMeta.current.pathHash)
+            extra.kbPathHash = kbMeta.current.pathHash;
           navigateToResults(buildResultsParams(extra));
         }
         return;
@@ -130,7 +142,12 @@ export function useClarificationState() {
         setSelectedOption(null);
         setFreeText("");
       } else {
-        navigateToResults(buildResultsParams());
+        const kbExtra: Record<string, string> = {};
+        if (kbMeta.current.sessionId)
+          kbExtra.kbSessionId = kbMeta.current.sessionId;
+        if (kbMeta.current.pathHash)
+          kbExtra.kbPathHash = kbMeta.current.pathHash;
+        navigateToResults(buildResultsParams(kbExtra));
       }
     },
     [goToResults, navigateToResults, buildResultsParams]
@@ -152,7 +169,11 @@ export function useClarificationState() {
         const response = await fetch("/api/clarify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, turns: turnsArray }),
+          body: JSON.stringify({
+            query,
+            turns: turnsArray,
+            kbSessionId: kbMeta.current.sessionId,
+          }),
         });
 
         if (!response.ok) {
@@ -160,6 +181,9 @@ export function useClarificationState() {
         }
 
         const data: TranslationResponse = await response.json();
+        // Extract KB metadata BEFORE handleResponse (which may navigate away)
+        if (data.kbSessionId) kbMeta.current.sessionId = data.kbSessionId;
+        if (data.kbPathHash) kbMeta.current.pathHash = data.kbPathHash;
         responseCache.current.set(cacheKey, data);
         handleResponse(data);
       } catch (err) {
@@ -221,6 +245,18 @@ export function useClarificationState() {
   };
 
   const handleSkip = () => {
+    if (kbMeta.current.pathHash && kbMeta.current.sessionId) {
+      fetch("/api/kb/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pathHash: kbMeta.current.pathHash,
+          eventType: "skip",
+          sessionId: kbMeta.current.sessionId,
+        }),
+      }).catch(() => {}); // Best-effort
+    }
+
     if (allCodes.length > 0) {
       goToResults(allCodes, interpretation, pricingPlan);
     } else {
@@ -228,6 +264,9 @@ export function useClarificationState() {
       if (pricingPlan) {
         extra.plan = JSON.stringify(pricingPlan);
       }
+      if (kbMeta.current.sessionId)
+        extra.kbSessionId = kbMeta.current.sessionId;
+      if (kbMeta.current.pathHash) extra.kbPathHash = kbMeta.current.pathHash;
       navigateToResults(buildResultsParams(extra));
     }
   };

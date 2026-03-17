@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type {
   ChargeResult,
@@ -74,6 +74,8 @@ export function useResultsSearch() {
   const directPlanParam = searchParams.get("plan") || "";
   const directPlan = parsePricingPlan(directPlanParam);
   const directCodeDescsParam = searchParams.get("codeDescs") || "";
+  const kbSessionId = searchParams.get("kbSessionId");
+  const kbPathHash = searchParams.get("kbPathHash");
 
   const [results, setResults] = useState<ChargeResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<ChargeResult[]>([]);
@@ -88,6 +90,54 @@ export function useResultsSearch() {
   const [view, setView] = useState<"list" | "map">("list");
   const [radius, setRadius] = useState<number>(25);
   const [fetchCounter, setFetchCounter] = useState(0);
+
+  const logKBEvent = useCallback(
+    (eventType: string) => {
+      if (!kbPathHash || !kbSessionId) return;
+      fetch("/api/kb/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pathHash: kbPathHash,
+          eventType,
+          sessionId: kbSessionId,
+        }),
+      }).catch(() => {}); // Best-effort
+    },
+    [kbPathHash, kbSessionId]
+  );
+
+  const hasInteracted = useRef(false);
+
+  const logResultClick = useCallback(() => {
+    hasInteracted.current = true;
+    logKBEvent("result_click");
+  }, [logKBEvent]);
+
+  const logSaveSearch = useCallback(() => {
+    hasInteracted.current = true;
+    logKBEvent("save");
+  }, [logKBEvent]);
+
+  useEffect(() => {
+    return () => {
+      if (!hasInteracted.current && kbPathHash && kbSessionId) {
+        navigator.sendBeacon(
+          "/api/kb/events",
+          new Blob(
+            [
+              JSON.stringify({
+                pathHash: kbPathHash,
+                eventType: "bounce",
+                sessionId: kbSessionId,
+              }),
+            ],
+            { type: "application/json" }
+          )
+        );
+      }
+    };
+  }, [kbPathHash, kbSessionId]);
 
   useEffect(() => {
     if (
@@ -298,5 +348,7 @@ export function useResultsSearch() {
     handleFilteredResults,
     radius,
     handleRadiusChange,
+    logResultClick,
+    logSaveSearch,
   };
 }
