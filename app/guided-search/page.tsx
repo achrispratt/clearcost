@@ -97,6 +97,33 @@ function GuidedSearchContent() {
       {/* Clarifying phase */}
       {phase === "clarifying" && (
         <div className="mt-6">
+          {/* Pricing tool context banner */}
+          <div
+            className="flex items-start gap-2 rounded-lg border px-3 py-2.5 mb-4"
+            style={{
+              background: "#f0fdf9",
+              borderColor: "#99f6e4",
+            }}
+          >
+            <svg
+              className="w-4 h-4 shrink-0 mt-0.5"
+              style={{ color: "var(--cc-primary)" }}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            <p className="text-[13px] leading-relaxed" style={{ color: "var(--cc-primary)" }}>
+              These questions help us find the right billing code for your price
+              search. This is not a medical assessment.
+            </p>
+          </div>
+
           <BreadcrumbTrail
             query={query}
             turns={turns}
@@ -137,8 +164,8 @@ function GuidedSearchContent() {
             className="mt-8 text-xs text-center leading-relaxed"
             style={{ color: "var(--cc-text-tertiary)" }}
           >
-            This tool helps you find pricing, not diagnose conditions. Always
-            consult a healthcare provider for medical advice.
+            ClearCost is a price comparison tool, not a medical service. Always
+            consult a healthcare provider for medical decisions.
           </p>
         </div>
       )}
