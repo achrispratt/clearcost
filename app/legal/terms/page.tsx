@@ -169,7 +169,10 @@ export default function TermsPage() {
             >
               Important Notice
             </p>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--cc-primary)" }}>
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--cc-primary)" }}
+            >
               ClearCost provides healthcare pricing information{" "}
               <strong>for informational purposes only</strong>. The Service is
               not a substitute for professional medical advice, diagnosis, or
@@ -243,8 +246,8 @@ export default function TermsPage() {
               Prices shown represent self-pay (cash pay) rates or gross charges
               as reported by individual hospitals. Actual prices you are charged
               may differ based on your insurance coverage, negotiated rates,
-              facility fees, the specific services rendered, and other
-              factors determined at the time of service.
+              facility fees, the specific services rendered, and other factors
+              determined at the time of service.
             </p>
             <p>
               Prices displayed may not include all fees associated with a
@@ -331,9 +334,9 @@ export default function TermsPage() {
             <p>
               ClearCost uses artificial intelligence — specifically, the Claude
               API provided by Anthropic, PBC — to interpret plain-language
-              search queries and translate them into standardized medical billing
-              codes. This AI-powered interpretation is a core feature of the
-              Service.
+              search queries and translate them into standardized medical
+              billing codes. This AI-powered interpretation is a core feature of
+              the Service.
             </p>
             <p>
               <strong style={{ color: "var(--cc-text)" }}>
@@ -356,10 +359,10 @@ export default function TermsPage() {
             </p>
             <p>
               ClearCost does not use your search queries or conversation history
-              to train AI models. Query data may be processed by Anthropic&apos;s
-              systems as part of the API service in accordance with
-              Anthropic&apos;s usage policies. We do not sell your query data to
-              third parties.
+              to train AI models. Query data may be processed by
+              Anthropic&apos;s systems as part of the API service in accordance
+              with Anthropic&apos;s usage policies. We do not sell your query
+              data to third parties.
             </p>
           </div>
         </section>
@@ -384,9 +387,7 @@ export default function TermsPage() {
               LIMITED TO LOSS OF PROFITS, DATA, OR GOODWILL, ARISING OUT OF OR
               IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE SERVICE.
             </p>
-            <p>
-              Without limiting the foregoing, ClearCost is not liable for:
-            </p>
+            <p>Without limiting the foregoing, ClearCost is not liable for:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li>
                 Any medical decisions, treatment choices, or healthcare actions
@@ -467,8 +468,8 @@ export default function TermsPage() {
             <p>
               You may not reproduce, distribute, modify, create derivative works
               from, publicly display, or commercially exploit any portion of the
-              Service or its proprietary content without prior written permission
-              from ClearCost.
+              Service or its proprietary content without prior written
+              permission from ClearCost.
             </p>
           </div>
         </section>
@@ -540,23 +541,23 @@ export default function TermsPage() {
               <strong style={{ color: "var(--cc-text)" }}>
                 Binding Arbitration.
               </strong>{" "}
-              Except for claims that qualify for small claims court, any dispute,
-              claim, or controversy arising out of or relating to the Service or
-              these Terms — including the determination of the scope or
-              applicability of this agreement to arbitrate — shall be resolved by
-              binding arbitration administered by the American Arbitration
-              Association (AAA) under its Consumer Arbitration Rules. Arbitration
-              shall be conducted on an individual basis; class arbitrations and
-              class actions are not permitted.
+              Except for claims that qualify for small claims court, any
+              dispute, claim, or controversy arising out of or relating to the
+              Service or these Terms — including the determination of the scope
+              or applicability of this agreement to arbitrate — shall be
+              resolved by binding arbitration administered by the American
+              Arbitration Association (AAA) under its Consumer Arbitration
+              Rules. Arbitration shall be conducted on an individual basis;
+              class arbitrations and class actions are not permitted.
             </p>
             <p>
               <strong style={{ color: "var(--cc-text)" }}>
                 Opt-Out Right.
               </strong>{" "}
               You may opt out of the arbitration agreement within 30 days of
-              first accepting these Terms by sending written notice to
-              ClearCost at the contact address below. Opting out does not affect
-              any other provision of these Terms.
+              first accepting these Terms by sending written notice to ClearCost
+              at the contact address below. Opting out does not affect any other
+              provision of these Terms.
             </p>
             <p>
               If the arbitration agreement is found to be unenforceable for any

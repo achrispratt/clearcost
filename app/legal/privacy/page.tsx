@@ -91,7 +91,8 @@ export default function PrivacyPage() {
                 The plain-text descriptions you enter when searching for
                 healthcare procedures (e.g., &ldquo;knee MRI&rdquo; or
                 &ldquo;blood test for cholesterol&rdquo;). These are used to
-                translate your query into billing codes and return price results.
+                translate your query into billing codes and return price
+                results.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>
@@ -107,8 +108,8 @@ export default function PrivacyPage() {
                 </strong>{" "}
                 If you choose to sign in, ClearCost receives your email address,
                 display name, and profile picture from Google via OAuth. This
-                information is collected only if you create an account;
-                account creation is not required to use the Service.
+                information is collected only if you create an account; account
+                creation is not required to use the Service.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>Usage data.</strong>{" "}
@@ -141,8 +142,8 @@ export default function PrivacyPage() {
                 </strong>{" "}
                 Your search query is sent to our AI interpretation service to
                 translate it into standardized billing codes (CPT, HCPCS,
-                MS-DRG), which are then used to query hospital pricing data
-                near your location.
+                MS-DRG), which are then used to query hospital pricing data near
+                your location.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>
@@ -202,10 +203,13 @@ export default function PrivacyPage() {
               ClearCost is not a healthcare provider, health plan, or healthcare
               clearinghouse, and is not subject to HIPAA as a covered entity or
               business associate. We do not collect, store, or process Protected
-              Health Information as defined under the Health Insurance Portability
-              and Accountability Act (HIPAA).
+              Health Information as defined under the Health Insurance
+              Portability and Accountability Act (HIPAA).
             </p>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--cc-primary)" }}>
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--cc-primary)" }}
+            >
               <strong>
                 Your search queries are price research — not medical records.
               </strong>{" "}
@@ -223,8 +227,12 @@ export default function PrivacyPage() {
             <p>We specifically do not collect or store:</p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>Medical records or clinical documentation of any kind</li>
-              <li>Insurance plan details, member IDs, or coverage information</li>
-              <li>Social Security numbers or government-issued identification</li>
+              <li>
+                Insurance plan details, member IDs, or coverage information
+              </li>
+              <li>
+                Social Security numbers or government-issued identification
+              </li>
               <li>Patient identifiers as defined under HIPAA</li>
               <li>Diagnostic codes tied to a specific individual</li>
               <li>Treatment history, prescriptions, or clinical notes</li>
@@ -249,8 +257,8 @@ export default function PrivacyPage() {
             style={{ color: "var(--cc-text-secondary)" }}
           >
             <p>
-              ClearCost uses the following third-party services to operate.
-              Each has its own privacy policy governing how it handles data.
+              ClearCost uses the following third-party services to operate. Each
+              has its own privacy policy governing how it handles data.
             </p>
             <div className="space-y-4 mt-4">
               <div
@@ -266,7 +274,10 @@ export default function PrivacyPage() {
                 >
                   Supabase
                 </p>
-                <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
                   Database hosting and user authentication. Stores account data
                   (email, display name) and saved searches for signed-in users.
                   Data is stored in a Supabase-managed Postgres database with
@@ -286,7 +297,10 @@ export default function PrivacyPage() {
                 >
                   Anthropic Claude API
                 </p>
-                <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
                   AI-powered search query interpretation. Your search queries
                   are sent to Anthropic&apos;s API to translate plain-language
                   descriptions into standardized billing codes. Queries are
@@ -308,7 +322,10 @@ export default function PrivacyPage() {
                 >
                   Google Maps
                 </p>
-                <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
                   Location geocoding and interactive map display. Used to
                   convert location names to coordinates for geographic search
                   and to display hospital locations on a map. Subject to
@@ -328,11 +345,14 @@ export default function PrivacyPage() {
                 >
                   Vercel
                 </p>
-                <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
-                  Web application hosting and content delivery. Standard
-                  request logs (IP address, browser type, pages visited) may
-                  be retained by Vercel as part of normal hosting operations.
-                  Subject to Vercel&apos;s Privacy Policy.
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Web application hosting and content delivery. Standard request
+                  logs (IP address, browser type, pages visited) may be retained
+                  by Vercel as part of normal hosting operations. Subject to
+                  Vercel&apos;s Privacy Policy.
                 </p>
               </div>
             </div>
@@ -403,9 +423,9 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong style={{ color: "var(--cc-text)" }}>Access.</strong>{" "}
-                You may request a copy of the personal data ClearCost holds
-                about you.
+                <strong style={{ color: "var(--cc-text)" }}>Access.</strong> You
+                may request a copy of the personal data ClearCost holds about
+                you.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>Deletion.</strong>{" "}
@@ -422,9 +442,9 @@ export default function PrivacyPage() {
                 <strong style={{ color: "var(--cc-text)" }}>
                   Opt out of data collection.
                 </strong>{" "}
-                You may use ClearCost without creating an account. Unauthenticated
-                use does not result in any persistent data being stored about
-                you by ClearCost.
+                You may use ClearCost without creating an account.
+                Unauthenticated use does not result in any persistent data being
+                stored about you by ClearCost.
               </li>
             </ul>
             <p>
@@ -492,8 +512,8 @@ export default function PrivacyPage() {
             <p>
               We may update this Privacy Policy from time to time to reflect
               changes in the Service, applicable law, or our data practices.
-              When we make material changes, we will update the
-              &ldquo;Last updated&rdquo; date at the top of this page and, where
+              When we make material changes, we will update the &ldquo;Last
+              updated&rdquo; date at the top of this page and, where
               appropriate, provide additional notice — such as an in-app
               notification or an email to registered users.
             </p>

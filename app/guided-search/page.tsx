@@ -118,7 +118,10 @@ function GuidedSearchContent() {
               <circle cx="12" cy="12" r="10" />
               <path d="M12 16v-4M12 8h.01" />
             </svg>
-            <p className="text-[13px] leading-relaxed" style={{ color: "var(--cc-primary)" }}>
+            <p
+              className="text-[13px] leading-relaxed"
+              style={{ color: "var(--cc-primary)" }}
+            >
               These questions help us find the right billing code for your price
               search. This is not a medical assessment.
             </p>
