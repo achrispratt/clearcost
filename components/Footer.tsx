@@ -10,8 +10,8 @@ export function Footer() {
       }}
     >
       <div className="max-w-4xl mx-auto">
-        {/* Three-column grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">
+        {/* Four-column grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
           {/* Brand */}
           <div>
             <Link href="/" className="flex items-center gap-2 mb-3">
@@ -106,6 +106,45 @@ export function Footer() {
               Transparency Rule.
             </p>
           </div>
+
+          {/* Legal */}
+          <div>
+            <h3
+              className="text-xs font-semibold tracking-widest uppercase mb-4"
+              style={{ color: "var(--cc-text-tertiary)" }}
+            >
+              Legal
+            </h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/legal/terms"
+                  className="text-sm hover:underline"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/legal/privacy"
+                  className="text-sm hover:underline"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/legal/disclaimers"
+                  className="text-sm hover:underline"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Disclaimers
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Bottom bar */}
@@ -121,7 +160,14 @@ export function Footer() {
             final cost. ClearCost is a price transparency tool, not a medical
             device. It does not provide medical advice, diagnosis, or treatment
             recommendations. Always consult a qualified healthcare provider for
-            medical decisions.
+            medical decisions.{" "}
+            <Link
+              href="/legal/disclaimers"
+              className="underline hover:no-underline"
+              style={{ color: "var(--cc-primary)" }}
+            >
+              Full disclaimers
+            </Link>
           </p>
           <p className="mt-3">&copy; {new Date().getFullYear()} ClearCost</p>
         </div>
