@@ -108,6 +108,10 @@ export function useResultsSearch() {
   );
 
   const hasInteracted = useRef(false);
+  const kbPathHashRef = useRef(kbPathHash);
+  const kbSessionIdRef = useRef(kbSessionId);
+  useEffect(() => { kbPathHashRef.current = kbPathHash; }, [kbPathHash]);
+  useEffect(() => { kbSessionIdRef.current = kbSessionId; }, [kbSessionId]);
 
   const logResultClick = useCallback(() => {
     hasInteracted.current = true;
@@ -121,15 +125,15 @@ export function useResultsSearch() {
 
   useEffect(() => {
     return () => {
-      if (!hasInteracted.current && kbPathHash && kbSessionId) {
+      if (!hasInteracted.current && kbPathHashRef.current && kbSessionIdRef.current) {
         navigator.sendBeacon(
           "/api/kb/events",
           new Blob(
             [
               JSON.stringify({
-                pathHash: kbPathHash,
+                pathHash: kbPathHashRef.current,
                 eventType: "bounce",
-                sessionId: kbSessionId,
+                sessionId: kbSessionIdRef.current,
               }),
             ],
             { type: "application/json" }
@@ -137,7 +141,7 @@ export function useResultsSearch() {
         );
       }
     };
-  }, [kbPathHash, kbSessionId]);
+  }, []);
 
   useEffect(() => {
     if (

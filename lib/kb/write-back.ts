@@ -2,13 +2,18 @@ import { createClient } from "@/lib/supabase/server";
 import {
   computeQueryHash,
   buildPathHashFromSegments,
-  turnToSegment,
+  turnsToSegments,
 } from "./path-hash";
 import type {
+  BodySite,
   ClarificationTurn,
+  CPTCode,
   KBQuestionPayload,
   KBResolutionPayload,
   KBSource,
+  Laterality,
+  PricingPlan,
+  QueryType,
   TranslationResponse,
 } from "@/types";
 
@@ -37,7 +42,6 @@ export async function writeNode(params: {
   canonicalQuery: string;
   answerSegments: string[];
   depth: number;
-  nodeType: "question" | "resolution";
   payload: KBQuestionPayload | KBResolutionPayload;
   source?: KBSource;
 }): Promise<string> {
@@ -45,10 +49,10 @@ export async function writeNode(params: {
     canonicalQuery,
     answerSegments,
     depth,
-    nodeType,
     payload,
     source = "claude",
   } = params;
+  const nodeType = payload.type;
 
   const pathHash = buildPathHashFromSegments(canonicalQuery, answerSegments);
   const supabase = await createClient();
@@ -77,16 +81,6 @@ export async function writeNode(params: {
   }
 
   return pathHash;
-}
-
-export function turnsToSegments(turns: ClarificationTurn[]): string[] | null {
-  const segments: string[] = [];
-  for (const turn of turns) {
-    const segment = turnToSegment(turn);
-    if (segment === null) return null;
-    segments.push(segment);
-  }
-  return segments;
 }
 
 export async function writeBackClarifyResponse(params: {
@@ -127,15 +121,46 @@ export async function writeBackClarifyResponse(params: {
         confidence: response.confidence,
       };
 
-  const nodeType = isResolution ? "resolution" : "question";
-
   const pathHash = await writeNode({
     canonicalQuery,
     answerSegments: segments,
     depth: turns.length,
-    nodeType,
     payload,
   });
 
   return pathHash;
+}
+
+export async function writeResolutionToKB(params: {
+  query: string;
+  canonicalQuery: string;
+  result: {
+    codes: CPTCode[];
+    interpretation: string;
+    searchTerms?: string;
+    queryType?: QueryType;
+    pricingPlan?: PricingPlan;
+    laterality?: Laterality;
+    bodySite?: BodySite;
+  };
+}): Promise<void> {
+  const { query, canonicalQuery, result } = params;
+  await writeSynonym(query, canonicalQuery);
+  await writeNode({
+    canonicalQuery,
+    answerSegments: [],
+    depth: 0,
+    payload: {
+      type: "resolution",
+      codes: result.codes,
+      interpretation: result.interpretation,
+      searchTerms: result.searchTerms,
+      queryType: result.queryType,
+      pricingPlan: result.pricingPlan,
+      laterality: result.laterality,
+      bodySite: result.bodySite,
+      confidence: "high",
+      conversationComplete: true,
+    },
+  });
 }

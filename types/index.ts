@@ -331,6 +331,8 @@ export interface KBLookupResult {
   canonical_query?: string;
   path_hash?: string;
   node?: KBNode;
+  queryHash?: string;
+  normalizedQuery?: string;
 }
 
 // -- Saved Search (user bookmark) --

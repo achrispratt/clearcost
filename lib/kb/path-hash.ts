@@ -24,18 +24,23 @@ export function turnToSegment(turn: ClarificationTurn): string | null {
   return turn.selectedOption.toLowerCase().trim();
 }
 
-export function buildPathHash(
-  canonicalQuery: string,
-  turns: ClarificationTurn[]
-): string | null {
+export function turnsToSegments(turns: ClarificationTurn[]): string[] | null {
   const segments: string[] = [];
   for (const turn of turns) {
     const segment = turnToSegment(turn);
     if (segment === null) return null;
     segments.push(segment);
   }
-  const pathString = canonicalQuery + "|" + segments.join("|");
-  return sha256(pathString);
+  return segments;
+}
+
+export function buildPathHash(
+  canonicalQuery: string,
+  turns: ClarificationTurn[]
+): string | null {
+  const segments = turnsToSegments(turns);
+  if (segments === null) return null;
+  return buildPathHashFromSegments(canonicalQuery, segments);
 }
 
 export function buildPathHashFromSegments(

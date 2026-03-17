@@ -10,8 +10,8 @@ import {
   buildPricingPlan,
   normalizePricingPlanInput,
 } from "@/lib/cpt/pricing-plan";
-import { kbLookup } from "@/lib/kb/lookup";
-import { writeSynonym, writeNode } from "@/lib/kb/write-back";
+import { kbLookup, resolutionPayloadToTranslation } from "@/lib/kb/lookup";
+import { writeResolutionToKB } from "@/lib/kb/write-back";
 import { normalizeQuery, computeQueryHash } from "@/lib/kb/path-hash";
 import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
 import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
@@ -353,22 +353,14 @@ export async function POST(request: NextRequest) {
     }
 
     const kbResult = await kbLookup(queryText, []);
-    const { queryHash } = computeQueryHash(queryText);
+    const queryHash = kbResult.queryHash;
     const cacheStatus: CacheStatus = kbResult.hit ? "hit" : "miss";
 
     let translated;
     if (kbResult.hit && kbResult.node) {
       const payload = kbResult.node.payload as KBResolutionPayload;
       if (payload.type === "resolution") {
-        translated = {
-          codes: payload.codes,
-          interpretation: payload.interpretation,
-          searchTerms: payload.searchTerms,
-          queryType: payload.queryType,
-          pricingPlan: payload.pricingPlan,
-          laterality: payload.laterality,
-          bodySite: payload.bodySite,
-        };
+        translated = resolutionPayloadToTranslation(payload);
       }
     }
     if (!translated) {
@@ -408,27 +400,11 @@ export async function POST(request: NextRequest) {
     if (!kbResult.hit && results.length > 0) {
       const canonicalQuery =
         kbResult.canonical_query || normalizeQuery(queryText);
-      writeSynonym(queryText, canonicalQuery).catch((err) =>
-        console.error("KB synonym write failed:", err)
-      );
-      writeNode({
+      writeResolutionToKB({
+        query: queryText,
         canonicalQuery,
-        answerSegments: [],
-        depth: 0,
-        nodeType: "resolution",
-        payload: {
-          type: "resolution",
-          codes: translated.codes,
-          interpretation: translated.interpretation,
-          searchTerms: translated.searchTerms,
-          queryType: translated.queryType,
-          pricingPlan: translated.pricingPlan,
-          laterality: translated.laterality,
-          bodySite: translated.bodySite,
-          confidence: "high",
-          conversationComplete: true,
-        },
-      }).catch((err) => console.error("KB node write failed:", err));
+        result: translated,
+      }).catch((err) => console.error("KB write-back failed:", err));
     }
 
     maybeLogSearchDiagnostics({

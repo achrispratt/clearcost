@@ -16,6 +16,14 @@ type DirectCodeGroup = {
   codes: string[];
 };
 
+function withKBMeta(
+  params: Record<string, string>,
+  meta: { sessionId: string | null; pathHash: string | null }
+): void {
+  if (meta.sessionId) params.kbSessionId = meta.sessionId;
+  if (meta.pathHash) params.kbPathHash = meta.pathHash;
+}
+
 export function useClarificationState() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -98,10 +106,7 @@ export function useClarificationState() {
       if (plan) {
         extraParams.plan = JSON.stringify(plan);
       }
-      if (kbMeta.current.sessionId)
-        extraParams.kbSessionId = kbMeta.current.sessionId;
-      if (kbMeta.current.pathHash)
-        extraParams.kbPathHash = kbMeta.current.pathHash;
+      withKBMeta(extraParams, kbMeta.current);
 
       navigateToResults(buildResultsParams(extraParams));
     },
@@ -127,10 +132,7 @@ export function useClarificationState() {
           if (data.pricingPlan) {
             extra.plan = JSON.stringify(data.pricingPlan);
           }
-          if (kbMeta.current.sessionId)
-            extra.kbSessionId = kbMeta.current.sessionId;
-          if (kbMeta.current.pathHash)
-            extra.kbPathHash = kbMeta.current.pathHash;
+          withKBMeta(extra, kbMeta.current);
           navigateToResults(buildResultsParams(extra));
         }
         return;
@@ -143,10 +145,7 @@ export function useClarificationState() {
         setFreeText("");
       } else {
         const kbExtra: Record<string, string> = {};
-        if (kbMeta.current.sessionId)
-          kbExtra.kbSessionId = kbMeta.current.sessionId;
-        if (kbMeta.current.pathHash)
-          kbExtra.kbPathHash = kbMeta.current.pathHash;
+        withKBMeta(kbExtra, kbMeta.current);
         navigateToResults(buildResultsParams(kbExtra));
       }
     },
@@ -264,9 +263,7 @@ export function useClarificationState() {
       if (pricingPlan) {
         extra.plan = JSON.stringify(pricingPlan);
       }
-      if (kbMeta.current.sessionId)
-        extra.kbSessionId = kbMeta.current.sessionId;
-      if (kbMeta.current.pathHash) extra.kbPathHash = kbMeta.current.pathHash;
+      withKBMeta(extra, kbMeta.current);
       navigateToResults(buildResultsParams(extra));
     }
   };

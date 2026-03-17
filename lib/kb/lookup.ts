@@ -6,6 +6,7 @@ import type {
   KBNode,
   KBQuestionPayload,
   KBResolutionPayload,
+  TranslationResponse,
 } from "@/types";
 
 function isValidPayload(
@@ -14,6 +15,44 @@ function isValidPayload(
   if (!payload || typeof payload !== "object") return false;
   const p = payload as Record<string, unknown>;
   return p.type === "question" || p.type === "resolution";
+}
+
+export function nodeToResponse(
+  payload: KBQuestionPayload | KBResolutionPayload
+): TranslationResponse {
+  if (payload.type === "resolution") {
+    return {
+      codes: payload.codes,
+      interpretation: payload.interpretation,
+      searchTerms: payload.searchTerms,
+      queryType: payload.queryType,
+      pricingPlan: payload.pricingPlan,
+      laterality: payload.laterality,
+      bodySite: payload.bodySite,
+      confidence: payload.confidence,
+      conversationComplete: true,
+    };
+  }
+  return {
+    codes: payload.codes || [],
+    interpretation: payload.interpretation || "",
+    pricingPlan: payload.pricingPlan,
+    confidence: payload.confidence,
+    nextQuestion: payload.question,
+    conversationComplete: false,
+  };
+}
+
+export function resolutionPayloadToTranslation(payload: KBResolutionPayload) {
+  return {
+    codes: payload.codes,
+    interpretation: payload.interpretation,
+    searchTerms: payload.searchTerms,
+    queryType: payload.queryType,
+    pricingPlan: payload.pricingPlan,
+    laterality: payload.laterality,
+    bodySite: payload.bodySite,
+  };
 }
 
 /**
@@ -26,7 +65,7 @@ export async function kbLookup(
   query: string,
   turns: ClarificationTurn[]
 ): Promise<KBLookupResult> {
-  const { queryHash } = computeQueryHash(query);
+  const { queryHash, normalizedQuery } = computeQueryHash(query);
   const supabase = await createClient();
 
   // Step 1: synonym lookup
@@ -37,7 +76,7 @@ export async function kbLookup(
     .maybeSingle();
 
   if (synError || !synonym) {
-    return { hit: false };
+    return { hit: false, queryHash, normalizedQuery };
   }
 
   const canonicalQuery = synonym.canonical_query;
@@ -45,7 +84,7 @@ export async function kbLookup(
   // Step 2: build path_hash from canonical + turns
   const pathHash = buildPathHash(canonicalQuery, turns);
   if (!pathHash) {
-    return { hit: false, canonical_query: canonicalQuery };
+    return { hit: false, canonical_query: canonicalQuery, queryHash, normalizedQuery };
   }
 
   // Step 3: node lookup
@@ -56,7 +95,7 @@ export async function kbLookup(
     .maybeSingle();
 
   if (nodeError || !node || !isValidPayload(node.payload)) {
-    return { hit: false, canonical_query: canonicalQuery, path_hash: pathHash };
+    return { hit: false, canonical_query: canonicalQuery, path_hash: pathHash, queryHash, normalizedQuery };
   }
 
   // Bump hit_count (fire-and-forget)
@@ -76,6 +115,8 @@ export async function kbLookup(
     canonical_query: canonicalQuery,
     path_hash: pathHash,
     node: node as KBNode,
+    queryHash,
+    normalizedQuery,
   };
 }
 

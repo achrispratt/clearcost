@@ -5,7 +5,7 @@ import {
   clarifyQuery,
   translateQueryToCPT,
 } from "@/lib/cpt/translate";
-import { kbLookup } from "@/lib/kb/lookup";
+import { kbLookup, nodeToResponse } from "@/lib/kb/lookup";
 import { writeBackClarifyResponse } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
@@ -13,34 +13,7 @@ import type {
   ClarificationTurn,
   KBQuestionPayload,
   KBResolutionPayload,
-  TranslationResponse,
 } from "@/types";
-
-function nodeToResponse(
-  payload: KBQuestionPayload | KBResolutionPayload
-): TranslationResponse {
-  if (payload.type === "resolution") {
-    return {
-      codes: payload.codes,
-      interpretation: payload.interpretation,
-      searchTerms: payload.searchTerms,
-      queryType: payload.queryType,
-      pricingPlan: payload.pricingPlan,
-      laterality: payload.laterality,
-      bodySite: payload.bodySite,
-      confidence: payload.confidence,
-      conversationComplete: true,
-    };
-  }
-  return {
-    codes: payload.codes || [],
-    interpretation: payload.interpretation || "",
-    pricingPlan: payload.pricingPlan,
-    confidence: payload.confidence,
-    nextQuestion: payload.question,
-    conversationComplete: false,
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +44,7 @@ export async function POST(request: NextRequest) {
           pathHash: kbResult.path_hash,
           eventType: "walk",
           sessionId,
-        });
+        }).catch((err) => console.error("KB walk event log failed:", err));
       }
 
       const response = nodeToResponse(
