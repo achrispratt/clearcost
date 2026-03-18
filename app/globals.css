@@ -149,6 +149,22 @@
   transform: translateY(0);
 }
 
+/* Respect reduced motion: show content immediately, skip all animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-slide-down,
+  .animate-scale-in {
+    animation: none;
+  }
+}
+
 /* Shimmer loading effect */
 .shimmer {
   background: linear-gradient(
