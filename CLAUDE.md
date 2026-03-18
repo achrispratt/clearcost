@@ -222,15 +222,7 @@ When possible and optimal, push reference data and logic into SQL (temp tables, 
 
 ## Code Style, Git Workflow & Design
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for code conventions, git workflow, branch naming, issue management, design system, and environment setup.
-
-Quick reference for AI sessions:
-
-- **Imports**: Group by external packages, then internal using `@/` path alias
-- **Types**: Use interfaces from `types/index.ts` — do not create parallel type definitions
-- **Formatting**: Prettier + ESLint flat config (v9). CI runs format check, lint, type check, build on every PR.
-- **Branches**: `feat/`, `fix/`, `data/`, `infra/`, `refactor/` prefixes. Always use feature branches + PRs for issue-tracked work.
-- **Design tokens**: CSS custom properties in `globals.css` prefixed `--cc-*` — use these, not raw colors. DaisyUI 5 components. Light mode only.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — the single source of truth for code conventions, git workflow, branch naming, issue management, design system, and environment setup. Read it before writing code.
 
 ## Product Roadmap
 
