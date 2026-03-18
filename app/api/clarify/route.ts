@@ -5,8 +5,11 @@ import {
   clarifyQuery,
   translateQueryToCPT,
 } from "@/lib/cpt/translate";
-import { kbLookup } from "@/lib/kb/lookup";
-import { writeBackClarifyResponse } from "@/lib/kb/write-back";
+import { kbLookup, getKnownCanonicals } from "@/lib/kb/lookup";
+import {
+  writeBackClarifyResponse,
+  writeSynonym,
+} from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
 import type {
@@ -87,13 +90,52 @@ export async function POST(request: NextRequest) {
 
     // --- KB MISS — fall through to Claude ---
     try {
+      // For initial assessments (no turns), pass known canonicals so Claude
+      // can identify synonym matches (e.g. "MRI of my knee" → "knee mri")
+      const knownCanonicals =
+        turns.length === 0 ? await getKnownCanonicals() : undefined;
+
       const result =
         turns.length === 0
-          ? await assessQuery(queryText)
+          ? await assessQuery(queryText, knownCanonicals)
           : await clarifyQuery(queryText, turns);
 
+      // If Claude matched this query to an existing canonical, link the
+      // synonym and serve from the existing tree instead of creating a new one
+      if (result.canonicalMatch && turns.length === 0) {
+        writeSynonym(queryText, result.canonicalMatch).catch((err) =>
+          console.error("KB synonym clustering write failed:", err)
+        );
+
+        // Try to serve from the matched tree
+        const matchedLookup = await kbLookup(result.canonicalMatch, []);
+        if (matchedLookup.hit && matchedLookup.node) {
+          if (matchedLookup.path_hash) {
+            logKBEvent({
+              pathHash: matchedLookup.path_hash,
+              eventType: "walk",
+              sessionId,
+            }).catch(() => {});
+          }
+
+          const matchedResponse = nodeToResponse(
+            matchedLookup.node.payload as
+              | KBQuestionPayload
+              | KBResolutionPayload
+          );
+
+          return NextResponse.json({
+            ...matchedResponse,
+            kbSessionId: sessionId,
+            kbPathHash: matchedLookup.path_hash,
+          });
+        }
+      }
+
       const canonicalQuery =
-        kbResult.canonical_query || normalizeQuery(queryText);
+        result.canonicalMatch ||
+        kbResult.canonical_query ||
+        normalizeQuery(queryText);
 
       writeBackClarifyResponse({
         originalQuery: queryText,

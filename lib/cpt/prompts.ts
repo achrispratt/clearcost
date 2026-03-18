@@ -290,17 +290,36 @@ When you have enough information (confidence: "high"):
 /**
  * Initial assessment — first contact with a user query.
  * Claude classifies the query and either returns codes or asks the first question.
+ *
+ * When knownCanonicals is provided, Claude also checks if the query is
+ * semantically equivalent to an existing canonical form (synonym clustering).
  */
-export function buildGuidedSearchPrompt(query: string): string {
-  return `A patient is looking for healthcare pricing. Their query: "${query}"
+export function buildGuidedSearchPrompt(
+  query: string,
+  knownCanonicals?: string[]
+): string {
+  let prompt = `A patient is looking for healthcare pricing. Their query: "${query}"
 
 Assess this query:
 1. Classify it (code, procedure, condition, or symptom)
 2. If specific enough to identify 1-3 billing codes with high confidence, return them directly
 3. If ambiguous, ask your FIRST clarifying question to narrow down what they need
-4. Always include pricingPlan with baseCodeGroups + adders in your JSON
+4. Always include pricingPlan with baseCodeGroups + adders in your JSON`;
+
+  if (knownCanonicals && knownCanonicals.length > 0) {
+    prompt += `
+
+5. Check if the patient's query is semantically equivalent to one of these known queries (same medical intent, just different wording):
+${knownCanonicals.map((c) => `- "${c}"`).join("\n")}
+
+If the query matches one of the above, include "canonicalMatch": "<the matching query>" in your JSON response. Only match if the medical intent is clearly the same — "MRI of my knee" matches "knee mri", but "knee pain" does NOT match "knee mri" (pain could need many different procedures).`;
+  }
+
+  prompt += `
 
 Remember: help them figure out what procedure to price-shop for. Be warm and helpful.`;
+
+  return prompt;
 }
 
 /**
