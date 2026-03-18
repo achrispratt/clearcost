@@ -95,3 +95,38 @@ export async function kbSynonymLookup(query: string): Promise<string | null> {
   if (error || !data) return null;
   return data.canonical_query;
 }
+
+/**
+ * Fetch all distinct canonical queries for synonym clustering.
+ * Used when a query misses the synonym table — Claude checks if the
+ * new phrasing matches an existing canonical.
+ *
+ * Cached in-memory for 5 minutes to avoid hitting the DB on every miss.
+ */
+let canonicalCache: { queries: string[]; fetchedAt: number } | null = null;
+const CANONICAL_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export async function getKnownCanonicals(): Promise<string[]> {
+  const now = Date.now();
+  if (
+    canonicalCache &&
+    now - canonicalCache.fetchedAt < CANONICAL_CACHE_TTL_MS
+  ) {
+    return canonicalCache.queries;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("kb_nodes")
+    .select("canonical_query")
+    .eq("depth", 0)
+    .limit(2000);
+
+  if (error || !data) {
+    return canonicalCache?.queries || [];
+  }
+
+  const unique = [...new Set(data.map((r) => r.canonical_query))];
+  canonicalCache = { queries: unique, fetchedAt: now };
+  return unique;
+}

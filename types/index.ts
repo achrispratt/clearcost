@@ -276,6 +276,7 @@ export interface TranslationResponse {
   conversationComplete?: boolean;
   kbSessionId?: string; // KB session ID for event tracking
   kbPathHash?: string; // KB path hash for event tracking
+  canonicalMatch?: string; // Synonym clustering: matched existing canonical query
 }
 
 // -- Knowledge Base (Translation KB) --

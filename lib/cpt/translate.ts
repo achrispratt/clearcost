@@ -292,8 +292,15 @@ export async function translateQueryToCPT(
 /**
  * Guided search: initial assessment of a user query.
  * Returns either high-confidence codes or the first clarifying question.
+ *
+ * When knownCanonicals is provided, Claude also checks if the query matches
+ * an existing canonical form (synonym clustering). The match is returned as
+ * canonicalMatch on the response.
  */
-export async function assessQuery(query: string): Promise<TranslationResponse> {
+export async function assessQuery(
+  query: string,
+  knownCanonicals?: string[]
+): Promise<TranslationResponse> {
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
@@ -301,7 +308,12 @@ export async function assessQuery(query: string): Promise<TranslationResponse> {
     max_tokens: 1024,
     temperature: 0,
     system: GUIDED_SEARCH_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildGuidedSearchPrompt(query) }],
+    messages: [
+      {
+        role: "user",
+        content: buildGuidedSearchPrompt(query, knownCanonicals),
+      },
+    ],
   });
 
   const content = message.content[0];
@@ -310,7 +322,15 @@ export async function assessQuery(query: string): Promise<TranslationResponse> {
   }
 
   const parsed = parseJsonResponse(content.text);
-  return buildTranslationResponse(parsed, query);
+  const response = buildTranslationResponse(parsed, query);
+
+  // Pass through canonicalMatch if Claude identified a synonym
+  const canonicalMatch =
+    typeof parsed.canonicalMatch === "string"
+      ? parsed.canonicalMatch.trim().toLowerCase()
+      : undefined;
+
+  return { ...response, canonicalMatch };
 }
 
 /**
