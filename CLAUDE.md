@@ -215,106 +215,22 @@ Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler p
 - **Current phase:** Frontend polish (#13–#19)
 - **Work tracking:** GitHub Issues are the source of truth (issue # = priority)
 
-## Environment Variables
-
-See `.env.local.example` for required keys:
-
-| Variable                          | Purpose                                 |
-| --------------------------------- | --------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL                    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Supabase public/anon key                |
-| `SUPABASE_SERVICE_ROLE_KEY`       | Server-side Supabase admin access       |
-| `ANTHROPIC_API_KEY`               | Claude API for billing code translation |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view)      |
-
 ## Data Architecture Principles
 
 **Prefer bringing the calculation to the data, not the data to the calculation.**
 When possible and optimal, push reference data and logic into SQL (temp tables, CTEs, JOINs) rather than pulling large result sets to Node.js for local processing. This minimizes network transfer, respects Supabase Pro CPU/IO limits, and leverages Postgres's query optimizer. Not a hard rule — sometimes client-side processing is simpler or necessary (e.g., when logic depends on npm packages with no SQL equivalent). Use judgment.
 
-## Code Style & Guidelines
+## Code Style, Git Workflow & Design
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for code conventions, git workflow, branch naming, issue management, design system, and environment setup.
+
+Quick reference for AI sessions:
 
 - **Imports**: Group by external packages, then internal using `@/` path alias
 - **Types**: Use interfaces from `types/index.ts` — do not create parallel type definitions
-- **Error Handling**: try/catch for async operations, display errors with `react-hot-toast`
-- **API Routes**: Feature-organized in `app/api/`; use server Supabase client (async)
-- **Formatting**: Prettier (`.prettierrc`) + ESLint flat config (v9) extending next/core-web-vitals + next/typescript + eslint-config-prettier
-- **CI**: GitHub Actions (`.github/workflows/ci.yml`) — format check, lint, type check, build on every PR
-- **React hooks with setTimeout/setInterval**: always add `useEffect` cleanup on unmount to prevent orphaned timers
-- **Imperative API effects** (Google Maps, D3): split data-creation effects from selection/styling effects — avoid full object recreation on state changes
-
-## Git Workflow & Development Practices
-
-This is a solo-developer project. Workflow should be simple and low-friction, but tracked via GitHub Issues and PRs.
-
-**Issue-Driven Workflow:**
-All work is tracked via GitHub Issues on the [ClearCost MVP project board](https://github.com/users/achrispratt/projects/2). The standard flow:
-
-1. Pick an issue (user says "work on #7" or similar)
-2. Read the issue with `gh issue view <number>`
-3. Create a feature branch: `git checkout -b <type>/<short-description>` (e.g., `data/import-nj-charges`, `fix/payer-filter-removal`, `feat/loading-skeletons`)
-4. Do the work — commit frequently with clear messages
-5. Push and open a PR with `gh pr create`, linking the issue (use "Closes #N" in the PR body)
-6. User reviews and merges — issue auto-closes on merge
-
-**Creating New Issues:**
-When creating GitHub issues, always:
-
-1. Assign to the **ClearCost MVP project** (`--project "ClearCost MVP"`)
-2. Set the appropriate **milestone**: `MVP Data Complete`, `MVP App Ready`, `Launch`, or `Growth`
-3. Add relevant **labels**: type (`enhancement`, `bug`), area (`data`), priority (`high`, `medium`)
-
-```bash
-gh issue create --title "..." --body "..." \
-  --milestone "MVP App Ready" \
-  --label "enhancement" \
-  --project "ClearCost MVP"
-```
-
-**Branch Naming:**
-
-- `data/` — data pipeline, import, quality work
-- `feat/` — new features, UI additions
-- `fix/` — bug fixes
-- `infra/` — security, deployment, tooling
-- `refactor/` — code cleanup, no behavior change
-
-**Branching Rules:**
-
-- **Always use feature branches + PRs** for issue-tracked work. This keeps `main` clean and creates an audit trail.
-- **Commit directly to `main` only for** trivial fixes (typos, comment updates, CLAUDE.md changes) that don't warrant a PR.
-- Keep branches short-lived (merge within 1-2 sessions). Stale branches create confusion.
-
-**Commits:**
-
-- Commit frequently with clear messages. Small, focused commits are easier to review and revert.
-- Don't batch up many unrelated changes into one commit.
-
-**Merging:**
-
-- Merging a behind branch into `main` is safe — Git combines histories, it doesn't overwrite. The only dangerous operation is `git push --force`.
-- When in doubt about branch state: `git log --oneline main..branch-name` shows what the branch adds.
-
-**Planning & Docs:**
-
-- Planning documents (`docs/sprint-plan.md`, etc.) go directly on `main`. They don't need branch isolation.
-- This file (`CLAUDE.md`) is the primary source of institutional knowledge across sessions. Update it when decisions are made, patterns are established, or the project state changes.
-- Claude Code has **no memory across sessions** — anything not in repo files is lost. Keep CLAUDE.md current.
-
-**Sprint planning:**
-
-- GitHub Issues are the source of truth for work tracking. Issue # = priority order.
-- Sprint plan (`docs/sprint-plan.md`) is archived — all details rationalized into issues.
-- Priorities shift frequently in a solo project. Reorder issues when priorities change.
-
-## Design Direction
-
-- **Warm editorial aesthetic**: warm whites (#FAFAF8), teal primary (#0F766E), amber accents (#D97706)
-- Typography: Instrument Serif for headings, DM Sans for body
-- Reference: Zocdoc, GoodRx — trustworthy, clean, approachable; Sidecar Health cost calculator ([cost.sidecarhealth.com](https://cost.sidecarhealth.com/)) for price display patterns (large price focal points, procedure card layout, educational framing)
-- DaisyUI component library for consistent UI
-- Light mode only for MVP
-- CSS custom properties defined in `globals.css` (prefixed `--cc-*`) — use these, not raw colors
+- **Formatting**: Prettier + ESLint flat config (v9). CI runs format check, lint, type check, build on every PR.
+- **Branches**: `feat/`, `fix/`, `data/`, `infra/`, `refactor/` prefixes. Always use feature branches + PRs for issue-tracked work.
+- **Design tokens**: CSS custom properties in `globals.css` prefixed `--cc-*` — use these, not raw colors. DaisyUI 5 components. Light mode only.
 
 ## Product Roadmap
 

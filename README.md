@@ -119,7 +119,8 @@ Pricing data comes from [Trilliant Health's Oria](https://www.trillianthealth.co
 
 ## Documentation
 
-- **[CLAUDE.md](./CLAUDE.md)** — Full architecture, search flow, database schema, conventions, and roadmap
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — Setup, dev workflow, code conventions, design system
+- **[CLAUDE.md](./CLAUDE.md)** — Architecture, search flow, database schema, and roadmap
 - **[docs/prd.md](./docs/prd.md)** — Product requirements document
 - **[docs/billing-code-guide.md](./docs/billing-code-guide.md)** — Billing code structure and data interpretation
 - **[docs/data-snapshot.md](./docs/data-snapshot.md)** — Current data coverage numbers
