@@ -114,8 +114,9 @@ export async function getKnownCanonicals(): Promise<string[]> {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("kb_synonyms")
+    .from("kb_nodes")
     .select("canonical_query")
+    .eq("depth", 0)
     .limit(2000);
 
   if (error || !data) {

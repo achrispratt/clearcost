@@ -100,16 +100,16 @@ export async function POST(request: NextRequest) {
           ? await assessQuery(queryText, knownCanonicals)
           : await clarifyQuery(queryText, turns);
 
-      // If Claude matched this query to an existing canonical, link the
-      // synonym and serve from the existing tree instead of creating a new one
+      // If Claude matched this query to an existing canonical, verify the
+      // tree exists before linking the synonym (prevents orphaned synonyms
+      // if Claude hallucinated a match)
       if (result.canonicalMatch && turns.length === 0) {
-        writeSynonym(queryText, result.canonicalMatch).catch((err) =>
-          console.error("KB synonym clustering write failed:", err)
-        );
-
-        // Try to serve from the matched tree
         const matchedLookup = await kbLookup(result.canonicalMatch, []);
         if (matchedLookup.hit && matchedLookup.node) {
+          // Tree confirmed — now safe to write the synonym link
+          writeSynonym(queryText, result.canonicalMatch).catch((err) =>
+            console.error("KB synonym clustering write failed:", err)
+          );
           if (matchedLookup.path_hash) {
             logKBEvent({
               pathHash: matchedLookup.path_hash,
