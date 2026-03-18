@@ -51,14 +51,23 @@ SearchBar component → navigates to /guided-search?q=...&lat=...&lng=...
   ↓
 Guided Search page (app/guided-search/page.tsx) → POST /api/cpt
   ↓
+Step 0: kbLookup() (lib/kb/lookup.ts)
+  Normalize query → hash → check kb_synonyms for canonical form
+  Build path_hash → check kb_nodes for cached response
+  If KB hit (resolution node) → return cached codes immediately (zero AI cost)
+  If KB miss → fall through to Claude
+  ↓
 Step 1: translateQueryToCPT() (lib/cpt/translate.ts)
   Claude API assesses the query → returns confidence level + billing codes
+  Write-back: store synonym + node in KB for future lookups
   If confidence "high" → redirect to /results with codes
   If confidence "low"  → show clarifying questions (one at a time)
   ↓
 Step 1b (if clarification needed): Multi-turn Q&A loop
   POST /api/clarify with query + previous answers
+  KB checked at each turn (query + answer_path → path_hash)
   Claude generates next question based on full context
+  Each turn written back to KB as a conversation tree node
   Repeats until Claude resolves to specific codes (max 6 turns)
   ↓
 Navigate to /results?q=...&codes=73721&codeType=cpt&lat=...&lng=...
@@ -118,21 +127,27 @@ app/
   api/search/         — Main search endpoint (query → codes → prices)
   api/cpt/            — Billing code translation (single-shot assessment)
   api/clarify/        — Multi-turn clarification Q&A endpoint
+  api/kb/events/      — KB interaction event logging (clicks, saves, bounces)
   api/saved/          — Saved searches CRUD (requires auth)
   api/geocode/        — Location geocoding via Google Maps
   api/payers/         — Payer list for insurance dropdown
   auth/callback/      — Supabase OAuth callback handler
   guided-search/      — Diagnostic clarification page (pre-results Q&A)
+  legal/              — Legal pages: Terms of Service, Privacy Policy, Medical Disclaimers
   results/            — Search results page
   saved/              — Saved searches page
-components/           — UI: SearchBar, LocationInput, ResultCard, FilterBar, MapView, ClarificationStep, etc.
+components/
+  landing/            — Homepage sections: HeroSection, HowItWorks, WhyClearCost, SearchCategories, DataQuality
+  Footer.tsx          — Site-wide footer with legal links
+  ...                 — SearchBar, LocationInput, ResultCard, FilterBar, MapView, ClarificationStep, etc.
 lib/
   anthropic.ts        — Claude API client singleton
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
+  kb/                 — Translation Knowledge Base (lookup.ts, write-back.ts, events.ts, path-hash.ts)
   data/               — Import pipeline, code lists, DuckDB/Parquet data
   supabase/           — Three Supabase clients (browser, server, middleware)
 scripts/              — DB migration utilities + one-time audit/fix scripts from data quality phase
-#                       Active/reusable: db-audit.ts, stability-smoke.ts
+#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, migrate-translation-cache.ts
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
@@ -148,11 +163,15 @@ supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, 
 - `SearchResult` — Full API response: `{ cptCodes, results, interpretation, totalResults }`
 - `SavedSearch` — User bookmark with RLS
 - `BillingCodeType` = `'cpt' | 'hcpcs' | 'ms_drg'`
+- `KBNode` — Knowledge Base conversation tree node (question or resolution)
+- `KBSynonym` — Query normalization: maps variant phrasings to a canonical query
+- `KBLookupResult` — KB cache hit/miss result with optional node
 - Legacy aliases (`PriceResult`, `NegotiatedRate`) have been removed
 
 ## Database (Supabase Postgres + PostGIS)
 
-5 tables: `providers`, `charges`, `payer_rates`, `payers`, `saved_searches`
+5 core tables: `providers`, `charges`, `payer_rates`, `payers`, `saved_searches`
+4 KB tables: `kb_synonyms`, `kb_nodes`, `kb_events`, `kb_path_stats` (see Translation KB below)
 
 2 RPC functions:
 
@@ -167,6 +186,7 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - **billing_class**: "facility", "professional", "Both", or null — determines what cost component a charge represents
 - **All-in cost problem**: Hospital charges often represent only facility fees (~70-80% of total). Professional fees (radiologist, anesthesiologist) billed separately. MVP shows available price with smart contextual callouts.
 - **Hybrid AI approach**: Claude interprets plain English → verified code lookup confirms codes → PostGIS queries prices by location
+- **Translation Knowledge Base (KB)**: Caches AI translation results as a conversation tree. Synonym table maps variant phrasings ("mri knee" → "knee mri") to canonical queries. Node table stores each query+answer_path as a tree node. Repeat searches skip Claude entirely (zero AI cost). Synonym clustering links new queries to existing trees when semantically equivalent. See `lib/kb/` for implementation.
 
 ## Data Source: Trilliant Oria
 
@@ -185,10 +205,13 @@ Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler p
 
 ## Current Status
 
-**Phases 1-5.6 complete. Data quality sprint complete. Deployed to Vercel.**
+**Phases 1-5.6 complete. Data quality sprint complete. Translation KB + Legal pages shipped. Deployed to Vercel.**
 
 - **Live URL:** https://clearcost-orcin.vercel.app
 - Search pipeline working end-to-end. See `docs/data-snapshot.md` for current numbers.
+- **Translation KB:** Repeat searches served from cache (zero AI cost). Synonym clustering links variant phrasings.
+- **Legal:** Terms of Service, Privacy Policy, Medical Disclaimers pages live.
+- **Homepage:** Redesigned as 6-section landing page (Hero, How It Works, Why ClearCost, Search Categories, Data Quality, Footer).
 - **Current phase:** Frontend polish (#13–#19)
 - **Work tracking:** GitHub Issues are the source of truth (issue # = priority)
 
@@ -301,6 +324,8 @@ gh issue create --title "..." --body "..." \
 | **Phase 5.5**        | Guided Search — AI diagnostic clarification flow + UX polish                              | Complete |
 | **Phase 5.6**        | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete |
 | **Data Quality**     | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12)             | Complete |
+| **Translation KB**   | Knowledge Base caching, synonym clustering, zero-AI repeat searches                       | Complete |
+| **Legal & Landing**  | Terms/Privacy/Disclaimers pages, homepage redesign, Footer                                | Complete |
 | **Frontend Polish**  | Skeletons, billing callouts, distance filter, mobile UX (#13-#19)                         | Planned  |
 | **Pre-Launch**       | Security headers, rate limiting, verification checklist (#20-#23)                         | Planned  |
 | **Phase 6**          | Independent MRF crawler (replace Trilliant dependency)                                    | Deferred |
