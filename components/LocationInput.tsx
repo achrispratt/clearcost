@@ -142,7 +142,7 @@ export function LocationInput({
         type="button"
         onClick={detectLocation}
         disabled={isLoading}
-        className="shrink-0 p-1.5 rounded-md transition-colors hover:bg-[var(--cc-surface-alt)]"
+        className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md transition-colors hover:bg-[var(--cc-surface-alt)]"
         title="Use my location"
         style={{ color: "var(--cc-text-tertiary)" }}
       >
