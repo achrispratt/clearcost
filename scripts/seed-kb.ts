@@ -112,7 +112,9 @@ async function seedQuery(query: string, index: number): Promise<string> {
 }
 
 async function main() {
-  console.log(`Seeding KB with ${QUERIES.length} queries via ${BASE_URL}/api/clarify`);
+  console.log(
+    `Seeding KB with ${QUERIES.length} queries via ${BASE_URL}/api/clarify`
+  );
   console.log("---");
 
   // Process in batches of 3 to avoid overwhelming the API / Claude rate limits

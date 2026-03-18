@@ -6,10 +6,7 @@ import {
   translateQueryToCPT,
 } from "@/lib/cpt/translate";
 import { kbLookup, getKnownCanonicals } from "@/lib/kb/lookup";
-import {
-  writeBackClarifyResponse,
-  writeSynonym,
-} from "@/lib/kb/write-back";
+import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
 import type {

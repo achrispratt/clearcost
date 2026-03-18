@@ -108,7 +108,10 @@ const CANONICAL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export async function getKnownCanonicals(): Promise<string[]> {
   const now = Date.now();
-  if (canonicalCache && now - canonicalCache.fetchedAt < CANONICAL_CACHE_TTL_MS) {
+  if (
+    canonicalCache &&
+    now - canonicalCache.fetchedAt < CANONICAL_CACHE_TTL_MS
+  ) {
     return canonicalCache.queries;
   }
 
