@@ -64,6 +64,7 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
+      aria-label="How It Works"
       className="border-t px-4 py-16 sm:py-20"
       style={{
         borderColor: "var(--cc-border)",
@@ -72,12 +73,13 @@ export function HowItWorks() {
     >
       <div className="max-w-4xl mx-auto">
         <AnimateOnScroll>
-          <h2
+          <p
             className="text-center text-sm font-semibold tracking-widest uppercase mb-12"
             style={{ color: "var(--cc-text-tertiary)" }}
+            aria-hidden="true"
           >
             How It Works
-          </h2>
+          </p>
         </AnimateOnScroll>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">

@@ -132,6 +132,7 @@ export function SearchCategories() {
   return (
     <section
       id="what-you-can-search"
+      aria-label="What You Can Search"
       className="border-t px-4 py-16 sm:py-20"
       style={{
         borderColor: "var(--cc-border)",
@@ -141,12 +142,13 @@ export function SearchCategories() {
       <div className="max-w-5xl mx-auto">
         <AnimateOnScroll>
           <div className="text-center mb-12">
-            <h2
+            <p
               className="text-center text-sm font-semibold tracking-widest uppercase mb-3"
               style={{ color: "var(--cc-text-tertiary)" }}
+              aria-hidden="true"
             >
               What You Can Search
-            </h2>
+            </p>
             <p
               className="text-base"
               style={{ color: "var(--cc-text-secondary)" }}

@@ -64,6 +64,7 @@ export function WhyClearCost() {
 
   return (
     <section
+      aria-label="Why ClearCost Exists"
       className="border-t px-4 py-16 sm:py-20"
       style={{
         borderColor: "var(--cc-border)",
@@ -72,12 +73,13 @@ export function WhyClearCost() {
     >
       <div className="max-w-4xl mx-auto">
         <AnimateOnScroll>
-          <h2
+          <p
             className="text-center text-sm font-semibold tracking-widest uppercase mb-12"
             style={{ color: "var(--cc-text-tertiary)" }}
+            aria-hidden="true"
           >
             Why ClearCost Exists
-          </h2>
+          </p>
         </AnimateOnScroll>
 
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-10 sm:gap-12">
