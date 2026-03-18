@@ -9,7 +9,9 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
@@ -31,6 +33,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
     "duckdb-async": "^1.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
@@ -41,6 +44,7 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^4.1.0",
     "zipcodes": "^8.0.0"
   },
   "lint-staged": {

@@ -26,9 +26,9 @@ ClearCost — a consumer-facing tool that translates plain English healthcare qu
 - `npm run build` — Build for production (**see Machine Safety below**)
 - `npm run start` — Start production server
 - `npm run lint` — Run ESLint (flat config v9, extends next/core-web-vitals + next/typescript)
+- `npm test` — Run Vitest test suite (unit + API route integration)
+- `npm run test:watch` — Run tests in watch mode during development
 - `npx tsx --env-file=.env.local lib/data/import-trilliant.ts` — Run data import pipeline
-
-**No test framework is configured.** No Jest, Vitest, or test files exist. Do not attempt to run tests.
 
 ## Machine Safety
 

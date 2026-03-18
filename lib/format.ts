@@ -87,3 +87,13 @@ export function formatApproxCount(n: number): string {
   if (n >= 1_000_000) return `${Math.floor(n / 1_000_000)}M+`;
   return `${n.toLocaleString()}+`;
 }
+
+/** Title-case ALL CAPS hospital names from MRF data for display */
+export function displayName(name: string): string {
+  if (name !== name.toUpperCase()) return name;
+  return name
+    .toLowerCase()
+    .replace(/(?:^|\s)\w/g, (c) => c.toUpperCase())
+    .replace(/\s(of|the|at|and|in|for)\b/gi, (w) => w.toLowerCase())
+    .replace(/^./, (c) => c.toUpperCase());
+}

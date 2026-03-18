@@ -6,17 +6,9 @@ import type { ChargeResult } from "@/types";
 import {
   getDisplayPrice,
   formatDisplayPrice,
+  displayName,
   type DisplayPrice,
 } from "@/lib/format";
-
-function displayName(name: string): string {
-  if (name !== name.toUpperCase()) return name;
-  return name
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace(/\b(Of|The|At|And|In|For)\b/g, (w) => w.toLowerCase())
-    .replace(/^./, (c) => c.toUpperCase());
-}
 import { haversineMiles } from "@/lib/geo";
 
 interface MapViewProps {

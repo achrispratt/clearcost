@@ -59,9 +59,27 @@ Open [http://localhost:3000](http://localhost:3000).
 - `npm run build` and `npx tsx <script>` are completely unrelated — the build compiles the web app; tsx runs a standalone script
 - If Node.js memory exceeds 500MB during any operation, something is wrong — kill it immediately
 
-### No Test Framework
+### Testing
 
-There is no Jest, Vitest, or test infrastructure configured. Do not attempt to run tests. Type-checking (`npx tsc --noEmit`) and linting (`npm run lint`) are the primary verification tools.
+ClearCost uses [Vitest](https://vitest.dev/) for testing. Tests live in `__tests__/`:
+
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Run in watch mode during development
+```
+
+**Test structure:**
+
+| Directory | What it tests | Mocking |
+|-----------|--------------|---------|
+| `__tests__/unit/` | Pure functions (formatting, hashing, parsing) | None — no external deps |
+| `__tests__/api/` | API route request→response behavior | Supabase + Anthropic mocked |
+
+**When to write tests:**
+- New pure function → add unit test
+- Bug fix → add regression test that reproduces the bug
+- New API route or changed route behavior → add/update API test
+- New conditional logic (if/else) → test both branches
 
 ---
 
