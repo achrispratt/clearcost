@@ -289,7 +289,7 @@ Key insight: **Phases 6-8 are pure data engineering** — all data is publicly a
 
 - **Data freshness cadence**: How often does Trilliant update Oria? What's the lag from hospital MRF update to Oria inclusion?
 - **Accuracy validation**: How do we verify prices match actual hospital bills? Consider crowdsourced "what I actually paid" feature.
-- **Claude cost optimization**: What's the per-search cost for billing code translation? May need caching layer for common queries.
+- **Claude cost optimization**: ~~May need caching layer for common queries.~~ **Resolved** — Translation Knowledge Base (`lib/kb/`) caches AI responses as a conversation tree. Repeat searches and synonym variants are served from cache at zero AI cost.
 - **Mobile experience**: PWA manifest exists but mobile-optimized layout needs testing and polish.
 
 ### Future Opportunities
