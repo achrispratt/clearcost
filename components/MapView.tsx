@@ -8,6 +8,15 @@ import {
   formatDisplayPrice,
   type DisplayPrice,
 } from "@/lib/format";
+
+function displayName(name: string): string {
+  if (name !== name.toUpperCase()) return name;
+  return name
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\b(Of|The|At|And|In|For)\b/g, (w) => w.toLowerCase())
+    .replace(/^./, (c) => c.toUpperCase());
+}
 import { haversineMiles } from "@/lib/geo";
 
 interface MapViewProps {
@@ -68,7 +77,7 @@ function buildInfoWindowContent(providerResults: ChargeResult[]): string {
 
   return `
     <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
-      <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${first.provider.name}</p>
+      <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${displayName(first.provider.name)}</p>
       ${address ? `<p style="color: #5C5C6F; font-size: 12px; margin: 4px 0 0;">${address}</p>` : ""}
       ${priceStr ? `<p style="font-size: 20px; font-weight: 700; color: ${priceColor}; margin: 8px 0 0;">${priceStr}</p>` : ""}
       ${bestPrice.label ? `<p style="color: #5C5C6F; font-size: 11px; margin: 2px 0 0;">${bestPrice.label}</p>` : ""}

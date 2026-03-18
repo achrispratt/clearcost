@@ -12,6 +12,16 @@ import type { ChargeResult, GroupedChargeResult } from "@/types";
 import { InfoCircleIcon } from "./InfoCircleIcon";
 import { Tooltip } from "./Tooltip";
 
+/** Title-case ALL CAPS hospital names from MRF data for display */
+function displayName(name: string): string {
+  if (name !== name.toUpperCase()) return name;
+  return name
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\b(Of|The|At|And|In|For)\b/g, (w) => w.toLowerCase())
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
 const notNull = (v: string | undefined): v is string =>
   !!v && v.toLowerCase() !== "null";
 
@@ -160,7 +170,7 @@ export function ResultCard({
               className="text-sm font-semibold truncate min-w-0"
               style={{ color: "var(--cc-text)" }}
             >
-              {result.provider.name}
+              {displayName(result.provider.name)}
             </span>
 
             {/* Setting badge */}
