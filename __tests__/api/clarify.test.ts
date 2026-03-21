@@ -59,10 +59,7 @@ describe("POST /api/clarify", () => {
           question: {
             id: "q1",
             question: "What kind of knee care?",
-            options: [
-              { label: "Imaging" },
-              { label: "Surgery" },
-            ],
+            options: [{ label: "Imaging" }, { label: "Surgery" }],
           },
           confidence: "low" as const,
         },
@@ -117,9 +114,7 @@ describe("POST /api/clarify", () => {
     });
 
     const turns = [{ questionId: "q1", selectedOption: "Imaging" }];
-    const res = await POST(
-      makeRequest({ query: "my knee hurts", turns })
-    );
+    const res = await POST(makeRequest({ query: "my knee hurts", turns }));
 
     expect(res.status).toBe(200);
     expect(clarifyQuery).toHaveBeenCalledWith("my knee hurts", turns);
@@ -139,7 +134,9 @@ describe("POST /api/clarify", () => {
         node_type: "resolution",
         payload: {
           type: "resolution" as const,
-          codes: [{ code: "73721", description: "MRI knee", category: "Imaging" }],
+          codes: [
+            { code: "73721", description: "MRI knee", category: "Imaging" },
+          ],
           interpretation: "Knee MRI",
           confidence: "high" as const,
           conversationComplete: true,

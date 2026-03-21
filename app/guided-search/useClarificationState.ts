@@ -137,7 +137,9 @@ export function useClarificationState() {
       } else {
         // Server returned neither a question nor codes — malformed response.
         // Show error with skip option so the user isn't stuck.
-        setError("We couldn't process your query. You can try searching directly.");
+        setError(
+          "We couldn't process your query. You can try searching directly."
+        );
         setPhase("clarifying");
       }
     },

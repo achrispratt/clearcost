@@ -66,11 +66,14 @@ export async function POST(request: NextRequest) {
     const kbResult = await kbLookup(queryText, turns);
 
     if (kbResult.hit && kbResult.node) {
-      const payload = kbResult.node.payload as KBQuestionPayload | KBResolutionPayload;
+      const payload = kbResult.node.payload as
+        | KBQuestionPayload
+        | KBResolutionPayload;
 
       // GUARD: Skip depth-0 resolution nodes — the diagnostic must always run.
       // Only return cached responses at depth 0 if they are QUESTION nodes.
-      const isDepth0Resolution = turns.length === 0 && payload.type === "resolution";
+      const isDepth0Resolution =
+        turns.length === 0 && payload.type === "resolution";
 
       if (!isDepth0Resolution) {
         if (kbResult.path_hash) {

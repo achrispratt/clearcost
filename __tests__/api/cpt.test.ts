@@ -83,9 +83,7 @@ describe("POST /api/cpt", () => {
     vi.mocked(kbLookup).mockResolvedValue({ hit: false });
 
     const claudeResult = {
-      codes: [
-        { code: "73721", description: "MRI knee", category: "Imaging" },
-      ],
+      codes: [{ code: "73721", description: "MRI knee", category: "Imaging" }],
       interpretation: "Knee MRI without contrast",
       confidence: "high" as const,
     };
@@ -107,9 +105,7 @@ describe("POST /api/cpt", () => {
 
   it("returns 500 when Claude throws", async () => {
     vi.mocked(kbLookup).mockResolvedValue({ hit: false });
-    vi.mocked(translateQueryToCPT).mockRejectedValue(
-      new Error("API timeout")
-    );
+    vi.mocked(translateQueryToCPT).mockRejectedValue(new Error("API timeout"));
 
     const res = await POST(makeRequest({ query: "knee MRI" }));
     expect(res.status).toBe(500);

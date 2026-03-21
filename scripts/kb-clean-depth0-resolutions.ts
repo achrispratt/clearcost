@@ -20,7 +20,9 @@ async function main() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    console.error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+    );
     process.exit(1);
   }
 
@@ -61,7 +63,9 @@ async function main() {
   }
 
   console.log(`\nDeleted ${count} depth-0 resolution nodes.`);
-  console.log("New question nodes will be created as users go through the diagnostic.");
+  console.log(
+    "New question nodes will be created as users go through the diagnostic."
+  );
 }
 
 main();

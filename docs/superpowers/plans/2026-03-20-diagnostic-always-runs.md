@@ -38,6 +38,7 @@ User: "knee MRI"
 ```
 
 **How depth-0 resolutions got into the KB:**
+
 - `/api/cpt` route (route.ts:39-56) writes a resolution node at depth 0 for EVERY query via `writeNode()`
 - `/api/clarify` write-back (write-back.ts:105-106) writes resolution when Claude returns `confidence: "high"` — even at depth 0
 - System prompt (prompts.ts:85) tells Claude: "If specific enough → return billing codes directly"
@@ -49,12 +50,14 @@ User: "knee MRI"
 ## Scope
 
 **In scope:**
+
 - Diagnostic always runs (never skips to results)
 - KB serves cached questions instantly (reduce Claude calls / latency)
 - Remove all hardcoded skip logic
 - Clean up stale KB data
 
 **Out of scope (separate issues):**
+
 - Full visit cost display (facility fees, professional fees, adders) — this is a results page concern
 - Pre-seeding KB trees for common queries
 - Minimum-turns configuration
@@ -63,29 +66,31 @@ User: "knee MRI"
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Modify | `app/guided-search/useClarificationState.ts:111-154` | Remove all confidence-based redirect logic |
-| Modify | `app/api/clarify/route.ts:66-86, 103-129` | Skip depth-0 resolution nodes; guard synonym clustering |
-| Modify | `lib/cpt/prompts.ts:83-86, 297-307` | Claude always walks the full diagnostic |
-| Modify | `lib/kb/write-back.ts:92-141` | Never write resolution at depth 0 |
-| Modify | `app/api/cpt/route.ts:33-56` | Stop writing KB nodes from legacy route |
-| Create | `scripts/kb-clean-depth0-resolutions.ts` | One-time cleanup of stale depth-0 resolution nodes |
-| Modify | `__tests__/api/clarify.test.ts` | Test: depth-0 resolution nodes are ignored |
-| Modify | `__tests__/api/cpt.test.ts` | Test: legacy route no longer writes KB nodes |
-| Create | `__tests__/unit/write-back-guard.test.ts` | Test: write-back refuses resolution at depth 0 |
+| Action | File                                                 | Responsibility                                          |
+| ------ | ---------------------------------------------------- | ------------------------------------------------------- |
+| Modify | `app/guided-search/useClarificationState.ts:111-154` | Remove all confidence-based redirect logic              |
+| Modify | `app/api/clarify/route.ts:66-86, 103-129`            | Skip depth-0 resolution nodes; guard synonym clustering |
+| Modify | `lib/cpt/prompts.ts:83-86, 297-307`                  | Claude always walks the full diagnostic                 |
+| Modify | `lib/kb/write-back.ts:92-141`                        | Never write resolution at depth 0                       |
+| Modify | `app/api/cpt/route.ts:33-56`                         | Stop writing KB nodes from legacy route                 |
+| Create | `scripts/kb-clean-depth0-resolutions.ts`             | One-time cleanup of stale depth-0 resolution nodes      |
+| Modify | `__tests__/api/clarify.test.ts`                      | Test: depth-0 resolution nodes are ignored              |
+| Modify | `__tests__/api/cpt.test.ts`                          | Test: legacy route no longer writes KB nodes            |
+| Create | `__tests__/unit/write-back-guard.test.ts`            | Test: write-back refuses resolution at depth 0          |
 
 ---
 
 ## Task 1: Client — remove all confidence-based redirect logic
 
 The client should have zero opinion about when the diagnostic is done. It follows the server response blindly:
+
 - Server returns `nextQuestion` → show it
 - Server returns `conversationComplete: true` + codes, no `nextQuestion` → go to results
 
 No confidence checks. No turn counting. The server decides.
 
 **Files:**
+
 - Modify: `app/guided-search/useClarificationState.ts:111-154`
 
 - [ ] **Step 1: Simplify `handleResponse` — remove confidence-based branching**
@@ -124,7 +129,9 @@ const handleResponse = useCallback(
       // Show error with skip option so the user isn't stuck.
       // This triggers the existing error UI (guided-search/page.tsx lines 76-95)
       // which has a "Skip to results" button that does a text search.
-      setError("We couldn't process your query. You can try searching directly.");
+      setError(
+        "We couldn't process your query. You can try searching directly."
+      );
       setPhase("clarifying");
     }
   },
@@ -158,6 +165,7 @@ git commit -m "fix: client follows server response — no confidence-based skip 
 The server should never return a resolution node at depth 0. When the KB has a stale depth-0 resolution, the server skips it and falls through to Claude to get the first diagnostic question.
 
 **Files:**
+
 - Modify: `app/api/clarify/route.ts:66-86, 103-129`
 - Modify: `__tests__/api/clarify.test.ts`
 
@@ -179,7 +187,9 @@ it("ignores depth-0 resolution nodes and falls through to Claude", async () => {
       node_type: "resolution",
       payload: {
         type: "resolution" as const,
-        codes: [{ code: "73721", description: "MRI knee", category: "Imaging" }],
+        codes: [
+          { code: "73721", description: "MRI knee", category: "Imaging" },
+        ],
         interpretation: "Knee MRI",
         confidence: "high" as const,
         conversationComplete: true,
@@ -230,11 +240,14 @@ Edit `app/api/clarify/route.ts` — modify the KB hit section (lines 68-86):
 
 ```typescript
 if (kbResult.hit && kbResult.node) {
-  const payload = kbResult.node.payload as KBQuestionPayload | KBResolutionPayload;
+  const payload = kbResult.node.payload as
+    | KBQuestionPayload
+    | KBResolutionPayload;
 
   // GUARD: Skip depth-0 resolution nodes — the diagnostic must always run.
   // Only return cached responses at depth 0 if they are QUESTION nodes.
-  const isDepth0Resolution = turns.length === 0 && payload.type === "resolution";
+  const isDepth0Resolution =
+    turns.length === 0 && payload.type === "resolution";
 
   if (!isDepth0Resolution) {
     if (kbResult.path_hash) {
@@ -386,6 +399,7 @@ git commit -m "fix: /api/clarify skips depth-0 resolution nodes, falls through t
 The prompt currently tells Claude to "return billing codes directly" for clear queries. Change it to always ask all relevant diagnostic questions before resolving.
 
 **Files:**
+
 - Modify: `lib/cpt/prompts.ts:83-86, 297-307`
 
 - [ ] **Step 1: Update the "How You Work" section**
@@ -393,6 +407,7 @@ The prompt currently tells Claude to "return billing codes directly" for clear q
 Edit `lib/cpt/prompts.ts` — change lines 83-88 in `GUIDED_SEARCH_SYSTEM_PROMPT`:
 
 From:
+
 ```
 ## How You Work
 
@@ -404,6 +419,7 @@ From:
 ```
 
 To:
+
 ```
 ## How You Work
 
@@ -423,12 +439,14 @@ To:
 Change the `"procedure"` and `"code"` entries:
 
 From:
+
 ```
 - **"code"**: User specified a billing code (e.g., "CPT 73721"). Return it directly. Confidence: high.
 - **"procedure"**: User named a specific procedure (e.g., "knee MRI without contrast"). May need 0-2 questions. Confidence depends on specificity.
 ```
 
 To:
+
 ```
 - **"code"**: User specified a billing code (e.g., "CPT 73721"). Still ask at least one question — confirm the procedure and ask about variants that affect pricing (laterality, contrast). Confidence: low on first assessment.
 - **"procedure"**: User named a specific procedure (e.g., "knee MRI"). Always needs at least 1 question (contrast, laterality). Confidence: low on first assessment, high only after all relevant triage questions are answered.
@@ -439,6 +457,7 @@ To:
 Edit `lib/cpt/prompts.ts` — change lines 301-307:
 
 From:
+
 ```typescript
 let prompt = `A patient is looking for healthcare pricing. Their query: "${query}"
 
@@ -450,6 +469,7 @@ Assess this query:
 ```
 
 To:
+
 ```typescript
 let prompt = `A patient is looking for healthcare pricing. Their query: "${query}"
 
@@ -480,6 +500,7 @@ git commit -m "fix: system prompt always walks full diagnostic before resolving"
 Prevent new depth-0 resolution nodes from entering the KB. Only question nodes should exist at the root of a KB tree.
 
 **Files:**
+
 - Modify: `lib/kb/write-back.ts:92-141`
 - Create: `__tests__/unit/write-back-guard.test.ts`
 
@@ -662,6 +683,7 @@ git commit -m "fix: write-back guard prevents resolution nodes at depth 0"
 The legacy `/api/cpt` route writes resolution nodes at depth 0 for every query. This is the original source of KB pollution. The guided search path (`/api/clarify`) has its own write-back; `/api/cpt` should stop writing.
 
 **Files:**
+
 - Modify: `app/api/cpt/route.ts:33-56`
 - Modify: `__tests__/api/cpt.test.ts`
 
@@ -766,6 +788,7 @@ git commit -m "fix: /api/cpt stops writing KB nodes (guided search owns write-ba
 Existing stale depth-0 resolution nodes need to be removed. The server guard (Task 2) catches them at runtime, but cleaning them up removes unnecessary KB lookups.
 
 **Files:**
+
 - Create: `scripts/kb-clean-depth0-resolutions.ts`
 
 - [ ] **Step 1: Write the cleanup script**
@@ -780,7 +803,9 @@ async function main() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    console.error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+    );
     process.exit(1);
   }
 
@@ -821,7 +846,9 @@ async function main() {
   }
 
   console.log(`\nDeleted ${count} depth-0 resolution nodes.`);
-  console.log("New question nodes will be created as users go through the diagnostic.");
+  console.log(
+    "New question nodes will be created as users go through the diagnostic."
+  );
 }
 
 main();
@@ -861,6 +888,7 @@ Expected: Clean.
 Run: `npm run dev`
 
 Test these scenarios:
+
 1. **"knee MRI"** → should show diagnostic question (laterality or contrast), NOT results
 2. **Answer a question** → should show next question or results
 3. **"knee MRI" a second time** → first question should load instantly from KB (no spinner)
