@@ -115,7 +115,6 @@ describe("POST /api/search", () => {
     vi.mocked(translateQueryToCPT).mockResolvedValue({
       codes: [{ code: "73721", description: "MRI knee", category: "Imaging" }],
       interpretation: "Knee MRI",
-      confidence: "high" as const,
     });
     vi.mocked(lookupWithPricingPlan).mockResolvedValue([]);
 
