@@ -1,3 +1,18 @@
+/**
+ * One-time cleanup: delete depth-0 resolution nodes from kb_nodes.
+ *
+ * These are stale artifacts from the old code path where /api/cpt wrote
+ * resolution nodes at the root of the KB tree, causing the guided search
+ * diagnostic to be bypassed.
+ *
+ * OPTIONAL: The server guard in /api/clarify already skips these at runtime,
+ * and the upsert in writeNode now overwrites them when a question node is
+ * written at the same path_hash. This script just pre-cleans the stale data.
+ *
+ * Note: /api/cpt still READS depth-0 resolutions from KB, but since we
+ * stopped it from WRITING new ones (Task 5), these will naturally be replaced
+ * by question nodes as guided searches overwrite them.
+ */
 import { createClient } from "@supabase/supabase-js";
 
 async function main() {

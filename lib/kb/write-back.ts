@@ -68,7 +68,6 @@ export async function writeNode(params: {
     },
     {
       onConflict: "path_hash",
-      ignoreDuplicates: true,
     }
   );
 
