@@ -70,12 +70,13 @@ npm run test:watch    # Run in watch mode during development
 
 **Test structure:**
 
-| Directory | What it tests | Mocking |
-|-----------|--------------|---------|
-| `__tests__/unit/` | Pure functions (formatting, hashing, parsing) | None — no external deps |
-| `__tests__/api/` | API route request→response behavior | Supabase + Anthropic mocked |
+| Directory         | What it tests                                 | Mocking                     |
+| ----------------- | --------------------------------------------- | --------------------------- |
+| `__tests__/unit/` | Pure functions (formatting, hashing, parsing) | None — no external deps     |
+| `__tests__/api/`  | API route request→response behavior           | Supabase + Anthropic mocked |
 
 **When to write tests:**
+
 - New pure function → add unit test
 - Bug fix → add regression test that reproduces the bug
 - New API route or changed route behavior → add/update API test
@@ -98,13 +99,13 @@ All work is tracked via GitHub Issues on the [ClearCost MVP project board](https
 
 ### Branch naming
 
-| Prefix | Use for |
-|--------|---------|
-| `feat/` | New features, UI additions |
-| `fix/` | Bug fixes |
-| `data/` | Data pipeline, import, quality work |
-| `infra/` | Security, deployment, tooling |
-| `refactor/` | Code cleanup, no behavior change |
+| Prefix      | Use for                             |
+| ----------- | ----------------------------------- |
+| `feat/`     | New features, UI additions          |
+| `fix/`      | Bug fixes                           |
+| `data/`     | Data pipeline, import, quality work |
+| `infra/`    | Security, deployment, tooling       |
+| `refactor/` | Code cleanup, no behavior change    |
 
 ### Branching rules
 
@@ -194,15 +195,15 @@ npx tsc --noEmit      # Type check
 
 ClearCost uses a warm editorial aesthetic — trustworthy, clean, approachable.
 
-| Element | Value |
-|---------|-------|
-| Background | Warm whites (`#FAFAF8`) |
-| Primary | Teal (`#0F766E`) |
-| Accent | Amber (`#D97706`) |
-| Heading font | Instrument Serif |
-| Body font | DM Sans |
-| Component library | DaisyUI 5 |
-| Theme | Light mode only (MVP) |
+| Element           | Value                   |
+| ----------------- | ----------------------- |
+| Background        | Warm whites (`#FAFAF8`) |
+| Primary           | Teal (`#0F766E`)        |
+| Accent            | Amber (`#D97706`)       |
+| Heading font      | Instrument Serif        |
+| Body font         | DM Sans                 |
+| Component library | DaisyUI 5               |
+| Theme             | Light mode only (MVP)   |
 
 **References:** Zocdoc, GoodRx for trust/cleanliness; [Sidecar Health cost calculator](https://cost.sidecarhealth.com/) for price display patterns.
 
@@ -215,7 +216,7 @@ Colors and design tokens are defined in `app/globals.css` with the `--cc-*` pref
 color: var(--cc-primary);
 
 /* Not this */
-color: #0F766E;
+color: #0f766e;
 ```
 
 ---
@@ -232,11 +233,11 @@ ClearCost deploys to **Vercel** automatically on merge to `main`.
 
 ## Key Documentation
 
-| Document | What it covers |
-|----------|---------------|
-| [CLAUDE.md](./CLAUDE.md) | Architecture, search flow, database, key types, safety rules |
-| [docs/prd.md](./docs/prd.md) | Product requirements, vision, roadmap |
-| [docs/billing-code-guide.md](./docs/billing-code-guide.md) | Billing code structure, charge anatomy, data interpretation |
-| [docs/data-snapshot.md](./docs/data-snapshot.md) | Current data coverage numbers |
-| [docs/import-reference.md](./docs/import-reference.md) | Data import pipeline flags, quirks, and resume workflow |
-| [supabase/schema.sql](./supabase/schema.sql) | Full database schema |
+| Document                                                   | What it covers                                               |
+| ---------------------------------------------------------- | ------------------------------------------------------------ |
+| [CLAUDE.md](./CLAUDE.md)                                   | Architecture, search flow, database, key types, safety rules |
+| [docs/prd.md](./docs/prd.md)                               | Product requirements, vision, roadmap                        |
+| [docs/billing-code-guide.md](./docs/billing-code-guide.md) | Billing code structure, charge anatomy, data interpretation  |
+| [docs/data-snapshot.md](./docs/data-snapshot.md)           | Current data coverage numbers                                |
+| [docs/import-reference.md](./docs/import-reference.md)     | Data import pipeline flags, quirks, and resume workflow      |
+| [supabase/schema.sql](./supabase/schema.sql)               | Full database schema                                         |

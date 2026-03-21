@@ -66,23 +66,33 @@ export async function POST(request: NextRequest) {
     const kbResult = await kbLookup(queryText, turns);
 
     if (kbResult.hit && kbResult.node) {
-      if (kbResult.path_hash) {
-        logKBEvent({
-          pathHash: kbResult.path_hash,
-          eventType: "walk",
-          sessionId,
+      const payload = kbResult.node.payload as
+        | KBQuestionPayload
+        | KBResolutionPayload;
+
+      // GUARD: Skip depth-0 resolution nodes — the diagnostic must always run.
+      // Only return cached responses at depth 0 if they are QUESTION nodes.
+      const isDepth0Resolution =
+        turns.length === 0 && payload.type === "resolution";
+
+      if (!isDepth0Resolution) {
+        if (kbResult.path_hash) {
+          logKBEvent({
+            pathHash: kbResult.path_hash,
+            eventType: "walk",
+            sessionId,
+          });
+        }
+
+        const response = nodeToResponse(payload);
+
+        return NextResponse.json({
+          ...response,
+          kbSessionId: sessionId,
+          kbPathHash: kbResult.path_hash,
         });
       }
-
-      const response = nodeToResponse(
-        kbResult.node.payload as KBQuestionPayload | KBResolutionPayload
-      );
-
-      return NextResponse.json({
-        ...response,
-        kbSessionId: sessionId,
-        kbPathHash: kbResult.path_hash,
-      });
+      // else: fall through to Claude for the first diagnostic question
     }
 
     // --- KB MISS — fall through to Claude ---
@@ -103,29 +113,33 @@ export async function POST(request: NextRequest) {
       if (result.canonicalMatch && turns.length === 0) {
         const matchedLookup = await kbLookup(result.canonicalMatch, []);
         if (matchedLookup.hit && matchedLookup.node) {
-          // Tree confirmed — now safe to write the synonym link
+          const matchedPayload = matchedLookup.node.payload as
+            | KBQuestionPayload
+            | KBResolutionPayload;
+
+          // Write the synonym link regardless — it's valid
           writeSynonym(queryText, result.canonicalMatch).catch((err) =>
             console.error("KB synonym clustering write failed:", err)
           );
-          if (matchedLookup.path_hash) {
-            logKBEvent({
-              pathHash: matchedLookup.path_hash,
-              eventType: "walk",
-              sessionId,
-            }).catch(() => {});
+
+          // Only return the cached node if it's a question, not a depth-0 resolution
+          if (matchedPayload.type === "question") {
+            if (matchedLookup.path_hash) {
+              logKBEvent({
+                pathHash: matchedLookup.path_hash,
+                eventType: "walk",
+                sessionId,
+              }).catch(() => {});
+            }
+
+            const matchedResponse = nodeToResponse(matchedPayload);
+            return NextResponse.json({
+              ...matchedResponse,
+              kbSessionId: sessionId,
+              kbPathHash: matchedLookup.path_hash,
+            });
           }
-
-          const matchedResponse = nodeToResponse(
-            matchedLookup.node.payload as
-              | KBQuestionPayload
-              | KBResolutionPayload
-          );
-
-          return NextResponse.json({
-            ...matchedResponse,
-            kbSessionId: sessionId,
-            kbPathHash: matchedLookup.path_hash,
-          });
+          // else: depth-0 resolution — fall through and use Claude's response
         }
       }
 
@@ -147,6 +161,10 @@ export async function POST(request: NextRequest) {
         kbPathHash: kbResult.path_hash || null,
       });
     } catch (parseError) {
+      // INTENTIONAL BYPASS: When the guided search Claude call fails entirely,
+      // falling back to single-shot results is better than showing nothing.
+      // The client handles this correctly because it checks nextQuestion first
+      // (no question = navigate to results).
       console.error(
         "Guided search error, falling back to single-shot:",
         parseError

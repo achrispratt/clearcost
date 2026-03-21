@@ -68,7 +68,6 @@ export async function writeNode(params: {
     },
     {
       onConflict: "path_hash",
-      ignoreDuplicates: true,
     }
   );
 
@@ -104,6 +103,12 @@ export async function writeBackClarifyResponse(params: {
 
   const isResolution =
     response.confidence === "high" || response.conversationComplete;
+
+  // GUARD: Never write resolution nodes at depth 0.
+  // The diagnostic must always run — depth-0 nodes should only be questions.
+  if (isResolution && turns.length === 0) {
+    return null;
+  }
 
   const payload: KBQuestionPayload | KBResolutionPayload = isResolution
     ? {

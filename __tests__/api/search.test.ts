@@ -27,15 +27,19 @@ vi.mock("@/lib/cpt/medicare", () => ({
   lookupMedicareBenchmarks: vi.fn().mockResolvedValue(new Map()),
 }));
 vi.mock("@/lib/cpt/episode", () => ({
-  enrichWithEpisodeEstimates: vi.fn().mockImplementation((r) => Promise.resolve(r)),
+  enrichWithEpisodeEstimates: vi
+    .fn()
+    .mockImplementation((r) => Promise.resolve(r)),
 }));
 vi.mock("@/lib/cpt/group-results", () => ({
   groupResultsByProvider: vi.fn().mockImplementation((r) => r),
 }));
 vi.mock("@/lib/api-helpers", () => ({
-  handleApiError: vi.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: "Internal error" }), { status: 500 })
-  ),
+  handleApiError: vi
+    .fn()
+    .mockReturnValue(
+      new Response(JSON.stringify({ error: "Internal error" }), { status: 500 })
+    ),
 }));
 vi.mock("@/lib/cpt/pricing-plan", () => ({
   buildPricingPlan: vi.fn().mockReturnValue({
@@ -111,7 +115,6 @@ describe("POST /api/search", () => {
     vi.mocked(translateQueryToCPT).mockResolvedValue({
       codes: [{ code: "73721", description: "MRI knee", category: "Imaging" }],
       interpretation: "Knee MRI",
-      confidence: "high" as const,
     });
     vi.mocked(lookupWithPricingPlan).mockResolvedValue([]);
 

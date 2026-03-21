@@ -59,10 +59,7 @@ describe("POST /api/clarify", () => {
           question: {
             id: "q1",
             question: "What kind of knee care?",
-            options: [
-              { label: "Imaging" },
-              { label: "Surgery" },
-            ],
+            options: [{ label: "Imaging" }, { label: "Surgery" }],
           },
           confidence: "low" as const,
         },
@@ -117,20 +114,69 @@ describe("POST /api/clarify", () => {
     });
 
     const turns = [{ questionId: "q1", selectedOption: "Imaging" }];
-    const res = await POST(
-      makeRequest({ query: "my knee hurts", turns })
-    );
+    const res = await POST(makeRequest({ query: "my knee hurts", turns }));
 
     expect(res.status).toBe(200);
     expect(clarifyQuery).toHaveBeenCalledWith("my knee hurts", turns);
     expect(assessQuery).not.toHaveBeenCalled();
   });
 
-  it("handles synonym clustering: links synonym when tree exists", async () => {
-    // First call: KB miss
+  it("ignores depth-0 resolution nodes and falls through to Claude", async () => {
+    vi.mocked(kbLookup).mockResolvedValue({
+      hit: true,
+      canonical_query: "knee mri",
+      path_hash: "abc123",
+      node: {
+        path_hash: "abc123",
+        canonical_query: "knee mri",
+        answer_path: [],
+        depth: 0,
+        node_type: "resolution",
+        payload: {
+          type: "resolution" as const,
+          codes: [
+            { code: "73721", description: "MRI knee", category: "Imaging" },
+          ],
+          interpretation: "Knee MRI",
+          confidence: "high" as const,
+          conversationComplete: true,
+        },
+        hit_count: 5,
+        version: 1,
+        source: "claude",
+        created_at: "2026-01-01",
+        updated_at: "2026-01-01",
+      },
+    });
+
+    vi.mocked(assessQuery).mockResolvedValue({
+      codes: [],
+      interpretation: "You need a knee MRI",
+      confidence: "low" as const,
+      nextQuestion: {
+        id: "q_laterality",
+        question: "Which knee do you need imaged?",
+        options: [
+          { label: "Left knee" },
+          { label: "Right knee" },
+          { label: "Both knees" },
+        ],
+      },
+      conversationComplete: false,
+    });
+
+    const res = await POST(makeRequest({ query: "knee MRI" }));
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    expect(assessQuery).toHaveBeenCalled();
+    expect(data.nextQuestion).toBeDefined();
+    expect(data.nextQuestion.question).toContain("knee");
+  });
+
+  it("handles synonym clustering: writes synonym but falls through for depth-0 resolution", async () => {
     vi.mocked(kbLookup)
       .mockResolvedValueOnce({ hit: false })
-      // Second call: verify the canonical match tree exists
       .mockResolvedValueOnce({
         hit: true,
         canonical_query: "knee mri",
@@ -158,23 +204,26 @@ describe("POST /api/clarify", () => {
 
     vi.mocked(assessQuery).mockResolvedValue({
       codes: [],
-      interpretation: "",
-      confidence: "high" as const,
-      conversationComplete: true,
+      interpretation: "You need a knee MRI",
+      confidence: "low" as const,
+      nextQuestion: {
+        id: "q1",
+        question: "Which knee?",
+        options: [{ label: "Left" }, { label: "Right" }],
+      },
+      conversationComplete: false,
       canonicalMatch: "knee mri",
     });
 
-    const res = await POST(
-      makeRequest({ query: "I need an MRI on my knee" })
-    );
+    const res = await POST(makeRequest({ query: "I need an MRI on my knee" }));
     expect(res.status).toBe(200);
 
     const data = await res.json();
-    expect(data.codes).toEqual([
-      { code: "73721", description: "MRI", category: "Imaging" },
-    ]);
+    // Should return Claude's question, NOT the cached resolution
+    expect(data.nextQuestion).toBeDefined();
+    expect(data.nextQuestion.question).toBe("Which knee?");
 
-    // Synonym should have been written
+    // Synonym should still be written
     expect(writeSynonym).toHaveBeenCalledWith(
       "I need an MRI on my knee",
       "knee mri"

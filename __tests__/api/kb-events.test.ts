@@ -47,9 +47,7 @@ describe("POST /api/kb/events", () => {
   });
 
   it("returns 400 for missing sessionId", async () => {
-    const res = await POST(
-      makeRequest({ pathHash: "abc", eventType: "walk" })
-    );
+    const res = await POST(makeRequest({ pathHash: "abc", eventType: "walk" }));
     expect(res.status).toBe(400);
   });
 
