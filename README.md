@@ -22,16 +22,16 @@ Type "knee MRI near Austin, TX" and get a sorted list of hospitals with actual c
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 16 (App Router) + React 19 + TypeScript |
-| Styling | Tailwind CSS v4 + DaisyUI 5 |
-| Database | Supabase (Postgres + PostGIS) |
-| Auth | Supabase Auth (Google OAuth) |
-| AI | Claude API via Anthropic SDK |
-| Maps | Google Maps JavaScript API |
-| Data | Trilliant Oria hospital MRF dataset (81GB Parquet) |
-| Deployment | Vercel |
+| Layer      | Technology                                         |
+| ---------- | -------------------------------------------------- |
+| Framework  | Next.js 16 (App Router) + React 19 + TypeScript    |
+| Styling    | Tailwind CSS v4 + DaisyUI 5                        |
+| Database   | Supabase (Postgres + PostGIS)                      |
+| Auth       | Supabase Auth (Google OAuth)                       |
+| AI         | Claude API via Anthropic SDK                       |
+| Maps       | Google Maps JavaScript API                         |
+| Data       | Trilliant Oria hospital MRF dataset (81GB Parquet) |
+| Deployment | Vercel                                             |
 
 ## Getting Started
 
