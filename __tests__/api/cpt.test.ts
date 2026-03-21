@@ -79,7 +79,7 @@ describe("POST /api/cpt", () => {
     expect(translateQueryToCPT).not.toHaveBeenCalled();
   });
 
-  it("calls Claude on KB miss and writes back to KB", async () => {
+  it("calls Claude on KB miss (no KB write-back)", async () => {
     vi.mocked(kbLookup).mockResolvedValue({ hit: false });
 
     const claudeResult = {
@@ -100,9 +100,9 @@ describe("POST /api/cpt", () => {
     // Claude should have been called
     expect(translateQueryToCPT).toHaveBeenCalledWith("knee MRI");
 
-    // Write-back should have been called (fire-and-forget)
-    expect(writeSynonym).toHaveBeenCalled();
-    expect(writeNode).toHaveBeenCalled();
+    // Legacy route should NOT write to KB (guided search handles its own write-back)
+    expect(writeSynonym).not.toHaveBeenCalled();
+    expect(writeNode).not.toHaveBeenCalled();
   });
 
   it("returns 500 when Claude throws", async () => {
@@ -115,20 +115,5 @@ describe("POST /api/cpt", () => {
     expect(res.status).toBe(500);
     const data = await res.json();
     expect(data.error).toBe("Failed to translate query");
-  });
-
-  it("still returns result even if KB write-back fails (silent failure)", async () => {
-    vi.mocked(kbLookup).mockResolvedValue({ hit: false });
-    vi.mocked(translateQueryToCPT).mockResolvedValue({
-      codes: [{ code: "73721", description: "MRI", category: "Imaging" }],
-      interpretation: "MRI",
-      confidence: "high" as const,
-    });
-    vi.mocked(writeSynonym).mockRejectedValue(new Error("DB error"));
-    vi.mocked(writeNode).mockRejectedValue(new Error("DB error"));
-
-    const res = await POST(makeRequest({ query: "knee MRI" }));
-    // Response should still be 200 — write-back is best-effort
-    expect(res.status).toBe(200);
   });
 });

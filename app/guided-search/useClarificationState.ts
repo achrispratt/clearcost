@@ -119,38 +119,29 @@ export function useClarificationState() {
         setAllCodes(data.codes);
       }
 
-      if (data.confidence === "high" || data.conversationComplete) {
-        if (data.codes && data.codes.length > 0) {
-          goToResults(data.codes, data.interpretation || "", data.pricingPlan);
-        } else {
-          const extra: Record<string, string> = {};
-          if (data.pricingPlan) {
-            extra.plan = JSON.stringify(data.pricingPlan);
-          }
-          if (kbMeta.current.sessionId)
-            extra.kbSessionId = kbMeta.current.sessionId;
-          if (kbMeta.current.pathHash)
-            extra.kbPathHash = kbMeta.current.pathHash;
-          navigateToResults(buildResultsParams(extra));
-        }
-        return;
-      }
-
+      // Follow the server response — no client-side skip logic.
+      // If the server says there's a question to ask, show it.
+      // If the server says the conversation is complete, go to results.
       if (data.nextQuestion) {
         setCurrentQuestion(data.nextQuestion);
         setPhase("clarifying");
         setSelectedOption(null);
         setFreeText("");
+        return;
+      }
+
+      // No nextQuestion — conversation is complete (or server couldn't produce a question).
+      // Navigate to results with whatever codes we have.
+      if (data.codes && data.codes.length > 0) {
+        goToResults(data.codes, data.interpretation || "", data.pricingPlan);
       } else {
-        const kbExtra: Record<string, string> = {};
-        if (kbMeta.current.sessionId)
-          kbExtra.kbSessionId = kbMeta.current.sessionId;
-        if (kbMeta.current.pathHash)
-          kbExtra.kbPathHash = kbMeta.current.pathHash;
-        navigateToResults(buildResultsParams(kbExtra));
+        // Server returned neither a question nor codes — malformed response.
+        // Show error with skip option so the user isn't stuck.
+        setError("We couldn't process your query. You can try searching directly.");
+        setPhase("clarifying");
       }
     },
-    [goToResults, navigateToResults, buildResultsParams]
+    [goToResults]
   );
 
   const fetchOrCacheQuestion = useCallback(

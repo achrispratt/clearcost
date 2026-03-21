@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateQueryToCPT } from "@/lib/cpt/translate";
 import { kbLookup } from "@/lib/kb/lookup";
-import { writeSynonym, writeNode } from "@/lib/kb/write-back";
-import { normalizeQuery } from "@/lib/kb/path-hash";
 import type { KBResolutionPayload } from "@/types";
 
 export async function POST(request: NextRequest) {
@@ -31,30 +29,6 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await translateQueryToCPT(query);
-
-    const canonicalQuery = kbResult.canonical_query || normalizeQuery(query);
-    writeSynonym(query, canonicalQuery).catch((err) =>
-      console.error("KB synonym write failed:", err)
-    );
-    writeNode({
-      canonicalQuery,
-      answerSegments: [],
-      depth: 0,
-      nodeType: "resolution",
-      payload: {
-        type: "resolution",
-        codes: result.codes,
-        interpretation: result.interpretation,
-        searchTerms: result.searchTerms,
-        queryType: result.queryType,
-        pricingPlan: result.pricingPlan,
-        laterality: result.laterality,
-        bodySite: result.bodySite,
-        confidence: "high",
-        conversationComplete: true,
-      },
-    }).catch((err) => console.error("KB node write failed:", err));
-
     return NextResponse.json(result);
   } catch (error) {
     console.error("CPT translation error:", error);
