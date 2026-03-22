@@ -95,9 +95,11 @@ export function SearchBar({
     clearPending();
   }, [clearPending]);
 
+  const isDisabled = loading || geocoding;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if (isDisabled) return;
 
     const errors: { query?: string; location?: string } = {};
     if (!query.trim()) errors.query = "Describe a procedure or service";
@@ -112,8 +114,10 @@ export function SearchBar({
     if (location) {
       onSearch(query.trim(), location);
     } else {
-      pendingSearchRef.current = true;
-      setPendingSearch(true);
+      setValidationErrors((prev) => ({
+        ...prev,
+        location: "Select a location from the suggestions",
+      }));
     }
   };
 
@@ -260,17 +264,17 @@ export function SearchBar({
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isDisabled}
           className={`w-full sm:w-auto text-white font-medium transition-all cursor-pointer disabled:cursor-not-allowed ${
             compact
               ? "m-1.5 px-4 py-2 rounded-lg text-sm"
               : "m-2 px-6 py-3 rounded-xl hover:brightness-110"
           }`}
           style={{
-            background: loading
+            background: isDisabled
               ? "var(--cc-text-tertiary)"
               : "var(--cc-primary)",
-            opacity: loading ? 0.4 : 1,
+            opacity: isDisabled ? 0.4 : 1,
           }}
         >
           {getButtonContent(compact ? "compact" : "full")}

@@ -203,18 +203,6 @@ Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler p
 
 **Full import reference** (flags, DuckDB quirks, resume workflow, gotchas): see `docs/import-reference.md`
 
-## Current Status
-
-**Phases 1-5.6 complete. Data quality sprint complete. Translation KB + Legal pages shipped. Deployed to Vercel.**
-
-- **Live URL:** https://clearcost-orcin.vercel.app
-- Search pipeline working end-to-end. See `docs/data-snapshot.md` for current numbers.
-- **Translation KB:** Repeat searches served from cache (zero AI cost). Synonym clustering links variant phrasings.
-- **Legal:** Terms of Service, Privacy Policy, Medical Disclaimers pages live.
-- **Homepage:** Redesigned as 6-section landing page (Hero, How It Works, Why ClearCost, Search Categories, Data Quality, Footer).
-- **Current phase:** Frontend polish (#13–#19)
-- **Work tracking:** GitHub Issues are the source of truth (issue # = priority)
-
 ## Data Architecture Principles
 
 **Prefer bringing the calculation to the data, not the data to the calculation.**
@@ -224,30 +212,6 @@ When possible and optimal, push reference data and logic into SQL (temp tables, 
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — the single source of truth for code conventions, git workflow, branch naming, issue management, design system, and environment setup. Read it before writing code.
 
-## Product Roadmap
+## Roadmap & Work Tracking
 
-| Phase                | What                                                                                      | Status   |
-| -------------------- | ----------------------------------------------------------------------------------------- | -------- |
-| **Phases 1-5 (MVP)** | Cash prices + aggregated payer stats, national scope, 1,002 codes                         | Complete |
-| **Phase 5.5**        | Guided Search — AI diagnostic clarification flow + UX polish                              | Complete |
-| **Phase 5.6**        | Results page — split view, setting filter removal, search optimization, codebase refactor | Complete |
-| **Data Quality**     | Unknown-state providers, geocode backfill, dedup, pipeline hardening (#6-#12)             | Complete |
-| **Translation KB**   | Knowledge Base caching, synonym clustering, zero-AI repeat searches                       | Complete |
-| **Legal & Landing**  | Terms/Privacy/Disclaimers pages, homepage redesign, Footer                                | Complete |
-| **Frontend Polish**  | Skeletons, billing callouts, distance filter, mobile UX (#13-#19)                         | Planned  |
-| **Pre-Launch**       | Security headers, rate limiting, verification checklist (#20-#23)                         | Planned  |
-| **Phase 6**          | Independent MRF crawler (replace Trilliant dependency)                                    | Deferred |
-| **Phase 7**          | Plan-level insurance pricing from hospital MRFs                                           | Future   |
-| **Phase 8**          | Payer Transparency in Coverage data — all provider types                                  | Future   |
-| **Phase 9**          | Non-hospital cash prices (crowdsourced/partnerships/state data)                           | Future   |
-
-**Future UX enhancements** (tracked as backlog issues #32-#37):
-
-- Smart typeahead/suggestions in search bar (#32)
-- Conversational follow-up for deeply ambiguous queries
-- Results grouped by procedure type when query isn't fully resolved
-- Educational content: "How to work with your doctor to understand what you need"
-- Scheduling integration (e.g., Zocdoc partnership — ClearCost finds prices, they handle booking)
-- Primary care funnel for symptom-based users
-
-See `docs/prd.md` for full product requirements.
+GitHub Issues are the source of truth for work tracking. See `docs/prd.md` for full product requirements and phase history.
