@@ -111,7 +111,7 @@ export function ResultCard({
     <div
       data-result-id={result.id}
       data-provider-id={result.provider.id}
-      className={`rounded-xl border overflow-hidden transition-all duration-300 ${isExpanded ? "card-hover" : ""}`}
+      className="rounded-lg border overflow-hidden transition-all duration-300"
       style={{
         background: isSelected
           ? "var(--cc-primary-light)"
@@ -120,20 +120,10 @@ export function ResultCard({
         boxShadow: isSelected ? "0 0 0 2px var(--cc-primary)" : undefined,
       }}
     >
-      <div className="flex">
-        {/* Left accent stripe */}
-        <div
-          className="w-1 shrink-0"
-          style={{
-            background:
-              rank <= 3 ? "var(--cc-primary)" : "var(--cc-border-strong)",
-          }}
-        />
-
-        <div className="flex-1 min-w-0">
+      <div>
           {/* Collapsed header row — always visible */}
           <div
-            className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
+            className="flex items-center gap-2 p-3 cursor-pointer select-none"
             role="button"
             aria-expanded={isExpanded}
             onClick={() => {
@@ -219,7 +209,7 @@ export function ResultCard({
           {/* Accordion body */}
           <div className={`accordion-body ${isExpanded ? "expanded" : ""}`}>
             <div>
-              <div className="px-4 pb-4">
+              <div className="px-3 pb-3">
                 {/* Expanded header details */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
                   <div className="flex-1 min-w-0">
@@ -260,17 +250,8 @@ export function ResultCard({
                   <div className="text-left sm:text-right sm:shrink-0">
                     {displayPrice.type === "cash" ? (
                       <>
-                        {result.grossCharge != null &&
-                          result.grossCharge > (result.cashPrice || 0) && (
-                            <p
-                              className="text-xs line-through"
-                              style={{ color: "var(--cc-text-tertiary)" }}
-                            >
-                              {formatPrice(result.grossCharge)}
-                            </p>
-                          )}
                         <p
-                          className="text-2xl font-bold"
+                          className="text-xl font-bold"
                           style={{ color: "var(--cc-primary)" }}
                         >
                           {formatDisplayPrice(displayPrice)}
@@ -306,7 +287,7 @@ export function ResultCard({
                     ) : displayPrice.type === "insured" ? (
                       <>
                         <p
-                          className="text-2xl font-bold"
+                          className="text-xl font-bold"
                           style={{ color: "var(--cc-info)" }}
                         >
                           {formatDisplayPrice(displayPrice)}
@@ -327,7 +308,7 @@ export function ResultCard({
                     ) : displayPrice.type === "gross" ? (
                       <>
                         <p
-                          className="text-2xl font-bold"
+                          className="text-xl font-bold"
                           style={{ color: "var(--cc-accent)" }}
                         >
                           {formatDisplayPrice(displayPrice)}
@@ -686,7 +667,6 @@ export function ResultCard({
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
