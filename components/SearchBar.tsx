@@ -42,45 +42,24 @@ export function SearchBar({
     query?: string;
     location?: string;
   }>({});
-  const [pendingSearch, setPendingSearch] = useState(false);
-  const pendingSearchRef = useRef(false);
-  const queryRef = useRef(query);
   const queryInputRef = useRef<HTMLInputElement>(null);
 
   const [placeholder] = useState(
     () => placeholders[Math.floor(Math.random() * placeholders.length)]
   );
 
-  const clearPending = useCallback(() => {
-    pendingSearchRef.current = false;
-    setPendingSearch(false);
-  }, []);
-
-  // Wrap onLocationSelect to check pending search (success path)
   const handleLocationSelect = useCallback(
     (loc: { lat: number; lng: number; display: string }) => {
       setLocation(loc);
-      if (pendingSearchRef.current) {
-        clearPending();
-        onSearch(queryRef.current.trim(), loc);
-      }
     },
-    [onSearch, clearPending]
+    []
   );
 
-  // Check pending search failure when geocoding finishes without a location
   const handleGeocodingChange = useCallback(
     (isGeocoding: boolean) => {
       setGeocoding(isGeocoding);
-      if (!isGeocoding && pendingSearchRef.current) {
-        clearPending();
-        setValidationErrors((prev) => ({
-          ...prev,
-          location: "Couldn\u2019t find that location. Try a ZIP code.",
-        }));
-      }
     },
-    [clearPending]
+    []
   );
 
   const handleLocationTextChange = useCallback((text: string) => {
@@ -92,8 +71,7 @@ export function SearchBar({
 
   const handleLocationInvalidate = useCallback(() => {
     setLocation(null);
-    clearPending();
-  }, [clearPending]);
+  }, []);
 
   const isDisabled = loading || geocoding;
 
@@ -121,8 +99,7 @@ export function SearchBar({
     }
   };
 
-  const isLocating =
-    pendingSearch || (!location && geocoding && !!query.trim());
+  const isLocating = !location && geocoding && !!query.trim();
 
   // Button label logic
   const getButtonContent = (size: "compact" | "full") => {
@@ -213,7 +190,6 @@ export function SearchBar({
             value={query}
             onChange={(e) => {
               const val = e.target.value;
-              queryRef.current = val;
               setQuery(val);
               setValidationErrors((prev) =>
                 prev.query ? { ...prev, query: undefined } : prev

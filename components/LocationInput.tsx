@@ -16,6 +16,15 @@ interface LocationInputProps {
   initialValue?: string;
 }
 
+/** Reach into a PlaceAutocompleteElement to find its inner <input>. */
+function findInnerInput(el: HTMLElement): HTMLInputElement | null {
+  return (
+    el.querySelector<HTMLInputElement>("input") ??
+    el.shadowRoot?.querySelector<HTMLInputElement>("input") ??
+    null
+  );
+}
+
 export function LocationInput({
   onLocationSelect,
   onGeocodingChange,
@@ -27,6 +36,7 @@ export function LocationInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const autocompleteElRef = useRef<HTMLElement | null>(null);
+  const initialValueRef = useRef(initialValue);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [autocompleteReady, setAutocompleteReady] = useState(false);
@@ -81,8 +91,7 @@ export function LocationInput({
         `;
         // Find the internal input after it renders and style it
         requestAnimationFrame(() => {
-          const innerInput = ac.querySelector("input") ||
-            ac.shadowRoot?.querySelector("input");
+          const innerInput = findInnerInput(ac);
           if (innerInput) {
             innerInput.style.cssText = `
               background: transparent !important;
@@ -95,7 +104,7 @@ export function LocationInput({
               width: 100% !important;
             `;
             innerInput.placeholder = "ZIP or city";
-            if (initialValue) innerInput.value = initialValue;
+            if (initialValueRef.current) innerInput.value = initialValueRef.current;
           }
         });
 
@@ -122,9 +131,7 @@ export function LocationInput({
         // Track input changes for invalidation
         ac.addEventListener("input", () => {
           onLocationInvalidateRef.current?.();
-          const innerInput = ac.querySelector("input") ||
-            ac.shadowRoot?.querySelector("input");
-          onTextChangeRef.current?.(innerInput?.value || "");
+          onTextChangeRef.current?.(findInnerInput(ac)?.value || "");
         });
 
         // Hide fallback input, show autocomplete
@@ -148,7 +155,7 @@ export function LocationInput({
       }
       if (fallbackInput) fallbackInput.style.display = "";
     };
-  }, [apiKey, focusedOnce, initialValue]);
+  }, [apiKey, focusedOnce]);
 
   // Fallback geocoding — only used when Places Autocomplete is unavailable
   const geocodeAddress = useCallback(
@@ -228,8 +235,7 @@ export function LocationInput({
         });
         // Set text in whichever input is active
         if (autocompleteElRef.current) {
-          const innerInput = autocompleteElRef.current.querySelector("input") ||
-            autocompleteElRef.current.shadowRoot?.querySelector("input");
+          const innerInput = findInnerInput(autocompleteElRef.current);
           if (innerInput) innerInput.value = "Current Location";
         }
         if (inputRef.current) inputRef.current.value = "Current Location";
