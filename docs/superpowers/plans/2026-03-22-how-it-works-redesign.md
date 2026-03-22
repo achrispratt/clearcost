@@ -136,19 +136,23 @@ git commit -m "feat: add Step 1 text block with pill tags (#133)"
 
 - [ ] **Step 1: Build the three flow panels**
 
-Three panels side-by-side on desktop, stacked on mobile. Connected by `→` arrows (desktop) or `↓` (mobile).
+Three panels side-by-side on desktop, stacked on mobile. Connected by `→` arrows (desktop) or `↓` (mobile). All panels are **purely decorative** — not interactive.
 
-**Panel 1 — "You search":** Label + search bar mockup showing "knee MRI" with location "Trenton, NJ". Search icon (inline SVG) + location pin icon.
+Use an `<ol>` wrapper for semantic structure (screen readers announce "list of 3 steps"). Each panel is an `<li>`.
 
-**Panel 2 — "We clarify":** Label + serif question "Do you need contrast?" + help text + 3 radio options. "Without" is selected (teal border + filled dot). "With contrast" and "Not sure" are unselected.
+Wrap the entire `<ol>` in a container with `pointer-events-none select-none` to prevent click/select confusion.
 
-**Panel 3 — "You choose":** Label + serif question "Which knee?" + 2 radio options ("Left knee" selected, "Right knee" unselected). Below: resolved code badge with green background showing "73721 MRI knee w/o".
+**Panel 1 — "You search":** Label + search bar mockup showing "knee MRI" with location "Trenton, NJ". Search icon (inline SVG, `aria-hidden="true"`) + location pin icon (`aria-hidden="true"`). Add `role="img" aria-label="Search bar showing 'knee MRI' near Trenton, NJ"` on the panel `<li>`.
 
-Each panel: `bg-[var(--cc-surface)] border border-[var(--cc-border)] rounded-[10px] p-3 shadow-sm`. Flex-1 on desktop.
+**Panel 2 — "We clarify":** Label + serif question "Do you need contrast?" + help text + 3 radio options. "Without" is selected (teal border + filled dot). "With contrast" and "Not sure" are unselected. All radio dots are `aria-hidden="true"` (decorative). Add `role="img" aria-label="Clarification question: Do you need contrast dye?"` on the panel `<li>`.
+
+**Panel 3 — "You choose":** Label + serif question "Which knee?" + 2 radio options ("Left knee" selected, "Right knee" unselected). Below: resolved code badge with green background showing "73721 MRI knee w/o". Add `role="img" aria-label="Question resolved to CPT code 73721, MRI knee without contrast"` on the panel `<li>`.
+
+Each panel: `bg-[var(--cc-surface)] border border-[var(--cc-border)] rounded-[10px] p-3`. Flex-1 on desktop. **No shadow** (other landing sections don't use shadows).
 
 Radio button style: 12px circle, 2px border `--cc-border-strong` when unselected, `--cc-primary` when selected with 6px filled inner dot.
 
-Arrow style: `text-sm flex-shrink-0 pt-10` with `--cc-border-strong` color. Show `→` on `sm:`, `↓` below `sm:`.
+Arrow style: `text-sm flex-shrink-0 pt-10` with `--cc-border-strong` color. Show `→` on `sm:`, `↓` below `sm:`. Arrows are `aria-hidden="true"`.
 
 Wrap entire panel group in `<AnimateOnScroll delay={0.1}>`.
 
@@ -174,7 +178,7 @@ git commit -m "feat: add diagnostic flow panels to Step 1 (#133)"
 
 Step number + heading + description (same pattern as Step 1 but smaller: text-base heading).
 
-Then 3 mini ResultCards using canonical mock data:
+Then 3 mini ResultCards using canonical mock data. Wrap the cards container in `pointer-events-none select-none` (decorative). All chevron SVGs are `aria-hidden="true"`.
 
 **Card 1 (expanded):** Rank badge (1, teal bg), "Regional Medical Ctr", $420 (green), 3.2 mi, up-chevron. Expanded detail: address "123 Main St, Trenton, NJ", CPT badge "CPT 73721", description "MRI knee w/o contrast", large price $420 with "Cash price" label. Footer: Medicare $196 (green, `--cc-success`), "2.1×" badge, Avg insured $312 (blue, `--cc-info`).
 
@@ -210,7 +214,7 @@ git commit -m "feat: add mini ResultCards to Step 2 (#133)"
 
 Step number + heading + description.
 
-Then the split view container: `border border-[var(--cc-border)] rounded-[10px] overflow-hidden bg-[var(--cc-surface)] h-[200px] sm:flex`.
+Then the split view container: `border border-[var(--cc-border)] rounded-[10px] overflow-hidden bg-[var(--cc-surface)] h-[200px] sm:flex pointer-events-none select-none` (decorative). Add `role="img" aria-label="Split view showing search results list alongside a map with price markers"` on the container.
 
 **Left (55%):** Filter pills row (8px text: "25 mi", "Price ↑"). Then 5 result rows using canonical mock data. Row 1 highlighted with teal border and `--cc-primary-light` bg. Each row: rank number + provider name (truncated) + price. University Health shows amber price.
 
