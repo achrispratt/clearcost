@@ -43,26 +43,57 @@ The current HowItWorks section uses a symmetric 3-column grid (icon + title + de
 - **Contextual pill tags** — small rounded pills beneath each step crystallize capabilities
 - **Arrows between flow panels** — `→` characters connect the 3 diagnostic panels in Step 1 to show sequential progression
 
+### Mini-card fidelity
+
+The ResultCards and diagnostic panels in this section are **simplified facsimiles**, not pixel-scaled copies of the real components. They use the same colors and visual language (rank badges, price colors, chevrons, radio buttons) but are static HTML/CSS with hardcoded dummy data — not instances of the actual components.
+
+**Canonical mock data across Steps 2 and 3:**
+
+| Rank | Provider | Price | Type | Distance |
+|------|----------|-------|------|----------|
+| 1 | Regional Medical Center | $420 | Cash | 3.2 mi |
+| 2 | St. Mary's Hospital | $680 | Cash | 5.1 mi |
+| 3 | Princeton Healthcare | $510 | Cash | 7.8 mi |
+| 4 | University Health System | $1,200 | List Price | 8.4 mi |
+| 5 | Capital Health | $550 | Cash | 9.1 mi |
+
+Step 2 shows the top 3 (ranks 1-3). Step 3 shows all 5 in the split view.
+
 ### Design tokens (existing)
 
 All colors use existing CSS custom properties:
 - Primary: `--cc-primary` (#0f766e), `--cc-primary-light` (#f0fdfa)
 - Accent/warning: `--cc-accent` (#d97706), `--cc-accent-light` (#fef3c7)
+- Info (insured): `--cc-info` (#1e40af)
+- Success (Medicare): `--cc-success` (#059669)
 - Text hierarchy: `--cc-text`, `--cc-text-secondary`, `--cc-text-tertiary`
 - Borders: `--cc-border`, `--cc-border-strong`
 - Surfaces: `--cc-surface`, `--cc-surface-alt`, `--cc-bg`
 - Font: `--font-instrument-serif` for step numbers
 
-### Mobile behavior
+### Container width
 
-- Step 1: stack text above the 3 flow panels; panels stack vertically with `↓` arrows
-- Steps 2 and 3: stack vertically (full width each), divider becomes horizontal
-- Split view in Step 3: stack list above map, or show mobile toggle (matching actual results page behavior)
+Widen from the current `max-w-4xl` (896px) to `max-w-5xl` (1024px) to accommodate Step 1's 280px text + 3 flow panels comfortably.
+
+### Responsive behavior
+
+- **Desktop (`sm:` and up):** Full layout as described above
+- **Mobile (below `sm:`):**
+  - Step 1: text stacks above the 3 flow panels; panels stack vertically with `↓` arrows replacing `→`
+  - Steps 2 and 3: stack vertically (full width each), vertical divider hidden
+  - Step 3 split view: list stacks above map (fixed height ~200px for map), no toggle needed
+
+Tablet/medium breakpoints follow the mobile stacking — the 3-panel layout in Step 1 only works at `sm:` (640px+) where there's enough width.
 
 ### Animation
 
-- Retain existing `AnimateOnScroll` wrapper with staggered delays
-- Flow panels in Step 1 could animate sequentially (0.1s stagger) to reinforce the left-to-right progression
+- Wrap each major block in `AnimateOnScroll`:
+  1. Section header (no delay)
+  2. Step 1 text block (delay 0)
+  3. Step 1 flow panels as a group (delay 0.1)
+  4. Step 2 block (delay 0)
+  5. Step 3 block (delay 0.1)
+- The flow panels animate as one unit, not individually — keeps it simple
 
 ## What this replaces
 
