@@ -97,9 +97,9 @@ function PanelLabel({ children }: { children: React.ReactNode }) {
 
 function FlowPanels() {
   return (
-    <ol className="flex flex-col sm:flex-row items-stretch gap-2 pointer-events-none select-none" aria-label="Search flow: you search, we clarify, you choose">
+    <div className="flex flex-col sm:flex-row items-stretch gap-2 pointer-events-none select-none">
       {/* Panel 1 — You search */}
-      <li
+      <div
         role="img"
         aria-label="Search bar showing a query for knee MRI near Trenton NJ"
         className="flex-1 p-3 rounded-[10px]"
@@ -120,12 +120,12 @@ function FlowPanels() {
           <PinIcon />
           <span style={{ color: "var(--cc-text-secondary)" }}>Trenton, NJ</span>
         </div>
-      </li>
+      </div>
 
       <FlowArrow />
 
       {/* Panel 2 — We clarify */}
-      <li
+      <div
         role="img"
         aria-label="Clarification question asking if contrast is needed with radio button options"
         className="flex-1 p-3 rounded-[10px]"
@@ -142,16 +142,16 @@ function FlowPanels() {
           Do you need contrast?
         </p>
         <div className="flex flex-col gap-1.5 text-xs" style={{ color: "var(--cc-text-secondary)" }}>
-          <label className="flex items-center gap-1.5"><RadioDot selected={true} /> Without</label>
-          <label className="flex items-center gap-1.5"><RadioDot selected={false} /> With contrast</label>
-          <label className="flex items-center gap-1.5"><RadioDot selected={false} /> Not sure</label>
+          <span className="flex items-center gap-1.5"><RadioDot selected={true} /> Without</span>
+          <span className="flex items-center gap-1.5"><RadioDot selected={false} /> With contrast</span>
+          <span className="flex items-center gap-1.5"><RadioDot selected={false} /> Not sure</span>
         </div>
-      </li>
+      </div>
 
       <FlowArrow />
 
       {/* Panel 3 — You choose */}
-      <li
+      <div
         role="img"
         aria-label="Final selection showing left knee chosen and resolved billing code 73721"
         className="flex-1 p-3 rounded-[10px]"
@@ -168,8 +168,8 @@ function FlowPanels() {
           Which knee?
         </p>
         <div className="flex flex-col gap-1.5 text-xs mb-2.5" style={{ color: "var(--cc-text-secondary)" }}>
-          <label className="flex items-center gap-1.5"><RadioDot selected={true} /> Left knee</label>
-          <label className="flex items-center gap-1.5"><RadioDot selected={false} /> Right knee</label>
+          <span className="flex items-center gap-1.5"><RadioDot selected={true} /> Left knee</span>
+          <span className="flex items-center gap-1.5"><RadioDot selected={false} /> Right knee</span>
         </div>
         <span
           className="inline-block text-[10px] font-mono font-medium rounded px-2 py-0.5"
@@ -177,8 +177,8 @@ function FlowPanels() {
         >
           73721 MRI knee w/o
         </span>
-      </li>
-    </ol>
+      </div>
+    </div>
   );
 }
 
@@ -212,7 +212,7 @@ function MiniResultCards() {
           <div className="flex items-center gap-2">
             <span
               className="text-[10px] font-bold rounded px-1.5 py-0.5"
-              style={{ background: "var(--cc-primary)", color: "#fff" }}
+              style={{ background: "var(--cc-primary)", color: "white" }}
             >
               1
             </span>
