@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { ensureGoogleMaps, importLibrary } from "@/lib/google-maps";
 
 interface LocationInputProps {
   onLocationSelect: (location: {
@@ -15,6 +16,15 @@ interface LocationInputProps {
   initialValue?: string;
 }
 
+/** Reach into a PlaceAutocompleteElement to find its inner <input>. */
+function findInnerInput(el: HTMLElement): HTMLInputElement | null {
+  return (
+    el.querySelector<HTMLInputElement>("input") ??
+    el.shadowRoot?.querySelector<HTMLInputElement>("input") ??
+    null
+  );
+}
+
 export function LocationInput({
   onLocationSelect,
   onGeocodingChange,
@@ -23,19 +33,142 @@ export function LocationInput({
   compact,
   initialValue = "",
 }: LocationInputProps) {
-  const [value, setValue] = useState(initialValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const autocompleteElRef = useRef<HTMLElement | null>(null);
+  const initialValueRef = useRef(initialValue);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [autocompleteReady, setAutocompleteReady] = useState(false);
+  const [focusedOnce, setFocusedOnce] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  // Stable refs for callbacks used in autocomplete listener
+  const onLocationSelectRef = useRef(onLocationSelect);
+  const onTextChangeRef = useRef(onTextChange);
+  const onLocationInvalidateRef = useRef(onLocationInvalidate);
+  useEffect(() => {
+    onLocationSelectRef.current = onLocationSelect;
+  }, [onLocationSelect]);
+  useEffect(() => {
+    onTextChangeRef.current = onTextChange;
+  }, [onTextChange]);
+  useEffect(() => {
+    onLocationInvalidateRef.current = onLocationInvalidate;
+  }, [onLocationInvalidate]);
 
   // Notify parent of geocoding state changes
   useEffect(() => {
     onGeocodingChange?.(geocoding || detectingLocation);
   }, [geocoding, detectingLocation, onGeocodingChange]);
 
+  // Initialize Google Places Autocomplete (New API, lazy — waits for first focus)
+  useEffect(() => {
+    if (!apiKey || !containerRef.current || !focusedOnce) return;
+
+    ensureGoogleMaps(apiKey);
+
+    let cancelled = false;
+
+    importLibrary("places")
+      .then(() => {
+        if (cancelled || !containerRef.current) return;
+
+        const ac = new google.maps.places.PlaceAutocompleteElement({
+          componentRestrictions: { country: "us" },
+          types: ["(regions)"],
+        });
+
+        // Style the element to match our design
+        ac.style.cssText = `
+          width: 100%;
+          --gmpx-color-surface: transparent;
+          --gmpx-color-on-surface: var(--cc-text);
+          --gmpx-font-family-base: inherit;
+          --gmpx-font-size-base: 0.875rem;
+        `;
+        // Find the internal input after it renders and style it
+        requestAnimationFrame(() => {
+          const innerInput = findInnerInput(ac);
+          if (innerInput) {
+            innerInput.style.cssText = `
+              background: transparent !important;
+              border: none !important;
+              outline: none !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              font: inherit !important;
+              color: var(--cc-text) !important;
+              width: 100% !important;
+            `;
+            innerInput.placeholder = "ZIP or city";
+            if (initialValueRef.current)
+              innerInput.value = initialValueRef.current;
+          }
+        });
+
+        ac.addEventListener("gmp-placeselect", async (e) => {
+          const place = (
+            e as google.maps.places.PlaceAutocompletePlaceSelectEvent
+          ).place;
+          if (place) {
+            try {
+              await place.fetchFields({
+                fields: ["location", "formattedAddress"],
+              });
+              if (place.location) {
+                const display = place.formattedAddress || "";
+                onLocationSelectRef.current({
+                  lat: place.location.lat(),
+                  lng: place.location.lng(),
+                  display,
+                });
+                onTextChangeRef.current?.(display);
+              }
+            } catch (err) {
+              console.warn("Failed to fetch place details:", err);
+            }
+          }
+        });
+
+        // Track input changes for invalidation
+        ac.addEventListener("input", () => {
+          onLocationInvalidateRef.current?.();
+          onTextChangeRef.current?.(findInnerInput(ac)?.value || "");
+        });
+
+        // Hide fallback input, show autocomplete
+        const fallbackInput = inputRef.current;
+        if (fallbackInput) fallbackInput.style.display = "none";
+        containerRef.current?.appendChild(ac);
+        autocompleteElRef.current = ac;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        setAutocompleteReady(true);
+      })
+      .catch((err) => {
+        console.warn(
+          "Google Places API unavailable, using fallback geocoding:",
+          err
+        );
+      });
+
+    const fallbackInput = inputRef.current;
+    return () => {
+      cancelled = true;
+      if (autocompleteElRef.current) {
+        autocompleteElRef.current.remove();
+        autocompleteElRef.current = null;
+      }
+      if (fallbackInput) fallbackInput.style.display = "";
+    };
+  }, [apiKey, focusedOnce]);
+
+  // Fallback geocoding — only used when Places Autocomplete is unavailable
   const geocodeAddress = useCallback(
     async (input: string) => {
-      if (!input.trim()) return;
+      if (!input.trim() || autocompleteReady) return;
 
       setGeocoding(true);
       try {
@@ -57,36 +190,36 @@ export function LocationInput({
         setGeocoding(false);
       }
     },
-    [onLocationSelect]
+    [onLocationSelect, autocompleteReady]
   );
 
-  // Debounced geocoding — triggers 300ms after user stops typing
+  // Handle user typing (fallback input only)
   const handleInputChange = useCallback(
     (input: string) => {
-      setValue(input);
       onTextChange?.(input);
       onLocationInvalidate?.();
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
-      // Only auto-geocode if input looks like a plausible location
-      // (3+ chars for city names, or 5 digits for ZIP)
-      const trimmed = input.trim();
-      if (trimmed.length >= 3) {
-        debounceRef.current = setTimeout(() => {
-          geocodeAddress(trimmed);
-        }, 300);
+      if (!autocompleteReady) {
+        const trimmed = input.trim();
+        if (trimmed.length >= 3) {
+          debounceRef.current = setTimeout(() => {
+            geocodeAddress(trimmed);
+          }, 300);
+        }
       }
     },
-    [geocodeAddress, onTextChange, onLocationInvalidate]
+    [geocodeAddress, onTextChange, onLocationInvalidate, autocompleteReady]
   );
 
-  // Immediate geocode on blur or Enter (no debounce)
+  // Immediate geocode on blur or Enter — fallback only
   const handleImmediate = useCallback(
     (input: string) => {
+      if (autocompleteReady) return;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       geocodeAddress(input);
     },
-    [geocodeAddress]
+    [geocodeAddress, autocompleteReady]
   );
 
   // Cleanup debounce timer on unmount
@@ -108,7 +241,12 @@ export function LocationInput({
           lng: longitude,
           display: "Current Location",
         });
-        setValue("Current Location");
+        // Set text in whichever input is active
+        if (autocompleteElRef.current) {
+          const innerInput = findInnerInput(autocompleteElRef.current);
+          if (innerInput) innerInput.value = "Current Location";
+        }
+        if (inputRef.current) inputRef.current.value = "Current Location";
         onTextChange?.("Current Location");
         setDetectingLocation(false);
       },
@@ -121,15 +259,21 @@ export function LocationInput({
   const isLoading = geocoding || detectingLocation;
 
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex items-center" ref={containerRef}>
       <input
+        ref={inputRef}
         type="text"
-        value={value}
+        defaultValue={initialValue}
+        onFocus={() => {
+          if (!focusedOnce) setFocusedOnce(true);
+        }}
         onChange={(e) => handleInputChange(e.target.value)}
-        onBlur={() => handleImmediate(value)}
+        onBlur={() => {
+          if (inputRef.current) handleImmediate(inputRef.current.value);
+        }}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            handleImmediate(value);
+          if (e.key === "Enter" && !autocompleteReady && inputRef.current) {
+            handleImmediate(inputRef.current.value);
           }
         }}
         placeholder="ZIP or city"

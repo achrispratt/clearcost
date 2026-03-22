@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
+import { ensureGoogleMaps, importLibrary } from "@/lib/google-maps";
 import type { ChargeResult } from "@/types";
 import {
   getDisplayPrice,
@@ -163,7 +163,6 @@ export function MapView({
   className,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const optionsSetRef = useRef(false);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -188,10 +187,7 @@ export function MapView({
   useEffect(() => {
     if (!apiKey || map || !mapRef.current) return;
 
-    if (!optionsSetRef.current) {
-      setOptions({ key: apiKey, v: "weekly" });
-      optionsSetRef.current = true;
-    }
+    ensureGoogleMaps(apiKey);
 
     let cancelled = false;
 

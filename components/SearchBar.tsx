@@ -42,46 +42,22 @@ export function SearchBar({
     query?: string;
     location?: string;
   }>({});
-  const [pendingSearch, setPendingSearch] = useState(false);
-  const pendingSearchRef = useRef(false);
-  const queryRef = useRef(query);
   const queryInputRef = useRef<HTMLInputElement>(null);
 
   const [placeholder] = useState(
     () => placeholders[Math.floor(Math.random() * placeholders.length)]
   );
 
-  const clearPending = useCallback(() => {
-    pendingSearchRef.current = false;
-    setPendingSearch(false);
-  }, []);
-
-  // Wrap onLocationSelect to check pending search (success path)
   const handleLocationSelect = useCallback(
     (loc: { lat: number; lng: number; display: string }) => {
       setLocation(loc);
-      if (pendingSearchRef.current) {
-        clearPending();
-        onSearch(queryRef.current.trim(), loc);
-      }
     },
-    [onSearch, clearPending]
+    []
   );
 
-  // Check pending search failure when geocoding finishes without a location
-  const handleGeocodingChange = useCallback(
-    (isGeocoding: boolean) => {
-      setGeocoding(isGeocoding);
-      if (!isGeocoding && pendingSearchRef.current) {
-        clearPending();
-        setValidationErrors((prev) => ({
-          ...prev,
-          location: "Couldn\u2019t find that location. Try a ZIP code.",
-        }));
-      }
-    },
-    [clearPending]
-  );
+  const handleGeocodingChange = useCallback((isGeocoding: boolean) => {
+    setGeocoding(isGeocoding);
+  }, []);
 
   const handleLocationTextChange = useCallback((text: string) => {
     setLocationText(text);
@@ -92,12 +68,13 @@ export function SearchBar({
 
   const handleLocationInvalidate = useCallback(() => {
     setLocation(null);
-    clearPending();
-  }, [clearPending]);
+  }, []);
+
+  const isDisabled = loading || geocoding;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if (isDisabled) return;
 
     const errors: { query?: string; location?: string } = {};
     if (!query.trim()) errors.query = "Describe a procedure or service";
@@ -112,13 +89,14 @@ export function SearchBar({
     if (location) {
       onSearch(query.trim(), location);
     } else {
-      pendingSearchRef.current = true;
-      setPendingSearch(true);
+      setValidationErrors((prev) => ({
+        ...prev,
+        location: "Select a location from the suggestions",
+      }));
     }
   };
 
-  const isLocating =
-    pendingSearch || (!location && geocoding && !!query.trim());
+  const isLocating = !location && geocoding && !!query.trim();
 
   // Button label logic
   const getButtonContent = (size: "compact" | "full") => {
@@ -209,7 +187,6 @@ export function SearchBar({
             value={query}
             onChange={(e) => {
               const val = e.target.value;
-              queryRef.current = val;
               setQuery(val);
               setValidationErrors((prev) =>
                 prev.query ? { ...prev, query: undefined } : prev
@@ -260,17 +237,17 @@ export function SearchBar({
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isDisabled}
           className={`w-full sm:w-auto text-white font-medium transition-all cursor-pointer disabled:cursor-not-allowed ${
             compact
               ? "m-1.5 px-4 py-2 rounded-lg text-sm"
               : "m-2 px-6 py-3 rounded-xl hover:brightness-110"
           }`}
           style={{
-            background: loading
+            background: isDisabled
               ? "var(--cc-text-tertiary)"
               : "var(--cc-primary)",
-            opacity: loading ? 0.4 : 1,
+            opacity: isDisabled ? 0.4 : 1,
           }}
         >
           {getButtonContent(compact ? "compact" : "full")}
