@@ -104,15 +104,20 @@ export function LocationInput({
               width: 100% !important;
             `;
             innerInput.placeholder = "ZIP or city";
-            if (initialValueRef.current) innerInput.value = initialValueRef.current;
+            if (initialValueRef.current)
+              innerInput.value = initialValueRef.current;
           }
         });
 
         ac.addEventListener("gmp-placeselect", async (e) => {
-          const place = (e as google.maps.places.PlaceAutocompletePlaceSelectEvent).place;
+          const place = (
+            e as google.maps.places.PlaceAutocompletePlaceSelectEvent
+          ).place;
           if (place) {
             try {
-              await place.fetchFields({ fields: ["location", "formattedAddress"] });
+              await place.fetchFields({
+                fields: ["location", "formattedAddress"],
+              });
               if (place.location) {
                 const display = place.formattedAddress || "";
                 onLocationSelectRef.current({
@@ -143,7 +148,10 @@ export function LocationInput({
         setAutocompleteReady(true);
       })
       .catch((err) => {
-        console.warn("Google Places API unavailable, using fallback geocoding:", err);
+        console.warn(
+          "Google Places API unavailable, using fallback geocoding:",
+          err
+        );
       });
 
     const fallbackInput = inputRef.current;
@@ -256,7 +264,9 @@ export function LocationInput({
         ref={inputRef}
         type="text"
         defaultValue={initialValue}
-        onFocus={() => { if (!focusedOnce) setFocusedOnce(true); }}
+        onFocus={() => {
+          if (!focusedOnce) setFocusedOnce(true);
+        }}
         onChange={(e) => handleInputChange(e.target.value)}
         onBlur={() => {
           if (inputRef.current) handleImmediate(inputRef.current.value);

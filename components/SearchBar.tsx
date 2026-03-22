@@ -55,12 +55,9 @@ export function SearchBar({
     []
   );
 
-  const handleGeocodingChange = useCallback(
-    (isGeocoding: boolean) => {
-      setGeocoding(isGeocoding);
-    },
-    []
-  );
+  const handleGeocodingChange = useCallback((isGeocoding: boolean) => {
+    setGeocoding(isGeocoding);
+  }, []);
 
   const handleLocationTextChange = useCallback((text: string) => {
     setLocationText(text);

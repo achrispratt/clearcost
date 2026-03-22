@@ -50,9 +50,7 @@ describe("GET /api/geocode", () => {
     vi.stubEnv("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", "test-key");
 
     const { GET } = await import("@/app/api/geocode/route");
-    const req = new NextRequest(
-      "http://localhost/api/geocode?address=08624"
-    );
+    const req = new NextRequest("http://localhost/api/geocode?address=08624");
     const res = await GET(req);
     const data = await res.json();
 
@@ -72,9 +70,7 @@ describe("GET /api/geocode", () => {
   it("falls back to zipcodes package when no API key", async () => {
     vi.stubEnv("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", "");
     const { GET } = await import("@/app/api/geocode/route");
-    const req = new NextRequest(
-      "http://localhost/api/geocode?address=08624"
-    );
+    const req = new NextRequest("http://localhost/api/geocode?address=08624");
     const res = await GET(req);
     const data = await res.json();
 
