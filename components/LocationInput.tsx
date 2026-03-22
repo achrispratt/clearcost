@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ensureGoogleMaps, importLibrary } from "@/lib/google-maps";
 
 interface LocationInputProps {
   onLocationSelect: (location: {
@@ -25,86 +24,18 @@ export function LocationInput({
   initialValue = "",
 }: LocationInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
-  const [autocompleteReady, setAutocompleteReady] = useState(false);
-  const [focusedOnce, setFocusedOnce] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  // Stable refs for callbacks used in autocomplete listener
-  const onLocationSelectRef = useRef(onLocationSelect);
-  const onTextChangeRef = useRef(onTextChange);
-  useEffect(() => {
-    onLocationSelectRef.current = onLocationSelect;
-  }, [onLocationSelect]);
-  useEffect(() => {
-    onTextChangeRef.current = onTextChange;
-  }, [onTextChange]);
 
   // Notify parent of geocoding state changes
   useEffect(() => {
     onGeocodingChange?.(geocoding || detectingLocation);
   }, [geocoding, detectingLocation, onGeocodingChange]);
 
-  // Initialize Google Places Autocomplete (legacy API — attaches to our input)
-  useEffect(() => {
-    if (!apiKey || !inputRef.current || !focusedOnce) return;
-
-    ensureGoogleMaps(apiKey);
-
-    let cancelled = false;
-
-    importLibrary("places")
-      .then(() => {
-        if (cancelled || !inputRef.current) return;
-
-        const ac = new google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: "us" },
-          types: ["(regions)"],
-          fields: ["geometry", "formatted_address"],
-        });
-
-        ac.addListener("place_changed", () => {
-          const place = ac.getPlace();
-          if (place?.geometry?.location) {
-            const display =
-              place.formatted_address || inputRef.current?.value || "";
-            onLocationSelectRef.current({
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              display,
-            });
-            onTextChangeRef.current?.(display);
-          }
-        });
-
-        autocompleteRef.current = ac;
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        setAutocompleteReady(true);
-      })
-      .catch((err) => {
-        console.warn(
-          "Google Places API unavailable, using fallback geocoding:",
-          err
-        );
-      });
-
-    return () => {
-      cancelled = true;
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
-        autocompleteRef.current = null;
-      }
-    };
-  }, [apiKey, focusedOnce]);
-
-  // Fallback geocoding — only used when Places Autocomplete is unavailable
   const geocodeAddress = useCallback(
     async (input: string) => {
-      if (!input.trim() || autocompleteReady) return;
+      if (!input.trim()) return;
 
       setGeocoding(true);
       try {
@@ -126,36 +57,31 @@ export function LocationInput({
         setGeocoding(false);
       }
     },
-    [onLocationSelect, autocompleteReady]
+    [onLocationSelect]
   );
 
-  // Handle user typing — invalidate old location, debounce fallback geocode
   const handleInputChange = useCallback(
     (input: string) => {
       onTextChange?.(input);
       onLocationInvalidate?.();
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
-      if (!autocompleteReady) {
-        const trimmed = input.trim();
-        if (trimmed.length >= 3) {
-          debounceRef.current = setTimeout(() => {
-            geocodeAddress(trimmed);
-          }, 300);
-        }
+      const trimmed = input.trim();
+      if (trimmed.length >= 3) {
+        debounceRef.current = setTimeout(() => {
+          geocodeAddress(trimmed);
+        }, 300);
       }
     },
-    [geocodeAddress, onTextChange, onLocationInvalidate, autocompleteReady]
+    [geocodeAddress, onTextChange, onLocationInvalidate]
   );
 
-  // Immediate geocode on blur or Enter — fallback only
   const handleImmediate = useCallback(
     (input: string) => {
-      if (autocompleteReady) return;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       geocodeAddress(input);
     },
-    [geocodeAddress, autocompleteReady]
+    [geocodeAddress]
   );
 
   // Cleanup debounce timer on unmount
@@ -195,15 +121,12 @@ export function LocationInput({
         ref={inputRef}
         type="text"
         defaultValue={initialValue}
-        onFocus={() => {
-          if (!focusedOnce) setFocusedOnce(true);
-        }}
         onChange={(e) => handleInputChange(e.target.value)}
         onBlur={() => {
           if (inputRef.current) handleImmediate(inputRef.current.value);
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !autocompleteReady && inputRef.current) {
+          if (e.key === "Enter" && inputRef.current) {
             handleImmediate(inputRef.current.value);
           }
         }}
