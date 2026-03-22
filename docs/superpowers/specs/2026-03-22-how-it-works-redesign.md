@@ -13,6 +13,7 @@ The current HowItWorks section uses a symmetric 3-column grid (icon + title + de
 ### Layout: Asymmetric staggered (B-hybrid)
 
 **Step 01 — Search in plain English** (featured, full width)
+
 - Left half: constrained text block (280px) with step number (serif `01`), heading, description, and contextual pill tags ("AI-powered", "1,000+ procedures")
 - Right half: 3 small panels side-by-side showing one sequential diagnostic flow, connected by `→` arrows:
   1. **"You search"** — search bar mockup with "knee MRI" + "Trenton, NJ"
@@ -21,6 +22,7 @@ The current HowItWorks section uses a symmetric 3-column grid (icon + title + de
 - Separated from Steps 02/03 by a horizontal divider
 
 **Step 02 — Compare real prices** (half width, left)
+
 - Step number, heading, description
 - Mini ResultCards matching the actual `ResultCard` component UI:
   - First card expanded: rank badge, provider name, price ($420 green), distance, address, CPT badge, Medicare comparison ($196, 2.1×), avg insured ($312)
@@ -28,6 +30,7 @@ The current HowItWorks section uses a symmetric 3-column grid (icon + title + de
 - Pill tags: "Cash prices", "Medicare comparison"
 
 **Step 03 — Find nearby providers** (half width, right)
+
 - Step number, heading, description
 - 55/45 split view matching the actual results page layout:
   - Left (55%): filter pills (distance, sort, settings) + scrollable result rows (5 results, first highlighted with teal border)
@@ -49,19 +52,20 @@ The ResultCards and diagnostic panels in this section are **simplified facsimile
 
 **Canonical mock data across Steps 2 and 3:**
 
-| Rank | Provider | Price | Type | Distance |
-|------|----------|-------|------|----------|
-| 1 | Regional Medical Center | $420 | Cash | 3.2 mi |
-| 2 | St. Mary's Hospital | $680 | Cash | 5.1 mi |
-| 3 | Princeton Healthcare | $510 | Cash | 7.8 mi |
-| 4 | University Health System | $1,200 | List Price | 8.4 mi |
-| 5 | Capital Health | $550 | Cash | 9.1 mi |
+| Rank | Provider                 | Price  | Type       | Distance |
+| ---- | ------------------------ | ------ | ---------- | -------- |
+| 1    | Regional Medical Center  | $420   | Cash       | 3.2 mi   |
+| 2    | St. Mary's Hospital      | $680   | Cash       | 5.1 mi   |
+| 3    | Princeton Healthcare     | $510   | Cash       | 7.8 mi   |
+| 4    | University Health System | $1,200 | List Price | 8.4 mi   |
+| 5    | Capital Health           | $550   | Cash       | 9.1 mi   |
 
 Step 2 shows the top 3 (ranks 1-3). Step 3 shows all 5 in the split view.
 
 ### Design tokens (existing)
 
 All colors use existing CSS custom properties:
+
 - Primary: `--cc-primary` (#0f766e), `--cc-primary-light` (#f0fdfa)
 - Accent/warning: `--cc-accent` (#d97706), `--cc-accent-light` (#fef3c7)
 - Info (insured): `--cc-info` (#1e40af)
@@ -97,12 +101,12 @@ Tablet/medium breakpoints follow the mobile stacking — the 3-panel layout in S
 
 ## What this replaces
 
-| Removed | Added |
-|---------|-------|
-| Symmetric 3-column grid | Asymmetric: full-width Step 1 + half-width Steps 2/3 |
-| Icon-in-circle pattern | Inline UI previews (diagnostic flow, ResultCards, split view) |
-| Generic 2-line descriptions | Contextual pill tags + actual app UI mockups |
-| Identical visual weight per step | Step 1 featured with visual dominance |
+| Removed                          | Added                                                         |
+| -------------------------------- | ------------------------------------------------------------- |
+| Symmetric 3-column grid          | Asymmetric: full-width Step 1 + half-width Steps 2/3          |
+| Icon-in-circle pattern           | Inline UI previews (diagnostic flow, ResultCards, split view) |
+| Generic 2-line descriptions      | Contextual pill tags + actual app UI mockups                  |
+| Identical visual weight per step | Step 1 featured with visual dominance                         |
 
 ## Scope
 

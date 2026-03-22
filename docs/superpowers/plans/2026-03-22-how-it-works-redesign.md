@@ -17,11 +17,13 @@
 ### Task 1: Scaffold the new layout structure
 
 **Files:**
+
 - Modify: `components/landing/HowItWorks.tsx` (full rewrite)
 
 - [ ] **Step 1: Replace the component with the new outer structure**
 
 Replace the entire `HowItWorks` component. New structure:
+
 - Section wrapper: same `id`, `aria-label`, border-top, padding, background
 - Container: widen from `max-w-4xl` to `max-w-5xl`
 - AnimateOnScroll on section header (unchanged)
@@ -61,24 +63,24 @@ export function HowItWorks() {
 
         {/* Step 1: Featured full-width */}
         {/* TODO: Task 2 fills this in */}
-        <div className="sm:flex gap-10 mb-12 pb-12" style={{ borderBottom: "1px solid var(--cc-border)" }}>
+        <div
+          className="sm:flex gap-10 mb-12 pb-12"
+          style={{ borderBottom: "1px solid var(--cc-border)" }}
+        >
           <div className="sm:w-[280px] sm:flex-shrink-0 mb-8 sm:mb-0">
             {/* Step 1 text — Task 2 */}
           </div>
-          <div className="flex-1">
-            {/* Step 1 flow panels — Task 3 */}
-          </div>
+          <div className="flex-1">{/* Step 1 flow panels — Task 3 */}</div>
         </div>
 
         {/* Steps 2 + 3: Side by side */}
         <div className="sm:flex gap-12">
-          <div className="flex-1 mb-12 sm:mb-0">
-            {/* Step 2 — Task 4 */}
-          </div>
-          <div className="hidden sm:block w-px flex-shrink-0" style={{ background: "var(--cc-border)" }} />
-          <div className="flex-1">
-            {/* Step 3 — Task 5 */}
-          </div>
+          <div className="flex-1 mb-12 sm:mb-0">{/* Step 2 — Task 4 */}</div>
+          <div
+            className="hidden sm:block w-px flex-shrink-0"
+            style={{ background: "var(--cc-border)" }}
+          />
+          <div className="flex-1">{/* Step 3 — Task 5 */}</div>
         </div>
       </div>
     </section>
@@ -102,11 +104,13 @@ git commit -m "refactor: scaffold new HowItWorks asymmetric layout (#133)"
 ### Task 2: Step 1 — text block and pill tags
 
 **Files:**
+
 - Modify: `components/landing/HowItWorks.tsx`
 
 - [ ] **Step 1: Add Step 1 text content**
 
 Fill in the left column of Step 1 with:
+
 - Step number: `01` in serif font + horizontal line
 - Heading: "Search in plain English" (text-xl font-semibold)
 - Description: "Describe what you need. Our AI asks smart follow-up questions to find the exact right billing codes."
@@ -132,6 +136,7 @@ git commit -m "feat: add Step 1 text block with pill tags (#133)"
 ### Task 3: Step 1 — diagnostic flow panels
 
 **Files:**
+
 - Modify: `components/landing/HowItWorks.tsx`
 
 - [ ] **Step 1: Build the three flow panels**
@@ -172,6 +177,7 @@ git commit -m "feat: add diagnostic flow panels to Step 1 (#133)"
 ### Task 4: Step 2 — mini ResultCards
 
 **Files:**
+
 - Modify: `components/landing/HowItWorks.tsx`
 
 - [ ] **Step 1: Build Step 2 content**
@@ -208,6 +214,7 @@ git commit -m "feat: add mini ResultCards to Step 2 (#133)"
 ### Task 5: Step 3 — split view (list + map)
 
 **Files:**
+
 - Modify: `components/landing/HowItWorks.tsx`
 
 - [ ] **Step 1: Build Step 3 content**
@@ -242,6 +249,7 @@ git commit -m "feat: add split view list+map to Step 3 (#133)"
 ### Task 6: Final polish and verify
 
 **Files:**
+
 - Modify: `components/landing/HowItWorks.tsx` (if needed)
 
 - [ ] **Step 1: Visual review at desktop width**
