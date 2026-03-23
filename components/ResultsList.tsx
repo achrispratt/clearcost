@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { ChargeResult } from "@/types";
 import { ResultCard } from "./ResultCard";
 
@@ -26,6 +26,8 @@ export function ResultsList({
   onExpandRadius,
 }: ResultsListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  // Track whether selectedProviderId changed due to a card click (vs map marker)
+  const expandedByCardClick = useRef(false);
 
   // Auto-expand first result on new results, and all provider cards on marker click
   const [prevResults, setPrevResults] = useState(results);
@@ -40,18 +42,21 @@ export function ResultsList({
           ? new Set([results[0].id])
           : new Set<string>()
         : new Set(expandedIds);
-    // Expand all cards for the selected provider
-    if (selectedProviderId) {
+    // Expand all cards for the selected provider — but only on map marker clicks,
+    // not when a card's expand arrow was clicked (which already toggled just that card)
+    if (selectedProviderId && !expandedByCardClick.current) {
       for (const r of results) {
         if (r.provider.id === selectedProviderId && !next.has(r.id)) {
           next.add(r.id);
         }
       }
     }
+    expandedByCardClick.current = false;
     setExpandedIds(next);
   }
 
   const handleToggleExpand = useCallback((id: string) => {
+    expandedByCardClick.current = true;
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
