@@ -48,8 +48,12 @@ function ResultsContent() {
     handleRadiusChange(nextRadius);
   }, [radius, handleRadiusChange]);
 
-  const { selectedProviderId, handleMarkerClick, handleCardSelect } =
-    useResultSelection();
+  const {
+    selectedProviderId,
+    markerClickCount,
+    handleMarkerClick,
+    handleCardSelect,
+  } = useResultSelection();
 
   const codeDescriptionMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -197,6 +201,7 @@ function ResultsContent() {
               results={filteredResults}
               loading={loading}
               selectedProviderId={selectedProviderId}
+              markerClickCount={markerClickCount}
               onCardSelect={handleCardSelect}
               onResultClick={logResultClick}
               codeDescriptionMap={codeDescriptionMap}

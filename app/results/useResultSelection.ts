@@ -6,9 +6,10 @@ export function useResultSelection() {
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null
   );
+  // Counter (not boolean) so repeat clicks on the same marker re-expand collapsed siblings
+  const [markerClickCount, setMarkerClickCount] = useState(0);
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
@@ -23,10 +24,10 @@ export function useResultSelection() {
     );
   }, []);
 
-  // Called by MapView when a marker is clicked
   const handleMarkerClick = useCallback(
     (providerId: string) => {
       setSelectedProviderId(providerId);
+      setMarkerClickCount((c) => c + 1);
 
       requestAnimationFrame(() => {
         const card = document.querySelector(
@@ -40,7 +41,6 @@ export function useResultSelection() {
     [resetTimer]
   );
 
-  // Called by ResultCard when a card is clicked
   const handleCardSelect = useCallback(
     (providerId: string) => {
       setSelectedProviderId(providerId);
@@ -49,5 +49,10 @@ export function useResultSelection() {
     [resetTimer]
   );
 
-  return { selectedProviderId, handleMarkerClick, handleCardSelect };
+  return {
+    selectedProviderId,
+    markerClickCount,
+    handleMarkerClick,
+    handleCardSelect,
+  };
 }
