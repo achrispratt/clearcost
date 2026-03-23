@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ChargeResult } from "@/types";
 import { ResultCard } from "./ResultCard";
 
@@ -29,29 +29,32 @@ export function ResultsList({
 }: ResultsListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Auto-expand first result on new results, and all provider cards on marker click
-  const [prevResults, setPrevResults] = useState(results);
-  const [prevMarkerClickCount, setPrevMarkerClickCount] =
-    useState(markerClickCount);
-  if (results !== prevResults || markerClickCount !== prevMarkerClickCount) {
-    setPrevResults(results);
-    setPrevMarkerClickCount(markerClickCount);
-    const next =
-      results !== prevResults
-        ? results.length > 0
-          ? new Set([results[0].id])
-          : new Set<string>()
-        : new Set(expandedIds);
-    // Expand all cards for the selected provider on map marker clicks only
-    if (selectedProviderId && markerClickCount !== prevMarkerClickCount) {
+  // Reset to first result when search results change
+  useEffect(() => {
+    setExpandedIds(
+      results.length > 0 ? new Set([results[0].id]) : new Set<string>()
+    );
+  }, [results]);
+
+  // Expand all cards for the selected provider on map marker clicks.
+  // Uses markerClickCount (not selectedProviderId) as the trigger so card
+  // clicks don't expand siblings. Other deps are read but intentionally
+  // excluded — this should only fire on marker click events.
+  useEffect(() => {
+    if (markerClickCount === 0 || !selectedProviderId) return;
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      let changed = false;
       for (const r of results) {
         if (r.provider.id === selectedProviderId && !next.has(r.id)) {
           next.add(r.id);
+          changed = true;
         }
       }
-    }
-    setExpandedIds(next);
-  }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markerClickCount]);
 
   const handleToggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
