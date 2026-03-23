@@ -6,6 +6,8 @@ export function useResultSelection() {
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null
   );
+  // Incremented on map marker clicks to trigger expand-all-siblings in ResultsList
+  const [markerClickCount, setMarkerClickCount] = useState(0);
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clean up timer on unmount
@@ -27,6 +29,7 @@ export function useResultSelection() {
   const handleMarkerClick = useCallback(
     (providerId: string) => {
       setSelectedProviderId(providerId);
+      setMarkerClickCount((c) => c + 1);
 
       requestAnimationFrame(() => {
         const card = document.querySelector(
@@ -49,5 +52,10 @@ export function useResultSelection() {
     [resetTimer]
   );
 
-  return { selectedProviderId, handleMarkerClick, handleCardSelect };
+  return {
+    selectedProviderId,
+    markerClickCount,
+    handleMarkerClick,
+    handleCardSelect,
+  };
 }

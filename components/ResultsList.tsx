@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import type { ChargeResult } from "@/types";
 import { ResultCard } from "./ResultCard";
 
@@ -8,6 +8,7 @@ interface ResultsListProps {
   results: ChargeResult[];
   loading?: boolean;
   selectedProviderId?: string | null;
+  markerClickCount?: number;
   onCardSelect?: (providerId: string) => void;
   onResultClick?: () => void;
   codeDescriptionMap?: Record<string, string>;
@@ -19,6 +20,7 @@ export function ResultsList({
   results,
   loading,
   selectedProviderId,
+  markerClickCount = 0,
   onCardSelect,
   onResultClick,
   codeDescriptionMap,
@@ -26,37 +28,32 @@ export function ResultsList({
   onExpandRadius,
 }: ResultsListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  // Track whether selectedProviderId changed due to a card click (vs map marker)
-  const expandedByCardClick = useRef(false);
 
   // Auto-expand first result on new results, and all provider cards on marker click
   const [prevResults, setPrevResults] = useState(results);
-  const [prevSelectedProvider, setPrevSelectedProvider] =
-    useState(selectedProviderId);
-  if (results !== prevResults || selectedProviderId !== prevSelectedProvider) {
+  const [prevMarkerClickCount, setPrevMarkerClickCount] =
+    useState(markerClickCount);
+  if (results !== prevResults || markerClickCount !== prevMarkerClickCount) {
     setPrevResults(results);
-    setPrevSelectedProvider(selectedProviderId);
+    setPrevMarkerClickCount(markerClickCount);
     const next =
       results !== prevResults
         ? results.length > 0
           ? new Set([results[0].id])
           : new Set<string>()
         : new Set(expandedIds);
-    // Expand all cards for the selected provider — but only on map marker clicks,
-    // not when a card's expand arrow was clicked (which already toggled just that card)
-    if (selectedProviderId && !expandedByCardClick.current) {
+    // Expand all cards for the selected provider on map marker clicks only
+    if (selectedProviderId && markerClickCount !== prevMarkerClickCount) {
       for (const r of results) {
         if (r.provider.id === selectedProviderId && !next.has(r.id)) {
           next.add(r.id);
         }
       }
     }
-    expandedByCardClick.current = false;
     setExpandedIds(next);
   }
 
   const handleToggleExpand = useCallback((id: string) => {
-    expandedByCardClick.current = true;
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
