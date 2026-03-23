@@ -57,15 +57,9 @@ export function ResultsList({
   }, [markerClickCount]);
 
   const handleToggleExpand = useCallback((id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+    setExpandedIds((prev) =>
+      prev.has(id) ? new Set<string>() : new Set([id])
+    );
   }, []);
 
   if (loading) {
