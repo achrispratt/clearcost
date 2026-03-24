@@ -14,33 +14,16 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
           {/* Brand */}
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-3">
-              <div
-                className="w-6 h-6 rounded-md flex items-center justify-center"
-                style={{ background: "var(--cc-primary)" }}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2v20M2 12h20" />
-                </svg>
-              </div>
-              <span
-                className="text-lg"
-                style={{
-                  fontFamily: "var(--font-fraunces), Georgia, serif",
-                  color: "var(--cc-text)",
-                }}
-              >
-                ClearCost
-              </span>
+            <Link
+              href="/"
+              className="text-lg mb-3 inline-block"
+              style={{
+                fontFamily: "var(--font-fraunces), Georgia, serif",
+                fontWeight: 500,
+              }}
+            >
+              <span style={{ color: "var(--cc-text)" }}>Clear</span>
+              <span style={{ color: "var(--cc-primary)" }}>Cost</span>
             </Link>
             <p
               className="text-sm leading-relaxed"
