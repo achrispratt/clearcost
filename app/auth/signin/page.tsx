@@ -76,7 +76,7 @@ function SignInForm() {
         <h1
           className="text-2xl sm:text-3xl font-semibold text-center mb-8"
           style={{
-            fontFamily: "var(--font-fraunces), Georgia, serif",
+            fontFamily: "var(--font-instrument-serif), Georgia, serif",
             color: "var(--cc-text)",
           }}
         >

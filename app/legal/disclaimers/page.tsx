@@ -25,7 +25,7 @@ export default function DisclaimersPage() {
         <h1
           className="text-3xl sm:text-4xl mb-2"
           style={{
-            fontFamily: "var(--font-fraunces)",
+            fontFamily: "var(--font-instrument-serif)",
             color: "var(--cc-text)",
           }}
         >

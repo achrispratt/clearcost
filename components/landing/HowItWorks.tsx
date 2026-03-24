@@ -10,7 +10,7 @@ function StepNumber({ n }: { n: string }) {
       <span
         className="text-3xl font-light leading-none"
         style={{
-          fontFamily: "var(--font-fraunces), Georgia, serif",
+          fontFamily: "var(--font-instrument-serif), Georgia, serif",
           color: "var(--cc-border-strong)",
         }}
       >
@@ -197,7 +197,7 @@ function FlowPanels() {
         <p
           className="text-sm mb-2"
           style={{
-            fontFamily: "var(--font-fraunces), Georgia, serif",
+            fontFamily: "var(--font-instrument-serif), Georgia, serif",
             color: "var(--cc-text)",
           }}
         >
@@ -235,7 +235,7 @@ function FlowPanels() {
         <p
           className="text-sm mb-2"
           style={{
-            fontFamily: "var(--font-fraunces), Georgia, serif",
+            fontFamily: "var(--font-instrument-serif), Georgia, serif",
             color: "var(--cc-text)",
           }}
         >

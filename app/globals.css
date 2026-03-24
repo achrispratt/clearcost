@@ -42,8 +42,8 @@
 @theme inline {
   --color-background: var(--cc-bg);
   --color-foreground: var(--cc-text);
-  --font-sans: var(--font-space-grotesk);
-  --font-serif: var(--font-fraunces);
+  --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-instrument-serif);
 }
 
 /* ============================================================================

@@ -1,26 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Instrument_Serif, DM_Sans } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
+  weight: "400",
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-  display: "swap",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -46,9 +40,9 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="light">
       <body
-        className={`${fraunces.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable} antialiased min-h-screen`}
+        className={`${instrumentSerif.variable} ${dmSans.variable} antialiased min-h-screen`}
         style={{
-          fontFamily: "var(--font-space-grotesk), system-ui, sans-serif",
+          fontFamily: "var(--font-dm-sans), system-ui, sans-serif",
         }}
       >
         <Providers>

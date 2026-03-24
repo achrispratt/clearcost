@@ -18,7 +18,7 @@ export function Footer() {
               href="/"
               className="text-lg mb-3 inline-block"
               style={{
-                fontFamily: "var(--font-fraunces), Georgia, serif",
+                fontFamily: "var(--font-instrument-serif), Georgia, serif",
                 fontWeight: 500,
               }}
             >

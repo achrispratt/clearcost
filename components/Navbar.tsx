@@ -18,7 +18,7 @@ export function Navbar() {
         href="/"
         className="text-lg group-hover:opacity-80 transition-opacity group"
         style={{
-          fontFamily: "var(--font-fraunces), Georgia, serif",
+          fontFamily: "var(--font-instrument-serif), Georgia, serif",
           fontWeight: 500,
         }}
       >

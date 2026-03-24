@@ -17,20 +17,20 @@
 
 ## Typography
 
-- **Display/Hero:** Fraunces (Google Fonts, variable, opsz 9-144) — old-style serif with "wonky" optical axis. Distinctive, warm, not precious. The font that makes people pause. Use for hero headlines, savings callouts, brand moments.
-- **Body/UI:** Space Grotesk (Google Fonts, 300-700) — geometric sans with personality in the G and R. Confident, engineered, human. Use for body text, UI labels, navigation, buttons, filters.
-- **Data/Tables:** Space Grotesk with `font-variant-numeric: tabular-nums` — ensures price columns align. Fall back to IBM Plex Mono for dense data grids.
-- **Code:** IBM Plex Mono (Google Fonts, 400/500) — for billing codes (CPT 73721), metadata, source attributions.
-- **Loading:** Google Fonts via `next/font/google` with `display: "swap"` — same pattern as current implementation.
+- **Display/Hero:** Instrument Serif (Google Fonts, weight 400) — classic editorial serif with warmth and authority. Use for hero headlines, savings callouts, brand moments.
+- **Body/UI:** DM Sans (Google Fonts, variable 100-1000) — clean humanist sans-serif with excellent readability. Use for body text, UI labels, navigation, buttons, filters.
+- **Data/Tables:** DM Sans with `font-variant-numeric: tabular-nums` — ensures price columns align.
+- **Code:** System monospace — for billing codes (CPT 73721), metadata, source attributions.
+- **Loading:** Google Fonts via `next/font/google` with `display: "swap"`.
 - **Scale:**
-  - Hero: clamp(36px, 5vw, 56px) / Fraunces 400
-  - Section title: 32px / Fraunces 400
-  - Subheading: 20px / Space Grotesk 600
-  - Body: 15px / Space Grotesk 400
-  - Small/UI: 13px / Space Grotesk 500
-  - Caption: 11px / Space Grotesk 600, uppercase, letter-spacing 0.06-0.1em
-  - Data large: 28px / Space Grotesk 700
-  - Data inline: 16px / Space Grotesk 700
+  - Hero: clamp(36px, 5vw, 56px) / Instrument Serif 400
+  - Section title: 32px / Instrument Serif 400
+  - Subheading: 20px / DM Sans 600
+  - Body: 15px / DM Sans 400
+  - Small/UI: 13px / DM Sans 500
+  - Caption: 11px / DM Sans 600, uppercase, letter-spacing 0.06-0.1em
+  - Data large: 28px / DM Sans 700
+  - Data inline: 16px / DM Sans 700
 
 ## Color
 
@@ -125,5 +125,5 @@
 | ---------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-03-23 | Initial design system created    | Full redesign consultation with competitive research (Turquoise Health, FAIR Health, Healthcare Price Tool, GoodRx, Kayak, NerdWallet) + Codex + Claude subagent outside voices. All three voices converged on dropping teal, using editorial serif/sans contrast, and coral accent. |
 | 2026-03-23 | Coral accent over teal           | Every competitor uses teal/green. Coral (#ff6b4a) sits in a space no healthcare tool occupies — between red and orange — signaling "act on this" without "danger."                                                                                                                   |
-| 2026-03-23 | Fraunces + Space Grotesk chosen  | Fraunces: distinctive serif with optical size axis, free on Google Fonts. Space Grotesk: geometric sans with personality, great tabular figures. Both free, both distinctive vs. the ubiquitous Inter/DM Sans.                                                                       |
+| 2026-03-23 | Keep Instrument Serif + DM Sans  | Originally proposed Fraunces + Space Grotesk, but reverted to original fonts after seeing them live. The Instrument Serif + DM Sans pairing is proven and distinctive enough with the new coral/cream palette.                                                                       |
 | 2026-03-23 | Warm cream backgrounds (#f5f0e8) | White = hospitals. Cream = paper. Instant warmth signal that differentiates from every competitor's sterile white.                                                                                                                                                                   |
