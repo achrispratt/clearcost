@@ -8,12 +8,12 @@
 
 :root {
   /* Surface & Background */
-  --cc-bg: #f5f0e8;
-  --cc-surface: #fffdf8;
-  --cc-surface-hover: #f2ede4;
-  --cc-surface-alt: #eae2d3;
-  --cc-border: #d4cfc4;
-  --cc-border-strong: #b8b0a2;
+  --cc-bg: #fafaf8;
+  --cc-surface: #ffffff;
+  --cc-surface-hover: #f7f7f5;
+  --cc-surface-alt: #f5f3ef;
+  --cc-border: #e8e5df;
+  --cc-border-strong: #d4d0c8;
 
   /* Text */
   --cc-text: #1a1a2e;

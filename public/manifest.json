@@ -4,7 +4,7 @@
   "description": "Find real prices for healthcare procedures",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f0e8",
+  "background_color": "#fafaf8",
   "theme_color": "#ff6b4a",
   "icons": [
     {

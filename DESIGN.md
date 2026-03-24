@@ -41,12 +41,12 @@
 
 | Role            | Token                 | Hex                        | Usage                                                                  |
 | --------------- | --------------------- | -------------------------- | ---------------------------------------------------------------------- |
-| Background      | `--cc-bg`             | `#f5f0e8`                  | Page background — warm cream/paper                                     |
-| Surface         | `--cc-surface`        | `#fffdf8`                  | Cards, panels, inputs                                                  |
-| Surface hover   | `--cc-surface-hover`  | `#f2ede4`                  | Hover states on surfaces                                               |
-| Surface alt     | `--cc-surface-alt`    | `#eae2d3`                  | Secondary surfaces, badges, pill groups                                |
-| Border          | `--cc-border`         | `#d4cfc4`                  | Default borders                                                        |
-| Border strong   | `--cc-border-strong`  | `#b8b0a2`                  | Emphasized borders, section rules                                      |
+| Background      | `--cc-bg`             | `#fafaf8`                  | Page background — clean near-white                                     |
+| Surface         | `--cc-surface`        | `#ffffff`                  | Cards, panels, inputs                                                  |
+| Surface hover   | `--cc-surface-hover`  | `#f7f7f5`                  | Hover states on surfaces                                               |
+| Surface alt     | `--cc-surface-alt`    | `#f5f3ef`                  | Secondary surfaces, badges, pill groups                                |
+| Border          | `--cc-border`         | `#e8e5df`                  | Default borders                                                        |
+| Border strong   | `--cc-border-strong`  | `#d4d0c8`                  | Emphasized borders, section rules                                      |
 | Text            | `--cc-text`           | `#1a1a2e`                  | Primary text — deep ink with blue undertone                            |
 | Text secondary  | `--cc-text-secondary` | `#4a4a5e`                  | Supporting text, descriptions                                          |
 | Text tertiary   | `--cc-text-tertiary`  | `#78716c`                  | Muted text, metadata, captions                                         |
@@ -121,9 +121,9 @@
 
 ## Decisions Log
 
-| Date       | Decision                         | Rationale                                                                                                                                                                                                                                                                            |
-| ---------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 2026-03-23 | Initial design system created    | Full redesign consultation with competitive research (Turquoise Health, FAIR Health, Healthcare Price Tool, GoodRx, Kayak, NerdWallet) + Codex + Claude subagent outside voices. All three voices converged on dropping teal, using editorial serif/sans contrast, and coral accent. |
-| 2026-03-23 | Coral accent over teal           | Every competitor uses teal/green. Coral (#ff6b4a) sits in a space no healthcare tool occupies — between red and orange — signaling "act on this" without "danger."                                                                                                                   |
-| 2026-03-23 | Keep Instrument Serif + DM Sans  | Originally proposed Fraunces + Space Grotesk, but reverted to original fonts after seeing them live. The Instrument Serif + DM Sans pairing is proven and distinctive enough with the new coral/cream palette.                                                                       |
-| 2026-03-23 | Warm cream backgrounds (#f5f0e8) | White = hospitals. Cream = paper. Instant warmth signal that differentiates from every competitor's sterile white.                                                                                                                                                                   |
+| Date       | Decision                        | Rationale                                                                                                                                                                                                                                                                            |
+| ---------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-03-23 | Initial design system created   | Full redesign consultation with competitive research (Turquoise Health, FAIR Health, Healthcare Price Tool, GoodRx, Kayak, NerdWallet) + Codex + Claude subagent outside voices. All three voices converged on dropping teal, using editorial serif/sans contrast, and coral accent. |
+| 2026-03-23 | Coral accent over teal          | Every competitor uses teal/green. Coral (#ff6b4a) sits in a space no healthcare tool occupies — between red and orange — signaling "act on this" without "danger."                                                                                                                   |
+| 2026-03-23 | Keep Instrument Serif + DM Sans | Originally proposed Fraunces + Space Grotesk, but reverted to original fonts after seeing them live. The Instrument Serif + DM Sans pairing is proven and distinctive enough with the new coral/cream palette.                                                                       |
+| 2026-03-24 | Revert to white backgrounds     | Cream (#f5f0e8) + coral created an "autumn" feel. Original near-white (#fafaf8) is cleaner — coral pops better on white and the overall tone stays professional.                                                                                                                     |

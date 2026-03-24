@@ -651,7 +651,7 @@ function SplitView() {
         <div
           className="w-full sm:w-[45%] h-[200px] sm:h-auto relative"
           style={{
-            background: "#f0ece4",
+            background: "#f5f3ef",
             borderLeft: "1px solid var(--cc-border)",
           }}
         >
