@@ -129,7 +129,7 @@ export default function SavedPage() {
         <h1
           className="text-2xl mb-2"
           style={{
-            fontFamily: "var(--font-instrument-serif), Georgia, serif",
+            fontFamily: "var(--font-fraunces), Georgia, serif",
             color: "var(--cc-text)",
           }}
         >
@@ -157,7 +157,7 @@ export default function SavedPage() {
       <h1
         className="text-2xl mb-6"
         style={{
-          fontFamily: "var(--font-instrument-serif), Georgia, serif",
+          fontFamily: "var(--font-fraunces), Georgia, serif",
           color: "var(--cc-text)",
         }}
       >

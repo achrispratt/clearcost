@@ -41,7 +41,7 @@ export function HeroSection() {
         <h1
           className="text-4xl sm:text-5xl md:text-6xl leading-tight mb-5 animate-fade-up"
           style={{
-            fontFamily: "var(--font-instrument-serif), Georgia, serif",
+            fontFamily: "var(--font-fraunces), Georgia, serif",
             color: "var(--cc-text)",
             animationDelay: "0.08s",
           }}

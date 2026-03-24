@@ -14,7 +14,7 @@ export function DataQuality() {
           <h2
             className="text-2xl sm:text-3xl leading-tight mb-8 text-center"
             style={{
-              fontFamily: "var(--font-instrument-serif), Georgia, serif",
+              fontFamily: "var(--font-fraunces), Georgia, serif",
               color: "var(--cc-text)",
             }}
           >

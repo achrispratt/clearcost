@@ -35,7 +35,7 @@ export function ClarificationStep({
       <h2
         className="text-xl sm:text-2xl leading-snug mb-2"
         style={{
-          fontFamily: "var(--font-instrument-serif), Georgia, serif",
+          fontFamily: "var(--font-fraunces), Georgia, serif",
           color: "var(--cc-text)",
         }}
       >

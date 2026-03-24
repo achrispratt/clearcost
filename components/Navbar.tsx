@@ -35,7 +35,7 @@ export function Navbar() {
         <span
           className="text-lg group-hover:opacity-80 transition-opacity"
           style={{
-            fontFamily: "var(--font-instrument-serif), Georgia, serif",
+            fontFamily: "var(--font-fraunces), Georgia, serif",
             color: "var(--cc-text)",
           }}
         >

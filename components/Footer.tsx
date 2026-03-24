@@ -35,7 +35,7 @@ export function Footer() {
               <span
                 className="text-lg"
                 style={{
-                  fontFamily: "var(--font-instrument-serif), Georgia, serif",
+                  fontFamily: "var(--font-fraunces), Georgia, serif",
                   color: "var(--cc-text)",
                 }}
               >

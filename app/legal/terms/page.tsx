@@ -25,7 +25,7 @@ export default function TermsPage() {
         <h1
           className="text-4xl mb-2"
           style={{
-            fontFamily: "var(--font-instrument-serif), Georgia, serif",
+            fontFamily: "var(--font-fraunces), Georgia, serif",
             color: "var(--cc-text)",
           }}
         >
