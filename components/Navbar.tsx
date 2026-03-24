@@ -14,16 +14,33 @@ export function Navbar() {
         borderColor: "var(--cc-border)",
       }}
     >
-      <Link
-        href="/"
-        className="text-lg group-hover:opacity-80 transition-opacity group"
-        style={{
-          fontFamily: "var(--font-instrument-serif), Georgia, serif",
-          fontWeight: 500,
-        }}
-      >
-        <span style={{ color: "var(--cc-text)" }}>Clear</span>
-        <span style={{ color: "var(--cc-primary)" }}>Cost</span>
+      <Link href="/" className="flex items-center gap-2 group">
+        <div
+          className="w-6 h-6 rounded-md flex items-center justify-center"
+          style={{ background: "var(--cc-primary)" }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2v20M2 12h20" />
+          </svg>
+        </div>
+        <span
+          className="text-lg group-hover:opacity-80 transition-opacity"
+          style={{
+            fontFamily: "var(--font-instrument-serif), Georgia, serif",
+            color: "var(--cc-text)",
+          }}
+        >
+          ClearCost
+        </span>
       </Link>
 
       <div className="flex items-center gap-1">

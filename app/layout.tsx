@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ff6b4a",
+  themeColor: "#0F766E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -41,9 +41,7 @@ export default function RootLayout({
     <html lang="en" data-theme="light">
       <body
         className={`${instrumentSerif.variable} ${dmSans.variable} antialiased min-h-screen`}
-        style={{
-          fontFamily: "var(--font-dm-sans), system-ui, sans-serif",
-        }}
+        style={{ fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
       >
         <Providers>
           <Navbar />

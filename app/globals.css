@@ -3,7 +3,7 @@
 
 /* ============================================================================
    ClearCost Design System
-   Aesthetic: Editorial Warmth with Edge — coral accent, paper surfaces, confident type
+   Aesthetic: Warm Editorial — trustworthy, modern, distinctive
    ============================================================================ */
 
 :root {
@@ -17,17 +17,17 @@
 
   /* Text */
   --cc-text: #1a1a2e;
-  --cc-text-secondary: #4a4a5e;
-  --cc-text-tertiary: #78716c;
+  --cc-text-secondary: #5c5c6f;
+  --cc-text-tertiary: #9b9ba8;
 
-  /* Primary — Coral (action, CTAs, brand) */
-  --cc-primary: #ff6b4a;
-  --cc-primary-hover: #e85d3e;
-  --cc-primary-light: #fff0ec;
-  --cc-primary-muted: #ffe4dd;
-  --cc-primary-subtle: rgba(255, 107, 74, 0.08);
+  /* Primary — Teal (health, trust, calm) */
+  --cc-primary: #0f766e;
+  --cc-primary-hover: #0d9488;
+  --cc-primary-light: #f0fdfa;
+  --cc-primary-muted: #ccfbf1;
+  --cc-primary-subtle: rgba(15, 118, 110, 0.08);
 
-  /* Accent — Amber (contextual warnings, gross prices) */
+  /* Accent — Amber (savings, attention) */
   --cc-accent: #d97706;
   --cc-accent-light: #fef3c7;
 
@@ -195,7 +195,7 @@
   background:
     radial-gradient(
       ellipse at 60% 0%,
-      rgba(255, 107, 74, 0.04) 0%,
+      rgba(15, 118, 110, 0.05) 0%,
       transparent 60%
     ),
     radial-gradient(
@@ -218,7 +218,7 @@
 .search-container:focus-within {
   box-shadow:
     0 0 0 3px var(--cc-primary-subtle),
-    0 8px 32px rgba(255, 107, 74, 0.1);
+    0 8px 32px rgba(15, 118, 110, 0.1);
   border-color: var(--cc-primary);
 }
 

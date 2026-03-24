@@ -28,7 +28,7 @@ export function CostContextBanner({
       className="mt-4 rounded-xl border p-4 animate-fade-in"
       style={{
         background: "var(--cc-accent-light)",
-        borderColor: "rgba(217, 119, 6, 0.2)",
+        borderColor: "rgba(217, 119, 6, 0.15)",
       }}
     >
       <div className="flex items-start gap-2.5">
