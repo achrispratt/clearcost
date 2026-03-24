@@ -3,31 +3,31 @@
 
 /* ============================================================================
    ClearCost Design System
-   Aesthetic: Warm Editorial — trustworthy, modern, distinctive
+   Aesthetic: Editorial Warmth with Edge — coral accent, paper surfaces, confident type
    ============================================================================ */
 
 :root {
   /* Surface & Background */
-  --cc-bg: #fafaf8;
-  --cc-surface: #ffffff;
-  --cc-surface-hover: #f7f7f5;
-  --cc-surface-alt: #f5f3ef;
-  --cc-border: #e8e5df;
-  --cc-border-strong: #d4d0c8;
+  --cc-bg: #f5f0e8;
+  --cc-surface: #fffdf8;
+  --cc-surface-hover: #f2ede4;
+  --cc-surface-alt: #eae2d3;
+  --cc-border: #d4cfc4;
+  --cc-border-strong: #b8b0a2;
 
   /* Text */
   --cc-text: #1a1a2e;
-  --cc-text-secondary: #5c5c6f;
-  --cc-text-tertiary: #9b9ba8;
+  --cc-text-secondary: #4a4a5e;
+  --cc-text-tertiary: #78716c;
 
-  /* Primary — Teal (health, trust, calm) */
-  --cc-primary: #0f766e;
-  --cc-primary-hover: #0d9488;
-  --cc-primary-light: #f0fdfa;
-  --cc-primary-muted: #ccfbf1;
-  --cc-primary-subtle: rgba(15, 118, 110, 0.08);
+  /* Primary — Coral (action, CTAs, brand) */
+  --cc-primary: #ff6b4a;
+  --cc-primary-hover: #e85d3e;
+  --cc-primary-light: #fff0ec;
+  --cc-primary-muted: #ffe4dd;
+  --cc-primary-subtle: rgba(255, 107, 74, 0.08);
 
-  /* Accent — Amber (savings, attention) */
+  /* Accent — Amber (contextual warnings, gross prices) */
   --cc-accent: #d97706;
   --cc-accent-light: #fef3c7;
 
@@ -42,8 +42,8 @@
 @theme inline {
   --color-background: var(--cc-bg);
   --color-foreground: var(--cc-text);
-  --font-sans: var(--font-dm-sans);
-  --font-serif: var(--font-instrument-serif);
+  --font-sans: var(--font-space-grotesk);
+  --font-serif: var(--font-fraunces);
 }
 
 /* ============================================================================
@@ -195,7 +195,7 @@
   background:
     radial-gradient(
       ellipse at 60% 0%,
-      rgba(15, 118, 110, 0.05) 0%,
+      rgba(255, 107, 74, 0.04) 0%,
       transparent 60%
     ),
     radial-gradient(
@@ -218,7 +218,7 @@
 .search-container:focus-within {
   box-shadow:
     0 0 0 3px var(--cc-primary-subtle),
-    0 8px 32px rgba(15, 118, 110, 0.1);
+    0 8px 32px rgba(255, 107, 74, 0.1);
   border-color: var(--cc-primary);
 }
 
