@@ -60,20 +60,20 @@ function buildInfoWindowContent(providerResults: ChargeResult[]): string {
       ? "#1e40af"
       : bestPrice.type === "gross"
         ? "#D97706"
-        : "#0F766E";
+        : "#ff6b4a";
 
   const listingsLine =
     providerResults.length > 1
-      ? `<p style="color: #5C5C6F; font-size: 11px; margin: 4px 0 0;">${providerResults.length} price listings</p>`
+      ? `<p style="color: #4a4a5e; font-size: 11px; margin: 4px 0 0;">${providerResults.length} price listings</p>`
       : "";
 
   return `
     <div style="padding: 10px; max-width: 240px; font-family: system-ui, sans-serif;">
       <p style="font-weight: 600; margin: 0; color: #1A1A2E; font-size: 14px;">${displayName(first.provider.name)}</p>
-      ${address ? `<p style="color: #5C5C6F; font-size: 12px; margin: 4px 0 0;">${address}</p>` : ""}
+      ${address ? `<p style="color: #4a4a5e; font-size: 12px; margin: 4px 0 0;">${address}</p>` : ""}
       ${priceStr ? `<p style="font-size: 20px; font-weight: 700; color: ${priceColor}; margin: 8px 0 0;">${priceStr}</p>` : ""}
-      ${bestPrice.label ? `<p style="color: #5C5C6F; font-size: 11px; margin: 2px 0 0;">${bestPrice.label}</p>` : ""}
-      ${distance ? `<p style="color: #9B9BA8; font-size: 11px; margin: 4px 0 0;">${distance} away</p>` : ""}
+      ${bestPrice.label ? `<p style="color: #4a4a5e; font-size: 11px; margin: 2px 0 0;">${bestPrice.label}</p>` : ""}
+      ${distance ? `<p style="color: #78716c; font-size: 11px; margin: 4px 0 0;">${distance} away</p>` : ""}
       ${listingsLine}
     </div>
   `;
@@ -82,9 +82,9 @@ function buildInfoWindowContent(providerResults: ChargeResult[]): string {
 const DEFAULT_ICON = {
   path: 0, // google.maps.SymbolPath.CIRCLE (value is 0)
   scale: 12,
-  fillColor: "#0F766E",
+  fillColor: "#ff6b4a",
   fillOpacity: 1,
-  strokeColor: "#115E59",
+  strokeColor: "#e85d3e",
   strokeWeight: 2,
 };
 

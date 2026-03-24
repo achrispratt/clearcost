@@ -208,9 +208,13 @@ Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler p
 **Prefer bringing the calculation to the data, not the data to the calculation.**
 When possible and optimal, push reference data and logic into SQL (temp tables, CTEs, JOINs) rather than pulling large result sets to Node.js for local processing. This minimizes network transfer, respects Supabase Pro CPU/IO limits, and leverages Postgres's query optimizer. Not a hard rule — sometimes client-side processing is simpler or necessary (e.g., when logic depends on npm packages with no SQL equivalent). Use judgment.
 
+## Design System
+
+Always read [`DESIGN.md`](./DESIGN.md) before making any visual or UI decisions. All font choices, colors, spacing, and aesthetic direction are defined there. Do not deviate without explicit user approval. In QA mode, flag any code that doesn't match DESIGN.md.
+
 ## Code Style, Git Workflow & Design
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — the single source of truth for code conventions, git workflow, branch naming, issue management, design system, and environment setup. Read it before writing code.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — the single source of truth for code conventions, git workflow, branch naming, issue management, and environment setup. Read it before writing code.
 
 ## Roadmap & Work Tracking
 
