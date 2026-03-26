@@ -96,7 +96,7 @@ export function ResultRow({
       {/* Base Price — first, normal weight */}
       <div
         role="cell"
-        className="text-[13px]"
+        className="text-[13px] text-right tabular-nums"
         style={{ color: priceColor(baseAmount, priceRange) }}
       >
         {formatPrice(baseAmount)}
@@ -105,7 +105,7 @@ export function ResultRow({
       {/* Est. Total — bold, color-coded */}
       <div
         role="cell"
-        className="font-bold text-[15px] hidden sm:block"
+        className="font-bold text-[15px] text-right tabular-nums hidden sm:block"
         style={{ color: priceColor(estAmount, priceRange) }}
       >
         {formatPrice(estAmount)}
@@ -114,7 +114,7 @@ export function ResultRow({
       {/* Distance */}
       <div
         role="cell"
-        className="text-[12px]"
+        className="text-[12px] text-right"
         style={{ color: "var(--cc-text-tertiary)" }}
       >
         {distance}

@@ -221,12 +221,16 @@ export function ResultsList({
         }}
       >
         <span role="columnheader">Provider</span>
-        <span role="columnheader">Base Price</span>
-        <span role="columnheader" className="hidden sm:block">
+        <span role="columnheader" className="text-right">
+          Base Price
+        </span>
+        <span role="columnheader" className="text-right hidden sm:block">
           Est. Total
         </span>
-        <span role="columnheader">Distance</span>
-        <span role="columnheader" className="hidden sm:block">
+        <span role="columnheader" className="text-right">
+          Distance
+        </span>
+        <span role="columnheader" className="text-right hidden sm:block">
           Quality
         </span>
         <span />
