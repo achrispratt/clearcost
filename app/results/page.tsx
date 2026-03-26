@@ -79,7 +79,7 @@ function ResultsContent() {
         </div>
         {interpretation && !loading && (
           <span
-            className="text-[12px] truncate hidden lg:block max-w-[300px]"
+            className="text-[12px] hidden lg:block"
             style={{ color: "var(--cc-text-secondary)" }}
             title={interpretation}
           >
