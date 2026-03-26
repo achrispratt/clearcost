@@ -18,9 +18,6 @@ interface ResultRowProps {
   priceRange?: { min: number; max: number };
 }
 
-const ROW_GRID = "1fr 90px 100px 65px 80px 24px";
-const ROW_GAP = "16px";
-
 /** Returns a color based on where the price falls in the range: green (low), amber (mid), red (high) */
 function priceColor(
   price: number | undefined,
@@ -28,9 +25,9 @@ function priceColor(
 ): string {
   if (!price || !range || range.max === range.min) return "var(--cc-text)";
   const ratio = (price - range.min) / (range.max - range.min);
-  if (ratio <= 0.33) return "var(--cc-success)"; // green — low end
-  if (ratio <= 0.66) return "var(--cc-accent)"; // amber — mid
-  return "var(--cc-error)"; // red — high end
+  if (ratio <= 0.33) return "var(--cc-success)";
+  if (ratio <= 0.66) return "var(--cc-accent)";
+  return "var(--cc-error)";
 }
 
 export function ResultRow({
@@ -50,20 +47,14 @@ export function ResultRow({
   const estAmount = estTotal ?? baseAmount;
 
   return (
-    <div
+    <tr
       data-result-id={result.id}
       data-provider-id={result.provider.id}
-      className="grid items-center cursor-pointer select-none transition-colors duration-100 hover:bg-[var(--cc-surface-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cc-primary)]"
+      className="cursor-pointer select-none transition-colors duration-100 hover:bg-[var(--cc-surface-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cc-primary)]"
       style={{
-        gridTemplateColumns: ROW_GRID,
-        gap: ROW_GAP,
-        padding: "10px 16px",
-        borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
         background:
           isExpanded || isSelected ? "var(--cc-primary-light)" : undefined,
       }}
-      role="row"
-      aria-expanded={isExpanded}
       tabIndex={0}
       onClick={() => {
         onToggleExpand?.();
@@ -78,9 +69,14 @@ export function ResultRow({
       }}
     >
       {/* Provider */}
-      <div role="cell" className="min-w-0">
+      <td
+        className="py-2.5 px-4"
+        style={{
+          borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
+        }}
+      >
         <div
-          className="font-semibold text-[13px] truncate"
+          className="font-semibold text-[13px] truncate max-w-[300px]"
           style={{ color: "var(--cc-text)" }}
         >
           {displayName(result.provider.name)}
@@ -91,48 +87,62 @@ export function ResultRow({
         >
           {result.setting || "Outpatient"}
         </div>
-      </div>
+      </td>
 
-      {/* Base Price — first, normal weight */}
-      <div
-        role="cell"
-        className="text-[13px] text-right tabular-nums"
-        style={{ color: priceColor(baseAmount, priceRange) }}
+      {/* Base Price */}
+      <td
+        className="py-2.5 px-4 text-right tabular-nums text-[13px]"
+        style={{
+          color: priceColor(baseAmount, priceRange),
+          borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
+        }}
       >
         {formatPrice(baseAmount)}
-      </div>
+      </td>
 
-      {/* Est. Total — bold, color-coded */}
-      <div
-        role="cell"
-        className="font-bold text-[15px] text-right tabular-nums hidden sm:block"
-        style={{ color: priceColor(estAmount, priceRange) }}
+      {/* Est. Total */}
+      <td
+        className="py-2.5 px-4 text-right tabular-nums font-bold text-[15px] hidden sm:table-cell"
+        style={{
+          color: priceColor(estAmount, priceRange),
+          borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
+        }}
       >
         {formatPrice(estAmount)}
-      </div>
+      </td>
 
       {/* Distance */}
-      <div
-        role="cell"
-        className="text-[12px] text-right"
-        style={{ color: "var(--cc-text-tertiary)" }}
+      <td
+        className="py-2.5 px-4 text-right text-[12px]"
+        style={{
+          color: "var(--cc-text-tertiary)",
+          borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
+        }}
       >
         {distance}
-      </div>
+      </td>
 
-      {/* Quality stars — placeholder until #141 */}
-      <div
-        role="cell"
-        className="text-[12px] hidden sm:block"
-        style={{ color: "var(--cc-text-tertiary)" }}
+      {/* Quality */}
+      <td
+        className="py-2.5 px-4 text-[12px] hidden sm:table-cell"
+        style={{
+          color: "var(--cc-text-tertiary)",
+          borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
+        }}
       >
         —
-      </div>
+      </td>
 
       {/* Chevron */}
-      <div role="cell" className="flex justify-center">
+      <td
+        className="py-2.5 pr-4 text-center"
+        style={{
+          borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
+          width: "32px",
+        }}
+      >
         <svg
-          className="w-3.5 h-3.5 transition-transform duration-150"
+          className="w-3.5 h-3.5 transition-transform duration-150 inline-block"
           style={{
             color: isExpanded ? "var(--cc-primary)" : "var(--cc-border-strong)",
             transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
@@ -146,9 +156,7 @@ export function ResultRow({
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
-
-export { ROW_GRID, ROW_GAP };

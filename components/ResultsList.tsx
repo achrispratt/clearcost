@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import type { ChargeResult } from "@/types";
 import { getDisplayPrice } from "@/lib/format";
-import { ResultRow, ROW_GRID, ROW_GAP } from "./ResultRow";
+import { ResultRow } from "./ResultRow";
 import { ResultRowDetail } from "./ResultRowDetail";
 
 interface ResultsListProps {
@@ -81,45 +81,67 @@ export function ResultsList({
 
   if (loading) {
     return (
-      <div>
-        {/* Skeleton column headers */}
-        <div
-          className="grid items-center"
-          style={{
-            gridTemplateColumns: ROW_GRID,
-            gap: ROW_GAP,
-            padding: "6px 16px",
-            borderBottom: "1px solid var(--cc-border)",
-          }}
-        >
-          {["w-16", "w-12", "w-12", "w-10", "w-10", "w-4"].map((w, i) => (
-            <div key={i} className={`h-2.5 ${w} shimmer rounded`} />
+      <table className="w-full" style={{ borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            {["w-16", "w-12", "w-12", "w-10", "w-10", "w-4"].map((w, i) => (
+              <th
+                key={i}
+                className="py-1.5 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className={`h-2.5 ${w} shimmer rounded`} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <tr key={i}>
+              <td
+                className="py-3 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-3.5 w-40 shimmer rounded mb-1" />
+                <div className="h-2.5 w-16 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-4 w-14 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4 hidden sm:table-cell"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-4 w-16 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-3 w-10 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4 hidden sm:table-cell"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-3 w-14 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 pr-4"
+                style={{
+                  borderBottom: "1px solid var(--cc-border)",
+                  width: "32px",
+                }}
+              >
+                <div className="h-3 w-3 shimmer rounded" />
+              </td>
+            </tr>
           ))}
-        </div>
-        {/* Skeleton rows */}
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <div
-            key={i}
-            className="grid items-center"
-            style={{
-              gridTemplateColumns: ROW_GRID,
-              gap: ROW_GAP,
-              padding: "12px 16px",
-              borderBottom: "1px solid var(--cc-border)",
-            }}
-          >
-            <div>
-              <div className="h-3.5 w-40 shimmer rounded mb-1" />
-              <div className="h-2.5 w-16 shimmer rounded" />
-            </div>
-            <div className="h-4 w-14 shimmer rounded hidden sm:block" />
-            <div className="h-4 w-12 shimmer rounded" />
-            <div className="h-3 w-10 shimmer rounded" />
-            <div className="h-3 w-14 shimmer rounded hidden sm:block" />
-            <div className="h-3 w-3 shimmer rounded" />
-          </div>
-        ))}
-      </div>
+        </tbody>
+      </table>
     );
   }
 
@@ -204,56 +226,80 @@ export function ResultsList({
         </div>
       )}
 
-      {/* Column headers */}
-      <div
-        className="grid items-center sticky top-0 z-10"
-        role="row"
-        style={{
-          gridTemplateColumns: ROW_GRID,
-          padding: "6px 16px",
-          borderBottom: "1px solid var(--cc-border)",
-          background: "var(--cc-bg)",
-          fontSize: "10px",
-          fontWeight: 600,
-          textTransform: "uppercase" as const,
-          letterSpacing: "0.08em",
-          color: "var(--cc-text-tertiary)",
-        }}
-      >
-        <span role="columnheader">Provider</span>
-        <span role="columnheader" className="text-right">
-          Base Price
-        </span>
-        <span role="columnheader" className="text-right hidden sm:block">
-          Est. Total
-        </span>
-        <span role="columnheader" className="text-right">
-          Distance
-        </span>
-        <span role="columnheader" className="text-right hidden sm:block">
-          Quality
-        </span>
-        <span />
-      </div>
-
-      {/* Result rows */}
-      {results.map((result, i) => (
-        <div key={result.id}>
-          <ResultRow
-            result={result}
-            rank={i + 1}
-            isSelected={result.provider.id === selectedProviderId}
-            isExpanded={expandedIds.has(result.id)}
-            onToggleExpand={() => handleToggleExpand(result.id)}
-            onSelect={() => {
-              onCardSelect?.(result.provider.id);
-              onResultClick?.();
+      <table className="w-full" style={{ borderCollapse: "collapse" }}>
+        <thead
+          className="sticky top-0 z-10"
+          style={{ background: "var(--cc-bg)" }}
+        >
+          <tr
+            style={{
+              fontSize: "10px",
+              fontWeight: 600,
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.08em",
+              color: "var(--cc-text-tertiary)",
             }}
-            priceRange={priceRange}
-          />
-          {expandedIds.has(result.id) && <ResultRowDetail result={result} />}
-        </div>
-      ))}
+          >
+            <th
+              className="text-left py-1.5 px-4 font-semibold"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Provider
+            </th>
+            <th
+              className="text-right py-1.5 px-4 font-semibold"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Base Price
+            </th>
+            <th
+              className="text-right py-1.5 px-4 font-semibold hidden sm:table-cell"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Est. Total
+            </th>
+            <th
+              className="text-right py-1.5 px-4 font-semibold"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Distance
+            </th>
+            <th
+              className="py-1.5 px-4 font-semibold hidden sm:table-cell"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Quality
+            </th>
+            <th
+              style={{
+                borderBottom: "1px solid var(--cc-border)",
+                width: "32px",
+              }}
+            />
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((result, i) => (
+            <React.Fragment key={result.id}>
+              <ResultRow
+                result={result}
+                rank={i + 1}
+                isSelected={result.provider.id === selectedProviderId}
+                isExpanded={expandedIds.has(result.id)}
+                onToggleExpand={() => handleToggleExpand(result.id)}
+                onSelect={() => {
+                  onCardSelect?.(result.provider.id);
+                  onResultClick?.();
+                }}
+                priceRange={priceRange}
+              />
+              {expandedIds.has(result.id) && (
+                <ResultRowDetail result={result} />
+              )}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
