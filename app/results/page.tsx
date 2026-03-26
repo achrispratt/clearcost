@@ -65,29 +65,26 @@ function ResultsContent() {
   const { setSearchSlot } = useNavbarSlot();
   useEffect(() => {
     setSearchSlot(
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex-1 min-w-0">
-          <SearchBar
-            onSearch={handleNewSearch}
-            loading={loading}
-            initialQuery={query}
-            initialLocation={
-              lat && lng ? { lat, lng, display: locationDisplay } : undefined
-            }
-            compact
-          />
-        </div>
+      <div className="min-w-0">
+        <SearchBar
+          onSearch={handleNewSearch}
+          loading={loading}
+          initialQuery={query}
+          initialLocation={
+            lat && lng ? { lat, lng, display: locationDisplay } : undefined
+          }
+          compact
+        />
         {interpretation && !loading && (
-          <span
-            className="text-[12px] hidden lg:block"
-            style={{ color: "var(--cc-text-secondary)" }}
-            title={interpretation}
+          <p
+            className="text-[11px] mt-1 leading-tight"
+            style={{ color: "var(--cc-text-tertiary)" }}
           >
             <strong style={{ color: "var(--cc-primary)" }}>Interpreted:</strong>{" "}
             {interpretation}
             {cptCodes.length > 0 && (
               <span
-                className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded"
+                className="ml-1 text-[10px] px-1 py-0.5 rounded"
                 style={{
                   background: "var(--cc-primary-light)",
                   color: "var(--cc-primary)",
@@ -97,7 +94,7 @@ function ResultsContent() {
                 {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
               </span>
             )}
-          </span>
+          </p>
         )}
       </div>
     );
