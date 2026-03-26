@@ -6,7 +6,6 @@ import { ResultsList } from "@/components/ResultsList";
 import { FilterBar } from "@/components/FilterBar";
 import { MapView } from "@/components/MapView";
 import { SaveButton } from "@/components/SaveButton";
-import { CostContextBanner } from "@/components/CostContextBanner";
 import type { CPTCode, PricingPlan } from "@/types";
 import { useResultsSearch } from "./useResultsSearch";
 import { useResultSelection } from "./useResultSelection";
@@ -100,11 +99,6 @@ function ResultsContent() {
               {error}
             </p>
           </div>
-        )}
-
-        {/* Cost context banner */}
-        {!loading && results.length > 0 && (
-          <CostContextBanner cptCodes={cptCodes} results={results} />
         )}
 
         {/* Toolbar: View toggle (mobile only) + Save + Filters */}

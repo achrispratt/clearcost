@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import type { ChargeResult } from "@/types";
+import { getDisplayPrice } from "@/lib/format";
 import { ResultRow, ROW_GRID } from "./ResultRow";
 import { ResultRowDetail } from "./ResultRowDetail";
 
@@ -61,6 +62,22 @@ export function ResultsList({
       prev.has(id) ? new Set<string>() : new Set([id])
     );
   }, []);
+
+  // Compute price range for color-coding (green/amber/red)
+  const priceRange = useMemo(() => {
+    const prices = results
+      .map((r) => {
+        const dp = getDisplayPrice(r);
+        return (
+          r.estimatedTotalMedian ??
+          r.episodeEstimate?.estimatedAllInMedian ??
+          dp.amount
+        );
+      })
+      .filter((p): p is number => p != null && p > 0);
+    if (prices.length === 0) return undefined;
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+  }, [results]);
 
   if (loading) {
     return (
@@ -209,10 +226,10 @@ export function ResultsList({
         }}
       >
         <span role="columnheader">Provider</span>
+        <span role="columnheader">Base Price</span>
         <span role="columnheader" className="hidden sm:block">
           Est. Total
         </span>
-        <span role="columnheader">Base Price</span>
         <span role="columnheader">Distance</span>
         <span role="columnheader" className="hidden sm:block">
           Quality
@@ -233,6 +250,7 @@ export function ResultsList({
               onCardSelect?.(result.provider.id);
               onResultClick?.();
             }}
+            priceRange={priceRange}
           />
           {expandedIds.has(result.id) && <ResultRowDetail result={result} />}
         </div>

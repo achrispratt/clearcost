@@ -15,9 +15,22 @@ interface ResultRowProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   onSelect?: () => void;
+  priceRange?: { min: number; max: number };
 }
 
-const ROW_GRID = "1fr 90px 90px 65px 80px 24px";
+const ROW_GRID = "1fr 90px 100px 65px 80px 24px";
+
+/** Returns a color based on where the price falls in the range: green (low), amber (mid), red (high) */
+function priceColor(
+  price: number | undefined,
+  range: { min: number; max: number } | undefined
+): string {
+  if (!price || !range || range.max === range.min) return "var(--cc-text)";
+  const ratio = (price - range.min) / (range.max - range.min);
+  if (ratio <= 0.33) return "var(--cc-success)"; // green — low end
+  if (ratio <= 0.66) return "var(--cc-accent)"; // amber — mid
+  return "var(--cc-error)"; // red — high end
+}
 
 export function ResultRow({
   result,
@@ -25,11 +38,15 @@ export function ResultRow({
   isExpanded,
   onToggleExpand,
   onSelect,
+  priceRange,
 }: ResultRowProps) {
   const distance = formatDistance(result.distanceMiles);
   const displayPrice = getDisplayPrice(result);
   const estTotal =
     result.estimatedTotalMedian ?? result.episodeEstimate?.estimatedAllInMedian;
+
+  const baseAmount = displayPrice.amount;
+  const estAmount = estTotal ?? baseAmount;
 
   return (
     <div
@@ -74,24 +91,22 @@ export function ResultRow({
         </div>
       </div>
 
-      {/* Est. Total — primary number */}
+      {/* Base Price — first, normal weight */}
+      <div
+        role="cell"
+        className="text-[13px]"
+        style={{ color: priceColor(baseAmount, priceRange) }}
+      >
+        {formatPrice(baseAmount)}
+      </div>
+
+      {/* Est. Total — bold, color-coded */}
       <div
         role="cell"
         className="font-bold text-[15px] hidden sm:block"
-        style={{ color: "var(--cc-primary)" }}
+        style={{ color: priceColor(estAmount, priceRange) }}
       >
-        {estTotal ? formatPrice(estTotal) : formatPrice(displayPrice.amount)}
-      </div>
-
-      {/* Base Price — secondary */}
-      <div
-        role="cell"
-        className="text-[13px] font-bold sm:font-normal"
-        style={{
-          color: isExpanded ? "var(--cc-primary)" : "var(--cc-text-secondary)",
-        }}
-      >
-        {formatPrice(displayPrice.amount)}
+        {formatPrice(estAmount)}
       </div>
 
       {/* Distance */}
