@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import type { ChargeResult } from "@/types";
 import { getDisplayPrice } from "@/lib/format";
-import { ResultRow, ROW_GRID } from "./ResultRow";
+import { ResultRow, ROW_GRID, ROW_GAP } from "./ResultRow";
 import { ResultRowDetail } from "./ResultRowDetail";
 
 interface ResultsListProps {
@@ -87,6 +87,7 @@ export function ResultsList({
           className="grid items-center"
           style={{
             gridTemplateColumns: ROW_GRID,
+            gap: ROW_GAP,
             padding: "6px 16px",
             borderBottom: "1px solid var(--cc-border)",
           }}
@@ -102,6 +103,7 @@ export function ResultsList({
             className="grid items-center"
             style={{
               gridTemplateColumns: ROW_GRID,
+              gap: ROW_GAP,
               padding: "12px 16px",
               borderBottom: "1px solid var(--cc-border)",
             }}

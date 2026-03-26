@@ -19,6 +19,7 @@ interface ResultRowProps {
 }
 
 const ROW_GRID = "1fr 90px 100px 65px 80px 24px";
+const ROW_GAP = "16px";
 
 /** Returns a color based on where the price falls in the range: green (low), amber (mid), red (high) */
 function priceColor(
@@ -55,6 +56,7 @@ export function ResultRow({
       className="grid items-center cursor-pointer select-none transition-colors duration-100 hover:bg-[var(--cc-surface-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cc-primary)]"
       style={{
         gridTemplateColumns: ROW_GRID,
+        gap: ROW_GAP,
         padding: "10px 16px",
         borderBottom: isExpanded ? "none" : "1px solid var(--cc-border)",
         background:
@@ -149,4 +151,4 @@ export function ResultRow({
   );
 }
 
-export { ROW_GRID };
+export { ROW_GRID, ROW_GAP };
