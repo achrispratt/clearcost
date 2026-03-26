@@ -2,19 +2,24 @@
 
 import Link from "next/link";
 import { AuthButton } from "./AuthButton";
+import { useNavbarSlot } from "./NavbarContext";
 
 export function Navbar() {
+  const { searchSlot } = useNavbarSlot();
+
   return (
     <nav
-      className="sticky top-0 z-50 border-b px-4 lg:px-8 h-14 flex items-center justify-between"
+      className="sticky top-0 z-50 border-b px-4 lg:px-6 flex items-center gap-4"
       style={{
         background: "rgba(250, 250, 248, 0.85)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderColor: "var(--cc-border)",
+        height: searchSlot ? "auto" : "56px",
+        padding: searchSlot ? "8px 16px" : undefined,
       }}
     >
-      <Link href="/" className="flex items-center gap-2 group">
+      <Link href="/" className="flex items-center gap-2 group shrink-0">
         <div
           className="w-6 h-6 rounded-md flex items-center justify-center"
           style={{ background: "var(--cc-primary)" }}
@@ -33,7 +38,7 @@ export function Navbar() {
           </svg>
         </div>
         <span
-          className="text-lg group-hover:opacity-80 transition-opacity"
+          className="text-lg group-hover:opacity-80 transition-opacity hidden sm:inline"
           style={{
             fontFamily: "var(--font-instrument-serif), Georgia, serif",
             color: "var(--cc-text)",
@@ -43,7 +48,10 @@ export function Navbar() {
         </span>
       </Link>
 
-      <div className="flex items-center gap-1">
+      {/* Search slot — injected by results page via NavbarContext */}
+      {searchSlot && <div className="flex-1 min-w-0">{searchSlot}</div>}
+
+      <div className="flex items-center gap-1 shrink-0">
         <Link
           href="/saved"
           className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-[var(--cc-surface-alt)] transition-colors"

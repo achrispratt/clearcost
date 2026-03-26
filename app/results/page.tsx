@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsList } from "@/components/ResultsList";
+import { useNavbarSlot } from "@/components/NavbarContext";
 import { FilterBar } from "@/components/FilterBar";
 import { MapView } from "@/components/MapView";
 import { SaveButton } from "@/components/SaveButton";
-import type { CPTCode, PricingPlan } from "@/types";
 import { useResultsSearch } from "./useResultsSearch";
 import { useResultSelection } from "./useResultSelection";
 
@@ -22,7 +22,6 @@ function ResultsContent() {
     filteredResults,
     cptCodes,
     interpretation,
-    pricingPlan,
     loading,
     error,
     view,
@@ -62,30 +61,63 @@ function ResultsContent() {
     return map;
   }, [cptCodes]);
 
+  // Inject search bar + interpretation into the navbar
+  const { setSearchSlot } = useNavbarSlot();
+  useEffect(() => {
+    setSearchSlot(
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex-1 min-w-0">
+          <SearchBar
+            onSearch={handleNewSearch}
+            loading={loading}
+            initialQuery={query}
+            initialLocation={
+              lat && lng ? { lat, lng, display: locationDisplay } : undefined
+            }
+            compact
+          />
+        </div>
+        {interpretation && !loading && (
+          <span
+            className="text-[12px] truncate hidden lg:block max-w-[300px]"
+            style={{ color: "var(--cc-text-secondary)" }}
+            title={interpretation}
+          >
+            <strong style={{ color: "var(--cc-primary)" }}>Interpreted:</strong>{" "}
+            {interpretation}
+            {cptCodes.length > 0 && (
+              <span
+                className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded"
+                style={{
+                  background: "var(--cc-primary-light)",
+                  color: "var(--cc-primary)",
+                  fontWeight: 600,
+                }}
+              >
+                {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+    );
+    return () => setSearchSlot(null);
+  }, [
+    setSearchSlot,
+    handleNewSearch,
+    loading,
+    query,
+    lat,
+    lng,
+    locationDisplay,
+    interpretation,
+    cptCodes,
+  ]);
+
   return (
-    <div className="px-4 py-3">
+    <div className="px-4 py-2">
       {/* Header section — constrained width */}
       <div className="max-w-5xl mx-auto lg:max-w-7xl">
-        {/* Search bar (compact) */}
-        <SearchBar
-          onSearch={handleNewSearch}
-          loading={loading}
-          initialQuery={query}
-          initialLocation={
-            lat && lng ? { lat, lng, display: locationDisplay } : undefined
-          }
-          compact
-        />
-
-        {/* Interpretation banner (collapsible) */}
-        {interpretation && !loading && (
-          <InterpretationBanner
-            interpretation={interpretation}
-            pricingPlan={pricingPlan}
-            cptCodes={cptCodes}
-          />
-        )}
-
         {/* Error state */}
         {error && (
           <div
@@ -218,145 +250,6 @@ function ResultsContent() {
               selectedProviderId={selectedProviderId}
               className="h-full"
             />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InterpretationBanner({
-  interpretation,
-  pricingPlan,
-  cptCodes,
-}: {
-  interpretation: string;
-  pricingPlan: PricingPlan | undefined;
-  cptCodes: CPTCode[];
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const firstTwoCodes = cptCodes.slice(0, 2);
-  const overflowCount = cptCodes.length - 2;
-
-  return (
-    <div
-      className="mt-2 rounded-xl border animate-fade-in"
-      style={{
-        background: "var(--cc-primary-light)",
-        borderColor: "rgba(15, 118, 110, 0.12)",
-      }}
-    >
-      {/* Collapsed row */}
-      <button
-        className="w-full flex items-center gap-2 px-3 py-2 text-left"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-      >
-        <svg
-          className="w-4 h-4 shrink-0"
-          style={{ color: "var(--cc-primary)" }}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 8V4H8" />
-          <rect width="16" height="12" x="4" y="8" rx="2" />
-          <path d="M2 14h2M20 14h2M15 13v2M9 13v2" />
-        </svg>
-        <span
-          className="text-sm truncate min-w-0"
-          style={{ color: "var(--cc-primary)" }}
-        >
-          <span className="font-semibold">Interpreted as:</span>{" "}
-          {interpretation}
-        </span>
-        {!expanded && cptCodes.length > 0 && (
-          <span className="flex items-center gap-1 shrink-0">
-            {firstTwoCodes.map((code) => (
-              <span
-                key={code.code}
-                className="text-[11px] px-1.5 py-0.5 rounded-md font-medium hidden sm:inline"
-                style={{
-                  background: "rgba(15, 118, 110, 0.1)",
-                  color: "var(--cc-primary)",
-                }}
-              >
-                {(code.codeType || "CPT").toUpperCase()} {code.code}
-              </span>
-            ))}
-            {overflowCount > 0 && (
-              <span
-                className="text-[11px] font-medium hidden sm:inline"
-                style={{ color: "var(--cc-primary)" }}
-              >
-                +{overflowCount}
-              </span>
-            )}
-          </span>
-        )}
-        <svg
-          className="w-4 h-4 shrink-0 transition-transform duration-200"
-          style={{
-            color: "var(--cc-primary)",
-            transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      {/* Expanded content */}
-      <div className={`accordion-body ${expanded ? "expanded" : ""}`}>
-        <div>
-          <div className="px-3 pb-3">
-            {pricingPlan?.mode === "encounter_first" && (
-              <p
-                className="text-xs mb-2"
-                style={{ color: "var(--cc-primary)" }}
-              >
-                Showing a visit-first estimate; any imaging or lab work is
-                listed below as possible additional costs.
-              </p>
-            )}
-            {cptCodes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {cptCodes.map((code) => (
-                  <span
-                    key={code.code}
-                    className="text-xs px-2 py-0.5 rounded-md font-medium"
-                    style={{
-                      background: "rgba(15, 118, 110, 0.1)",
-                      color: "var(--cc-primary)",
-                    }}
-                  >
-                    {(code.codeType || "CPT").toUpperCase()} {code.code}:{" "}
-                    {code.description}
-                  </span>
-                ))}
-              </div>
-            )}
-            {cptCodes.length > 0 && (
-              <p
-                className="text-xs mt-2 px-2.5 py-2 rounded-md leading-relaxed"
-                style={{
-                  background: "var(--cc-bg)",
-                  color: "var(--cc-text-tertiary)",
-                }}
-              >
-                These codes are our interpretation of your search. Your provider
-                may bill differently — confirm codes and pricing before your
-                visit.
-              </p>
-            )}
           </div>
         </div>
       </div>
