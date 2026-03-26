@@ -87,136 +87,98 @@ function ResultsContent() {
   ]);
 
   return (
-    <div className="px-4 py-2">
-      {/* Header section — constrained width */}
-      <div className="max-w-5xl mx-auto lg:max-w-7xl">
-        {/* Error state */}
-        {error && (
-          <div
-            className="mt-4 p-4 rounded-xl border"
-            style={{
-              background: "var(--cc-error-light)",
-              borderColor: "rgba(220, 38, 38, 0.15)",
-            }}
-          >
-            <p className="text-sm" style={{ color: "var(--cc-error)" }}>
-              {error}
-            </p>
+    <div>
+      {/* Filter bar + controls — flush below navbar */}
+      <div
+        className="px-4 lg:px-6 border-b flex items-center gap-2"
+        style={{ borderColor: "var(--cc-border)", background: "var(--cc-bg)" }}
+      >
+        {/* Mobile view toggle */}
+        <div className="lg:hidden">
+          <div className="pill-group">
+            <button
+              onClick={() => setView("list")}
+              className={`pill-btn ${view === "list" ? "pill-btn-active" : ""}`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setView("map")}
+              className={`pill-btn ${view === "map" ? "pill-btn-active" : ""}`}
+            >
+              Map
+            </button>
           </div>
-        )}
-
-        {/* Interpretation — slim inline */}
-        {interpretation && !loading && (
-          <p
-            className="text-[12px] py-1.5"
-            style={{ color: "var(--cc-text-tertiary)" }}
-          >
-            <strong style={{ color: "var(--cc-primary)" }}>Interpreted:</strong>{" "}
-            {interpretation}
-            {cptCodes.length > 0 && (
-              <span
-                className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded"
-                style={{
-                  background: "var(--cc-primary-light)",
-                  color: "var(--cc-primary)",
-                  fontWeight: 600,
-                }}
-              >
-                {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
-              </span>
-            )}
-          </p>
-        )}
-
-        {/* Toolbar: View toggle (mobile only) + Save + Filters */}
-        <div className="mt-2">
-          <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-between">
-            {/* Toggle pills: mobile only */}
-            <div className="lg:hidden">
-              <div className="pill-group">
-                <button
-                  onClick={() => setView("list")}
-                  className={`pill-btn ${view === "list" ? "pill-btn-active" : ""}`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <svg
-                      className="w-3.5 h-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="8" y1="6" x2="21" y2="6" />
-                      <line x1="8" y1="12" x2="21" y2="12" />
-                      <line x1="8" y1="18" x2="21" y2="18" />
-                      <line x1="3" y1="6" x2="3.01" y2="6" />
-                      <line x1="3" y1="12" x2="3.01" y2="12" />
-                      <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                    List
-                  </span>
-                </button>
-                <button
-                  onClick={() => setView("map")}
-                  className={`pill-btn ${view === "map" ? "pill-btn-active" : ""}`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <svg
-                      className="w-3.5 h-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                      <line x1="8" y1="2" x2="8" y2="18" />
-                      <line x1="16" y1="6" x2="16" y2="22" />
-                    </svg>
-                    Map
-                  </span>
-                </button>
-              </div>
-            </div>
-            {/* Spacer on desktop where toggle was */}
-            <div className="hidden lg:block" />
-
-            {!loading && results.length > 0 && (
-              <SaveButton
-                query={query}
-                location={locationDisplay}
-                cptCodes={cptCodes.map((c) => c.code)}
-                lat={lat}
-                lng={lng}
-                onSave={logSaveSearch}
-              />
-            )}
-          </div>
-
-          {/* Filter bar */}
-          {!loading && results.length > 0 && (
-            <FilterBar
-              results={results}
-              onFilteredResults={handleFilteredResults}
-              radius={radius}
-              onRadiusChange={handleRadiusChange}
-            />
-          )}
         </div>
+
+        {/* Filters */}
+        {!loading && results.length > 0 && (
+          <FilterBar
+            results={results}
+            onFilteredResults={handleFilteredResults}
+            radius={radius}
+            onRadiusChange={handleRadiusChange}
+          />
+        )}
+
+        <div className="flex-1" />
+
+        {/* Interpretation — icon with tooltip */}
+        {interpretation && !loading && (
+          <span
+            className="text-[11px] px-1.5 py-0.5 rounded cursor-help hidden sm:inline-flex items-center gap-1"
+            style={{
+              background: "var(--cc-primary-light)",
+              color: "var(--cc-primary)",
+              fontWeight: 500,
+            }}
+            title={interpretation}
+          >
+            {cptCodes.length > 0 && (
+              <>
+                {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
+              </>
+            )}
+          </span>
+        )}
+
+        {/* Save — small icon button */}
+        {!loading && results.length > 0 && (
+          <SaveButton
+            query={query}
+            location={locationDisplay}
+            cptCodes={cptCodes.map((c) => c.code)}
+            lat={lat}
+            lng={lng}
+            onSave={logSaveSearch}
+          />
+        )}
       </div>
 
+      {/* Error state */}
+      {error && (
+        <div
+          className="mx-4 mt-2 p-3 rounded-lg border"
+          style={{
+            background: "var(--cc-error-light)",
+            borderColor: "rgba(220, 38, 38, 0.15)",
+          }}
+        >
+          <p className="text-sm" style={{ color: "var(--cc-error)" }}>
+            {error}
+          </p>
+        </div>
+      )}
+
       {/* Content section — split view on desktop, toggle on mobile */}
-      <div className="max-w-5xl mx-auto lg:max-w-7xl mt-2">
+      <div className="max-w-full px-4 lg:px-6">
         <div className="lg:flex lg:gap-4">
           {/* Left column: Results list */}
           <div
             className={`lg:w-1/2 lg:overflow-y-auto lg:pr-2 ${
               view === "map" ? "hidden lg:block" : ""
             }`}
-            style={{ maxHeight: "calc(100vh - 200px)" }}
+            style={{ maxHeight: "calc(100vh - 120px)" }}
           >
             <ResultsList
               results={filteredResults}
@@ -236,7 +198,7 @@ function ResultsContent() {
             className={`lg:w-1/2 lg:sticky lg:top-[72px] mt-4 lg:mt-0 ${
               view === "list" ? "hidden lg:block" : ""
             }`}
-            style={{ height: "calc(100vh - 200px)" }}
+            style={{ height: "calc(100vh - 120px)" }}
           >
             <MapView
               results={filteredResults}
