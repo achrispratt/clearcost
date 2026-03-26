@@ -174,13 +174,6 @@ export function ResultsList({
 
   return (
     <div>
-      <p
-        className="text-sm px-4 py-1"
-        style={{ color: "var(--cc-text-tertiary)" }}
-      >
-        {results.length} result{results.length !== 1 ? "s" : ""} found
-      </p>
-
       {results.length < 3 && (
         <div
           className="mx-4 mb-2 p-3 rounded-lg border text-sm flex items-center justify-between gap-3"

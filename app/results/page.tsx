@@ -121,25 +121,86 @@ function ResultsContent() {
           />
         )}
 
+        {/* Results count */}
+        {!loading && filteredResults.length > 0 && (
+          <span
+            className="text-[12px] whitespace-nowrap"
+            style={{ color: "var(--cc-text-tertiary)" }}
+          >
+            {filteredResults.length} result
+            {filteredResults.length !== 1 ? "s" : ""}
+          </span>
+        )}
+
         <div className="flex-1" />
 
-        {/* Interpretation — icon with tooltip */}
+        {/* Interpretation — label + code pill with hover tooltip */}
         {interpretation && !loading && (
-          <span
-            className="text-[11px] px-1.5 py-0.5 rounded cursor-help hidden sm:inline-flex items-center gap-1"
-            style={{
-              background: "var(--cc-primary-light)",
-              color: "var(--cc-primary)",
-              fontWeight: 500,
-            }}
-            title={interpretation}
-          >
-            {cptCodes.length > 0 && (
-              <>
-                {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
-              </>
-            )}
-          </span>
+          <div className="relative hidden sm:inline-flex items-center group">
+            <span
+              className="text-[11px] px-1.5 py-0.5 rounded cursor-help inline-flex items-center gap-1"
+              style={{
+                background: "var(--cc-primary-light)",
+                color: "var(--cc-primary)",
+                fontWeight: 500,
+              }}
+            >
+              Interpreted:
+              {cptCodes.length > 0 && (
+                <span className="font-semibold">
+                  {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
+                </span>
+              )}
+              <svg
+                className="w-3 h-3"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </span>
+            {/* Hover tooltip */}
+            <div
+              className="absolute top-full right-0 mt-1 p-3 rounded-lg border text-[12px] w-80 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150"
+              style={{
+                background: "var(--cc-surface)",
+                borderColor: "var(--cc-border)",
+                color: "var(--cc-text-secondary)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              }}
+            >
+              <p
+                className="font-semibold mb-1"
+                style={{ color: "var(--cc-text)" }}
+              >
+                How we interpreted your search
+              </p>
+              <p>{interpretation}</p>
+              {cptCodes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {cptCodes.map((code) => (
+                    <span
+                      key={code.code}
+                      className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                      style={{
+                        background: "var(--cc-primary-light)",
+                        color: "var(--cc-primary)",
+                      }}
+                    >
+                      {(code.codeType || "CPT").toUpperCase()} {code.code}:{" "}
+                      {code.description}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Save — small icon button */}
