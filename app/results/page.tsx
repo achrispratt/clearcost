@@ -90,7 +90,7 @@ function ResultsContent() {
     <div>
       {/* Filter bar + controls — flush below navbar */}
       <div
-        className="px-4 lg:px-6 border-b flex items-center gap-2"
+        className="px-4 lg:px-6 border-b flex items-center gap-2 overflow-x-auto"
         style={{ borderColor: "var(--cc-border)", background: "var(--cc-bg)" }}
       >
         {/* Mobile view toggle */}
