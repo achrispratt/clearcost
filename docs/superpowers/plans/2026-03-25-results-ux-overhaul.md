@@ -107,15 +107,7 @@ export function ResultRow({
         onToggleExpand?.();
         if (!isExpanded) onSelect?.();
       }}
-      onMouseEnter={(e) => {
-        if (!isExpanded && !isSelected)
-          (e.currentTarget as HTMLElement).style.background =
-            "var(--cc-surface-hover)";
-      }}
-      onMouseLeave={(e) => {
-        if (!isExpanded && !isSelected)
-          (e.currentTarget as HTMLElement).style.background = "transparent";
-      }}
+      className="grid items-center cursor-pointer select-none transition-colors duration-100 hover:bg-[var(--cc-surface-hover)]"
     >
       {/* Provider */}
       <div>
@@ -646,6 +638,98 @@ git commit -m "feat: mobile responsive adjustments for table layout"
 
 ---
 
+## Task 8: Component Tests
+
+**Files:**
+
+- Create: `__tests__/components/ResultRow.test.tsx`
+- Create: `__tests__/components/ResultRowDetail.test.tsx`
+
+Install React Testing Library if not present: `npm install -D @testing-library/react @testing-library/jest-dom`
+
+- [ ] **Step 1: Install test dependencies**
+
+Run: `npm install -D @testing-library/react @testing-library/jest-dom`
+
+- [ ] **Step 2: Write ResultRow tests**
+
+Test cases:
+
+- Renders provider name, est total, base price, distance
+- Shows estTotal in primary color when present
+- Falls back to displayPrice.amount when estTotal is null
+- Shows primary-light background when expanded
+- Shows primary-light background when selected
+- Calls onToggleExpand and onSelect on click
+- Truncates long provider names
+
+- [ ] **Step 3: Write ResultRowDetail tests**
+
+Test cases:
+
+- Renders address from provider fields, skipping null segments
+- Shows facility fee label + price for billingClass="facility"
+- Shows "Billed separately" note for the other fee type
+- Hides billing class callout when billingClass is null
+- Shows Medicare rate + multiplier badge when present
+- Hides Medicare row when medicareFacilityRate is null
+- Shows avg insured rate + payer count when present
+- Hides insured row when avgNegotiatedRate is null
+- Shows estimated total when different from base price
+
+- [ ] **Step 4: Run tests**
+
+Run: `npm test`
+Expected: All new tests PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add __tests__/components/ package.json package-lock.json
+git commit -m "test: add component tests for ResultRow and ResultRowDetail"
+```
+
+---
+
+## Design Specs (from /plan-design-review)
+
+### Interaction States
+
+| Feature           | Loading                                                                    | Empty                                                                                                                            | Error                                                      | Partial Data                                                                                        |
+| ----------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Results table     | Grid skeleton: 8 rows matching column grid, shimmer animation on each cell | Centered message: "No results found near [location]" + search icon + "Try a larger radius or different location" + Expand button | "Unable to load results. Please try again." + retry button | N/A                                                                                                 |
+| Est. Total column | Shimmer bar                                                                | N/A                                                                                                                              | N/A                                                        | If no estimatedTotalMedian: show base displayPrice in primary color (same column, no fallback text) |
+| Quality column    | Shimmer bar                                                                | N/A                                                                                                                              | N/A                                                        | Show "—" for unrated (placeholder until #141)                                                       |
+| Row expansion     | N/A                                                                        | N/A                                                                                                                              | N/A                                                        | Hide Medicare row if null, hide insured row if null, hide Est. Total line if same as base price     |
+| Search in navbar  | Spinner on search button                                                   | N/A                                                                                                                              | Red border on input + validation message below             | N/A                                                                                                 |
+
+### Accessibility
+
+- Column headers: `role="columnheader"` on each header cell
+- Result rows: `role="row"` with `aria-expanded` on each expandable row
+- Cells: `role="cell"` on each data cell in the grid
+- Keyboard: rows are focusable (`tabIndex={0}`), Enter/Space toggles expand
+- Touch targets: minimum 44px row height (current 10px padding + content achieves this)
+- Focus visible: `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cc-primary)]`
+
+### Mobile Responsive (< 640px)
+
+**Columns:** Provider + Base Price + Distance + Chevron (hide Est. Total and Quality)
+
+- Grid: `1fr 80px 60px 24px`
+- Column headers update to match (hide hidden column headers)
+
+**Expanded detail:** Stacks vertically (flex-col instead of flex-row)
+
+- Fee breakdown takes full width
+- Medicare/insured/CTA stack below, also full width
+
+**Interpretation in nav:** Show only code pill (`CPT 71046`) on mobile, full "Interpreted as: ..." on desktop. Code pill is tappable to expand full text.
+
+**Hospital Profile button:** Shows tooltip "Coming soon" on click (placeholder until hospital profile page is built). Button styled as secondary/outlined.
+
+---
+
 ## Execution Notes
 
 **What's NOT in scope:**
@@ -663,3 +747,14 @@ git commit -m "feat: mobile responsive adjustments for table layout"
 - MEDIUM: Mobile responsive — need to test thoroughly since we're changing from cards to table rows
 
 **Estimated effort:** ~45 min CC time
+
+## GSTACK REVIEW REPORT
+
+| Review        | Trigger               | Why                             | Runs | Status | Findings                                                                                          |
+| ------------- | --------------------- | ------------------------------- | ---- | ------ | ------------------------------------------------------------------------------------------------- |
+| CEO Review    | `/plan-ceo-review`    | Scope & strategy                | 0    | —      | —                                                                                                 |
+| Codex Review  | `/codex review`       | Independent 2nd opinion         | 0    | —      | —                                                                                                 |
+| Eng Review    | `/plan-eng-review`    | Architecture & tests (required) | 1    | CLEAR  | 1 issue (JS hover → CSS hover), 0 critical gaps, full component tests added                       |
+| Design Review | `/plan-design-review` | UI/UX gaps                      | 1    | CLEAR  | score: 6/10 → 8/10, 6 decisions added (interaction states, a11y, mobile, hospital profile button) |
+
+**VERDICT:** ENG + DESIGN CLEARED — ready to implement.

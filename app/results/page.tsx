@@ -192,10 +192,10 @@ function ResultsContent() {
         <div className="lg:flex lg:gap-4">
           {/* Left column: Results list */}
           <div
-            className={`lg:w-[55%] lg:overflow-y-auto lg:pr-2 ${
+            className={`lg:w-1/2 lg:overflow-y-auto lg:pr-2 ${
               view === "map" ? "hidden lg:block" : ""
             }`}
-            style={{ maxHeight: "calc(100vh - 240px)" }}
+            style={{ maxHeight: "calc(100vh - 200px)" }}
           >
             <ResultsList
               results={filteredResults}
@@ -212,10 +212,10 @@ function ResultsContent() {
 
           {/* Right column: Map */}
           <div
-            className={`lg:w-[45%] lg:sticky lg:top-[72px] mt-4 lg:mt-0 ${
+            className={`lg:w-1/2 lg:sticky lg:top-[72px] mt-4 lg:mt-0 ${
               view === "list" ? "hidden lg:block" : ""
             }`}
-            style={{ height: "calc(100vh - 240px)" }}
+            style={{ height: "calc(100vh - 200px)" }}
           >
             <MapView
               results={filteredResults}

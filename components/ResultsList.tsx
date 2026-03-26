@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { ChargeResult } from "@/types";
-import { ResultCard } from "./ResultCard";
+import { ResultRow, ROW_GRID } from "./ResultRow";
+import { ResultRowDetail } from "./ResultRowDetail";
 
 interface ResultsListProps {
   results: ChargeResult[];
@@ -23,7 +24,6 @@ export function ResultsList({
   markerClickCount = 0,
   onCardSelect,
   onResultClick,
-  codeDescriptionMap,
   locationDisplay,
   onExpandRadius,
 }: ResultsListProps) {
@@ -64,27 +64,40 @@ export function ResultsList({
 
   if (loading) {
     return (
-      <div className="space-y-1.5">
+      <div>
+        {/* Skeleton column headers */}
+        <div
+          className="grid items-center"
+          style={{
+            gridTemplateColumns: ROW_GRID,
+            padding: "6px 16px",
+            borderBottom: "1px solid var(--cc-border)",
+          }}
+        >
+          {["w-16", "w-12", "w-12", "w-10", "w-10", "w-4"].map((w, i) => (
+            <div key={i} className={`h-2.5 ${w} shimmer rounded`} />
+          ))}
+        </div>
+        {/* Skeleton rows */}
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
-            className="rounded-xl border overflow-hidden"
+            className="grid items-center"
             style={{
-              background: "var(--cc-surface)",
-              borderColor: "var(--cc-border)",
+              gridTemplateColumns: ROW_GRID,
+              padding: "12px 16px",
+              borderBottom: "1px solid var(--cc-border)",
             }}
           >
-            <div className="flex">
-              <div className="w-1 shrink-0 shimmer" />
-              <div className="flex-1 flex items-center gap-2 px-3 py-2">
-                <div className="w-5 h-5 rounded-lg shimmer shrink-0" />
-                <div className="h-4 w-40 shimmer" />
-                <div className="flex-1" />
-                <div className="h-4 w-16 shimmer shrink-0" />
-                <div className="h-3 w-12 shimmer shrink-0 hidden sm:block" />
-                <div className="w-4 h-4 shimmer shrink-0 rounded" />
-              </div>
+            <div>
+              <div className="h-3.5 w-40 shimmer rounded mb-1" />
+              <div className="h-2.5 w-16 shimmer rounded" />
             </div>
+            <div className="h-4 w-14 shimmer rounded hidden sm:block" />
+            <div className="h-4 w-12 shimmer rounded" />
+            <div className="h-3 w-10 shimmer rounded" />
+            <div className="h-3 w-14 shimmer rounded hidden sm:block" />
+            <div className="h-3 w-3 shimmer rounded" />
           </div>
         ))}
       </div>
@@ -143,14 +156,17 @@ export function ResultsList({
   }
 
   return (
-    <div className="space-y-1.5">
-      <p className="text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
+    <div>
+      <p
+        className="text-sm px-4 py-1"
+        style={{ color: "var(--cc-text-tertiary)" }}
+      >
         {results.length} result{results.length !== 1 ? "s" : ""} found
       </p>
 
       {results.length < 3 && (
         <div
-          className="p-3 rounded-xl border text-sm flex items-center justify-between gap-3"
+          className="mx-4 mb-2 p-3 rounded-lg border text-sm flex items-center justify-between gap-3"
           style={{
             background: "var(--cc-accent-light)",
             borderColor: "rgba(217, 119, 6, 0.2)",
@@ -158,9 +174,8 @@ export function ResultsList({
           }}
         >
           <span>
-            Only {results.length} result{results.length !== 1 ? "s" : ""} found
-            within your search radius. Try expanding your search area for more
-            options.
+            Only {results.length} result{results.length !== 1 ? "s" : ""} found.
+            Try expanding your search area.
           </span>
           {onExpandRadius && (
             <button
@@ -177,13 +192,38 @@ export function ResultsList({
         </div>
       )}
 
+      {/* Column headers */}
+      <div
+        className="grid items-center sticky top-0 z-10"
+        role="row"
+        style={{
+          gridTemplateColumns: ROW_GRID,
+          padding: "6px 16px",
+          borderBottom: "1px solid var(--cc-border)",
+          background: "var(--cc-bg)",
+          fontSize: "10px",
+          fontWeight: 600,
+          textTransform: "uppercase" as const,
+          letterSpacing: "0.08em",
+          color: "var(--cc-text-tertiary)",
+        }}
+      >
+        <span role="columnheader">Provider</span>
+        <span role="columnheader" className="hidden sm:block">
+          Est. Total
+        </span>
+        <span role="columnheader">Base Price</span>
+        <span role="columnheader">Distance</span>
+        <span role="columnheader" className="hidden sm:block">
+          Quality
+        </span>
+        <span />
+      </div>
+
+      {/* Result rows */}
       {results.map((result, i) => (
-        <div
-          key={result.id}
-          className="animate-fade-up"
-          style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
-        >
-          <ResultCard
+        <div key={result.id}>
+          <ResultRow
             result={result}
             rank={i + 1}
             isSelected={result.provider.id === selectedProviderId}
@@ -193,8 +233,8 @@ export function ResultsList({
               onCardSelect?.(result.provider.id);
               onResultClick?.();
             }}
-            codeDescriptionMap={codeDescriptionMap}
           />
+          {expandedIds.has(result.id) && <ResultRowDetail result={result} />}
         </div>
       ))}
     </div>
