@@ -136,7 +136,7 @@ export function SearchCategories() {
       className="border-t px-4 py-16 sm:py-20"
       style={{
         borderColor: "var(--cc-border)",
-        background: "var(--cc-bg)",
+        background: "var(--cc-surface)",
       }}
     >
       <div className="max-w-5xl mx-auto">
