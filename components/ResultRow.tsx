@@ -76,7 +76,7 @@ export function ResultRow({
       }}
     >
       {/* Provider */}
-      <div role="cell">
+      <div role="cell" className="min-w-0">
         <div
           className="font-semibold text-[13px] truncate"
           style={{ color: "var(--cc-text)" }}
