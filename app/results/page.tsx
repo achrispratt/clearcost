@@ -65,38 +65,15 @@ function ResultsContent() {
   const { setSearchSlot } = useNavbarSlot();
   useEffect(() => {
     setSearchSlot(
-      <div className="min-w-0">
-        <SearchBar
-          onSearch={handleNewSearch}
-          loading={loading}
-          initialQuery={query}
-          initialLocation={
-            lat && lng ? { lat, lng, display: locationDisplay } : undefined
-          }
-          compact
-        />
-        {interpretation && !loading && (
-          <p
-            className="text-[11px] mt-1 leading-tight"
-            style={{ color: "var(--cc-text-tertiary)" }}
-          >
-            <strong style={{ color: "var(--cc-primary)" }}>Interpreted:</strong>{" "}
-            {interpretation}
-            {cptCodes.length > 0 && (
-              <span
-                className="ml-1 text-[10px] px-1 py-0.5 rounded"
-                style={{
-                  background: "var(--cc-primary-light)",
-                  color: "var(--cc-primary)",
-                  fontWeight: 600,
-                }}
-              >
-                {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
-              </span>
-            )}
-          </p>
-        )}
-      </div>
+      <SearchBar
+        onSearch={handleNewSearch}
+        loading={loading}
+        initialQuery={query}
+        initialLocation={
+          lat && lng ? { lat, lng, display: locationDisplay } : undefined
+        }
+        compact
+      />
     );
     return () => setSearchSlot(null);
   }, [
@@ -107,8 +84,6 @@ function ResultsContent() {
     lat,
     lng,
     locationDisplay,
-    interpretation,
-    cptCodes,
   ]);
 
   return (
@@ -128,6 +103,29 @@ function ResultsContent() {
               {error}
             </p>
           </div>
+        )}
+
+        {/* Interpretation — slim inline */}
+        {interpretation && !loading && (
+          <p
+            className="text-[12px] py-1.5"
+            style={{ color: "var(--cc-text-tertiary)" }}
+          >
+            <strong style={{ color: "var(--cc-primary)" }}>Interpreted:</strong>{" "}
+            {interpretation}
+            {cptCodes.length > 0 && (
+              <span
+                className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded"
+                style={{
+                  background: "var(--cc-primary-light)",
+                  color: "var(--cc-primary)",
+                  fontWeight: 600,
+                }}
+              >
+                {cptCodes[0].codeType?.toUpperCase()} {cptCodes[0].code}
+              </span>
+            )}
+          </p>
         )}
 
         {/* Toolbar: View toggle (mobile only) + Save + Filters */}
