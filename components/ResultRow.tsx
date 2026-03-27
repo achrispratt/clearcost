@@ -10,7 +10,6 @@ import type { ChargeResult } from "@/types";
 
 interface ResultRowProps {
   result: ChargeResult;
-  rank: number;
   isSelected?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;

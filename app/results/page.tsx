@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsList } from "@/components/ResultsList";
 import { useNavbarSlot } from "@/components/NavbarContext";
@@ -52,14 +52,6 @@ function ResultsContent() {
     handleMarkerClick,
     handleCardSelect,
   } = useResultSelection();
-
-  const codeDescriptionMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const code of cptCodes) {
-      if (code.code && code.description) map[code.code] = code.description;
-    }
-    return map;
-  }, [cptCodes]);
 
   // Inject search bar + interpretation into the navbar
   const { setSearchSlot } = useNavbarSlot();
@@ -248,7 +240,6 @@ function ResultsContent() {
               markerClickCount={markerClickCount}
               onCardSelect={handleCardSelect}
               onResultClick={logResultClick}
-              codeDescriptionMap={codeDescriptionMap}
               locationDisplay={locationDisplay}
               onExpandRadius={radius < 250 ? handleExpandRadius : undefined}
             />

@@ -13,7 +13,6 @@ interface ResultsListProps {
   markerClickCount?: number;
   onCardSelect?: (providerId: string) => void;
   onResultClick?: () => void;
-  codeDescriptionMap?: Record<string, string>;
   locationDisplay?: string;
   onExpandRadius?: () => void;
 }
@@ -62,6 +61,14 @@ export function ResultsList({
       prev.has(id) ? new Set<string>() : new Set([id])
     );
   }, []);
+
+  const handleSelect = useCallback(
+    (providerId: string) => {
+      onCardSelect?.(providerId);
+      onResultClick?.();
+    },
+    [onCardSelect, onResultClick]
+  );
 
   // Compute price range for color-coding (green/amber/red)
   const priceRange = useMemo(() => {
@@ -279,18 +286,14 @@ export function ResultsList({
           </tr>
         </thead>
         <tbody>
-          {results.map((result, i) => (
+          {results.map((result) => (
             <React.Fragment key={result.id}>
               <ResultRow
                 result={result}
-                rank={i + 1}
                 isSelected={result.provider.id === selectedProviderId}
                 isExpanded={expandedIds.has(result.id)}
                 onToggleExpand={() => handleToggleExpand(result.id)}
-                onSelect={() => {
-                  onCardSelect?.(result.provider.id);
-                  onResultClick?.();
-                }}
+                onSelect={() => handleSelect(result.provider.id)}
                 priceRange={priceRange}
               />
               {expandedIds.has(result.id) && (

@@ -1,5 +1,9 @@
 import type { ChargeResult } from "@/types";
 
+/** Type guard: checks that a string value is present and not the literal "null" */
+export const notNull = (v: string | undefined): v is string =>
+  !!v && v.toLowerCase() !== "null";
+
 export function formatPrice(price: number | undefined): string {
   if (price == null) return "N/A";
   return `$${price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;

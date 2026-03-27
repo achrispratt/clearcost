@@ -1,14 +1,11 @@
 "use client";
 
-import { formatPrice, getDisplayPrice } from "@/lib/format";
+import { formatPrice, getDisplayPrice, notNull } from "@/lib/format";
 import type { ChargeResult } from "@/types";
 
 interface ResultRowDetailProps {
   result: ChargeResult;
 }
-
-const notNull = (v: string | undefined): v is string =>
-  !!v && v.toLowerCase() !== "null";
 
 export function ResultRowDetail({ result }: ResultRowDetailProps) {
   const displayPrice = getDisplayPrice(result);
