@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import type { ChargeResult } from "@/types";
-import { ResultCard } from "./ResultCard";
+import { getDisplayPrice } from "@/lib/format";
+import { ResultRow } from "./ResultRow";
+import { ResultRowDetail } from "./ResultRowDetail";
 
 interface ResultsListProps {
   results: ChargeResult[];
@@ -11,7 +13,6 @@ interface ResultsListProps {
   markerClickCount?: number;
   onCardSelect?: (providerId: string) => void;
   onResultClick?: () => void;
-  codeDescriptionMap?: Record<string, string>;
   locationDisplay?: string;
   onExpandRadius?: () => void;
 }
@@ -23,7 +24,6 @@ export function ResultsList({
   markerClickCount = 0,
   onCardSelect,
   onResultClick,
-  codeDescriptionMap,
   locationDisplay,
   onExpandRadius,
 }: ResultsListProps) {
@@ -62,32 +62,93 @@ export function ResultsList({
     );
   }, []);
 
+  const handleSelect = useCallback(
+    (providerId: string) => {
+      onCardSelect?.(providerId);
+      onResultClick?.();
+    },
+    [onCardSelect, onResultClick]
+  );
+
+  // Compute price range for color-coding (green/amber/red)
+  const priceRange = useMemo(() => {
+    const prices = results
+      .map((r) => {
+        const dp = getDisplayPrice(r);
+        return (
+          r.estimatedTotalMedian ??
+          r.episodeEstimate?.estimatedAllInMedian ??
+          dp.amount
+        );
+      })
+      .filter((p): p is number => p != null && p > 0);
+    if (prices.length === 0) return undefined;
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+  }, [results]);
+
   if (loading) {
     return (
-      <div className="space-y-1.5">
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <div
-            key={i}
-            className="rounded-xl border overflow-hidden"
-            style={{
-              background: "var(--cc-surface)",
-              borderColor: "var(--cc-border)",
-            }}
-          >
-            <div className="flex">
-              <div className="w-1 shrink-0 shimmer" />
-              <div className="flex-1 flex items-center gap-2 px-3 py-2">
-                <div className="w-5 h-5 rounded-lg shimmer shrink-0" />
-                <div className="h-4 w-40 shimmer" />
-                <div className="flex-1" />
-                <div className="h-4 w-16 shimmer shrink-0" />
-                <div className="h-3 w-12 shimmer shrink-0 hidden sm:block" />
-                <div className="w-4 h-4 shimmer shrink-0 rounded" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <table className="w-full" style={{ borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            {["w-16", "w-12", "w-12", "w-10", "w-10", "w-4"].map((w, i) => (
+              <th
+                key={i}
+                className="py-1.5 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className={`h-2.5 ${w} shimmer rounded`} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <tr key={i}>
+              <td
+                className="py-3 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-3.5 w-40 shimmer rounded mb-1" />
+                <div className="h-2.5 w-16 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-4 w-14 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4 hidden sm:table-cell"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-4 w-16 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-3 w-10 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 px-4 hidden sm:table-cell"
+                style={{ borderBottom: "1px solid var(--cc-border)" }}
+              >
+                <div className="h-3 w-14 shimmer rounded" />
+              </td>
+              <td
+                className="py-3 pr-4"
+                style={{
+                  borderBottom: "1px solid var(--cc-border)",
+                  width: "32px",
+                }}
+              >
+                <div className="h-3 w-3 shimmer rounded" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     );
   }
 
@@ -143,14 +204,10 @@ export function ResultsList({
   }
 
   return (
-    <div className="space-y-1.5">
-      <p className="text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
-        {results.length} result{results.length !== 1 ? "s" : ""} found
-      </p>
-
+    <div>
       {results.length < 3 && (
         <div
-          className="p-3 rounded-xl border text-sm flex items-center justify-between gap-3"
+          className="mx-4 mb-2 p-3 rounded-lg border text-sm flex items-center justify-between gap-3"
           style={{
             background: "var(--cc-accent-light)",
             borderColor: "rgba(217, 119, 6, 0.2)",
@@ -158,9 +215,8 @@ export function ResultsList({
           }}
         >
           <span>
-            Only {results.length} result{results.length !== 1 ? "s" : ""} found
-            within your search radius. Try expanding your search area for more
-            options.
+            Only {results.length} result{results.length !== 1 ? "s" : ""} found.
+            Try expanding your search area.
           </span>
           {onExpandRadius && (
             <button
@@ -177,26 +233,76 @@ export function ResultsList({
         </div>
       )}
 
-      {results.map((result, i) => (
-        <div
-          key={result.id}
-          className="animate-fade-up"
-          style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
+      <table className="w-full" style={{ borderCollapse: "collapse" }}>
+        <thead
+          className="sticky top-0 z-10"
+          style={{ background: "var(--cc-bg)" }}
         >
-          <ResultCard
-            result={result}
-            rank={i + 1}
-            isSelected={result.provider.id === selectedProviderId}
-            isExpanded={expandedIds.has(result.id)}
-            onToggleExpand={() => handleToggleExpand(result.id)}
-            onSelect={() => {
-              onCardSelect?.(result.provider.id);
-              onResultClick?.();
+          <tr
+            style={{
+              fontSize: "10px",
+              fontWeight: 600,
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.08em",
+              color: "var(--cc-text-tertiary)",
             }}
-            codeDescriptionMap={codeDescriptionMap}
-          />
-        </div>
-      ))}
+          >
+            <th
+              className="text-left py-1.5 px-4 font-semibold"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Provider
+            </th>
+            <th
+              className="text-right py-1.5 px-4 font-semibold"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Base Price
+            </th>
+            <th
+              className="text-right py-1.5 px-4 font-semibold hidden sm:table-cell"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Est. Total
+            </th>
+            <th
+              className="text-right py-1.5 px-4 font-semibold"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Distance
+            </th>
+            <th
+              className="py-1.5 px-4 font-semibold hidden sm:table-cell"
+              style={{ borderBottom: "1px solid var(--cc-border)" }}
+            >
+              Quality
+            </th>
+            <th
+              style={{
+                borderBottom: "1px solid var(--cc-border)",
+                width: "32px",
+              }}
+            />
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((result) => (
+            <React.Fragment key={result.id}>
+              <ResultRow
+                result={result}
+                isSelected={result.provider.id === selectedProviderId}
+                isExpanded={expandedIds.has(result.id)}
+                onToggleExpand={() => handleToggleExpand(result.id)}
+                onSelect={() => handleSelect(result.provider.id)}
+                priceRange={priceRange}
+              />
+              {expandedIds.has(result.id) && (
+                <ResultRowDetail result={result} />
+              )}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

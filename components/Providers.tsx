@@ -1,10 +1,11 @@
 "use client";
 
 import { Toaster } from "react-hot-toast";
+import { NavbarProvider } from "./NavbarContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <NavbarProvider>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -31,6 +32,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }}
       />
       {children}
-    </>
+    </NavbarProvider>
   );
 }

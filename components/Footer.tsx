@@ -6,7 +6,7 @@ export function Footer() {
       className="border-t px-4 sm:px-8 py-12 sm:py-16"
       style={{
         borderColor: "var(--cc-border)",
-        background: "var(--cc-bg)",
+        background: "var(--cc-surface-alt)",
       }}
     >
       <div className="max-w-4xl mx-auto">

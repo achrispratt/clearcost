@@ -210,7 +210,7 @@ export function SearchBar({
         />
 
         <div
-          className={`flex items-center ${compact ? "px-3 sm:w-44" : "px-4 sm:w-44"}`}
+          className={`flex items-center ${compact ? "px-3 sm:w-52" : "px-4 sm:w-52"}`}
         >
           <svg
             className={`${compact ? "w-3.5 h-3.5 mr-1.5" : "w-4 h-4 mr-2"} shrink-0`}
