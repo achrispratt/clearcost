@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { LocationInput } from "./LocationInput";
 
 interface SearchBarProps {
@@ -44,9 +44,18 @@ export function SearchBar({
   }>({});
   const queryInputRef = useRef<HTMLInputElement>(null);
 
-  const [placeholder] = useState(
-    () => placeholders[Math.floor(Math.random() * placeholders.length)]
-  );
+  // Start at index 0 on both server and client so the initial HTML matches
+  // (avoids a hydration mismatch). Rotation starts after mount, client-only.
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const placeholder = placeholders[placeholderIndex];
 
   const handleLocationSelect = useCallback(
     (loc: { lat: number; lng: number; display: string }) => {
