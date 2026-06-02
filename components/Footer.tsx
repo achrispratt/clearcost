@@ -48,6 +48,13 @@ export function Footer() {
             >
               Real hospital prices, searchable in plain English.
             </p>
+            <a
+              href="mailto:info@clearcost.live"
+              className="inline-block mt-3 text-sm hover:underline"
+              style={{ color: "var(--cc-text-secondary)" }}
+            >
+              info@clearcost.live
+            </a>
           </div>
 
           {/* Navigation */}
