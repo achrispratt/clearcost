@@ -4,6 +4,10 @@
 
 -- Enable PostGIS for geographic queries
 create extension if not exists postgis;
+-- NOTE: PostGIS creates `spatial_ref_sys` in public without RLS.
+-- Supabase's linter flags this, but the table is owned by supabase_admin
+-- and cannot be altered. Safe to ignore — contains only public coordinate
+-- system definitions (EPSG codes). See: https://supabase.com/docs/guides/database/extensions/postgis
 
 -- ============================================================================
 -- PROVIDERS (hospitals, imaging centers, labs, ASCs, clinics)
