@@ -63,6 +63,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Pin Turbopack's workspace root to this project. Next otherwise infers the
+  // root by walking up for a lockfile; a stray parent lockfile or stale .next
+  // cache can make it resolve modules from the parent dir — breaking dev and
+  // risking the 40GB+ RAM blowup tracked in vercel/next.js#92978.
+  turbopack: {
+    root: __dirname,
+  },
   async headers() {
     return [
       {
