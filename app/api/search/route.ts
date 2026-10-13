@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { translateQueryToCPT } from "@/lib/cpt/translate";
+import { MAX_RADIUS_MILES, validateQuery } from "@/lib/api-limits";
 import {
   createLookupDiagnostics,
   lookupWithPricingPlan,
@@ -233,7 +234,7 @@ export async function POST(request: NextRequest) {
       return respond({ error: "Location is required" }, 400);
     }
 
-    const radiusMiles = location.radiusMiles || 100;
+    const radiusMiles = Math.min(location.radiusMiles || 100, MAX_RADIUS_MILES);
     const { lat, lng } = location;
     const directCodeGroups = normalizeCodeGroups(directCodeGroupsRaw);
     const normalizedDirectCodes = Array.isArray(directCodes)
@@ -350,6 +351,10 @@ export async function POST(request: NextRequest) {
     // Standard path: AI translation -> code lookup -> fallback search.
     if (!queryText) {
       return respond({ error: "Query or codes are required" }, 400);
+    }
+    const queryError = validateQuery(queryText);
+    if (queryError) {
+      return respond({ error: queryError }, 400);
     }
 
     const kbResult = await kbLookup(queryText, []);

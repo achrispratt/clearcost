@@ -49,26 +49,19 @@ User types query on homepage
   ↓
 SearchBar component → navigates to /guided-search?q=...&lat=...&lng=...
   ↓
-Guided Search page (app/guided-search/page.tsx) → POST /api/cpt
+Guided Search page (app/guided-search/page.tsx) → POST /api/clarify (every turn)
   ↓
 Step 0: kbLookup() (lib/kb/lookup.ts)
   Normalize query → hash → check kb_synonyms for canonical form
-  Build path_hash → check kb_nodes for cached response
-  If KB hit (resolution node) → return cached codes immediately (zero AI cost)
+  Build path_hash (query + answer_path) → check kb_nodes for cached response
+  If KB hit → return cached question/resolution (zero AI cost)
   If KB miss → fall through to Claude
   ↓
-Step 1: translateQueryToCPT() (lib/cpt/translate.ts)
-  Claude API assesses the query → returns confidence level + billing codes
+Step 1: Claude (lib/cpt/translate.ts)
+  Turn 0: assessQuery() → first diagnostic question (depth-0 is always a question)
+  Turn N: clarifyQuery() → next question, or resolve to codes (prompt targets max 6 turns)
   Write-back: store synonym + node in KB for future lookups
-  If confidence "high" → redirect to /results with codes
-  If confidence "low"  → show clarifying questions (one at a time)
-  ↓
-Step 1b (if clarification needed): Multi-turn Q&A loop
-  POST /api/clarify with query + previous answers
-  KB checked at each turn (query + answer_path → path_hash)
-  Claude generates next question based on full context
-  Each turn written back to KB as a conversation tree node
-  Repeats until Claude resolves to specific codes (max 6 turns)
+  If the Claude call fails → translateQueryToCPT() single-shot fallback
   ↓
 Navigate to /results?q=...&codes=73721&codeType=cpt&lat=...&lng=...
   ↓
@@ -100,7 +93,7 @@ The guided search is an AI-driven diagnostic conversation that helps users narro
   2. Category → knows the area → show grouped results
   3. Unclear → suggest primary care visit (with option to search anyway)
 - **Handles all user types**: referral holders, self-directed, symptom-based
-- **API routes**: `/api/cpt` (single-shot), `/api/clarify` (multi-turn), `/api/search` (accepts direct codes)
+- **API routes**: `/api/clarify` (multi-turn guided search), `/api/search` (accepts direct codes). Inputs capped server-side in `lib/api-limits.ts`
 
 ## Architecture: Supabase Client Pattern
 
@@ -125,7 +118,6 @@ Three client types — using the wrong one causes auth/cookie bugs:
 ```
 app/
   api/search/         — Main search endpoint (query → codes → prices)
-  api/cpt/            — Billing code translation (single-shot assessment)
   api/clarify/        — Multi-turn clarification Q&A endpoint
   api/kb/events/      — KB interaction event logging (clicks, saves, bounces)
   api/saved/          — Saved searches CRUD (requires auth)

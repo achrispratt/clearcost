@@ -3,7 +3,6 @@ import { type NextRequest } from "next/server";
 // Requests per 60-second window, keyed by API path
 const RATE_LIMITS: Record<string, number> = {
   "/api/search": 100,
-  "/api/cpt": 50,
   "/api/clarify": 50,
 };
 
