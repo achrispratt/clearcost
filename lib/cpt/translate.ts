@@ -1,3 +1,4 @@
+import { AI_MODELS } from "@/lib/ai/models";
 import { getAnthropicClient } from "@/lib/anthropic";
 import {
   CPT_TRANSLATION_SYSTEM_PROMPT,
@@ -23,6 +24,8 @@ import type {
   QueryType,
   TranslationResponse,
 } from "@/types";
+
+const translationModel = AI_MODELS.billingCodeTranslation;
 
 interface TranslationResult {
   codes: CPTCode[];
@@ -264,9 +267,9 @@ export async function translateQueryToCPT(
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
-    temperature: 0,
+    model: translationModel.model,
+    max_tokens: translationModel.maxTokens,
+    temperature: translationModel.temperature,
     system: CPT_TRANSLATION_SYSTEM_PROMPT,
     messages: [{ role: "user", content: buildTranslationPrompt(query) }],
   });
@@ -304,9 +307,9 @@ export async function assessQuery(
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
-    temperature: 0,
+    model: translationModel.model,
+    max_tokens: translationModel.maxTokens,
+    temperature: translationModel.temperature,
     system: GUIDED_SEARCH_SYSTEM_PROMPT,
     messages: [
       {
@@ -345,9 +348,9 @@ export async function clarifyQuery(
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
-    temperature: 0,
+    model: translationModel.model,
+    max_tokens: translationModel.maxTokens,
+    temperature: translationModel.temperature,
     system: GUIDED_SEARCH_SYSTEM_PROMPT,
     messages: [
       { role: "user", content: buildClarificationPrompt(query, turns) },
