@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   computeQueryHash,
   buildPathHashFromSegments,
@@ -17,7 +17,7 @@ export async function writeSynonym(
   canonicalQuery: string
 ): Promise<void> {
   const { normalizedQuery, queryHash } = computeQueryHash(query);
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase.from("kb_synonyms").upsert(
     {
@@ -51,7 +51,7 @@ export async function writeNode(params: {
   } = params;
 
   const pathHash = buildPathHashFromSegments(canonicalQuery, answerSegments);
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase.from("kb_nodes").upsert(
     {

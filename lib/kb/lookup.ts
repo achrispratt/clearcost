@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { computeQueryHash, buildPathHash } from "./path-hash";
 import type {
   ClarificationTurn,
@@ -27,7 +27,7 @@ export async function kbLookup(
   turns: ClarificationTurn[]
 ): Promise<KBLookupResult> {
   const { queryHash } = computeQueryHash(query);
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Step 1: synonym lookup
   const { data: synonym, error: synError } = await supabase
@@ -84,7 +84,7 @@ export async function kbLookup(
  */
 export async function kbSynonymLookup(query: string): Promise<string | null> {
   const { queryHash } = computeQueryHash(query);
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("kb_synonyms")
@@ -115,7 +115,7 @@ export async function getKnownCanonicals(): Promise<string[]> {
     return canonicalCache.queries;
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("kb_nodes")
     .select("canonical_query")
