@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { KBEventType } from "@/types";
 
 export async function logKBEvent(params: {
@@ -7,7 +7,7 @@ export async function logKBEvent(params: {
   sessionId: string;
 }): Promise<void> {
   const { pathHash, eventType, sessionId } = params;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase.from("kb_events").insert({
     path_hash: pathHash,
