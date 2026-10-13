@@ -9,6 +9,7 @@ import { kbLookup, getKnownCanonicals } from "@/lib/kb/lookup";
 import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
+import { validateQuery, validateTurns } from "@/lib/api-limits";
 import type {
   ClarificationTurn,
   KBQuestionPayload,
@@ -56,8 +57,9 @@ export async function POST(request: NextRequest) {
     };
     const queryText = typeof query === "string" ? query : "";
 
-    if (!queryText) {
-      return NextResponse.json({ error: "Query is required" }, { status: 400 });
+    const inputError = validateQuery(queryText) ?? validateTurns(turns);
+    if (inputError) {
+      return NextResponse.json({ error: inputError }, { status: 400 });
     }
 
     const sessionId = kbSessionId || randomUUID();
