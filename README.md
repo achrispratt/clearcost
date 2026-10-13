@@ -2,7 +2,7 @@
 
 **Kayak for healthcare pricing** — search for any medical procedure in plain English and instantly compare real hospital prices near you.
 
-**Live:** [clearcost-orcin.vercel.app](https://clearcost-orcin.vercel.app)
+**Live:** [www.clearcost.live](https://www.clearcost.live)
 
 ---
 
