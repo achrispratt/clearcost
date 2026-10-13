@@ -1,4 +1,4 @@
-import { getAnthropicClient } from "@/lib/anthropic";
+import { CLAUDE_REQUEST_DEFAULTS, getAnthropicClient } from "@/lib/anthropic";
 import {
   CPT_TRANSLATION_SYSTEM_PROMPT,
   GUIDED_SEARCH_SYSTEM_PROMPT,
@@ -264,9 +264,7 @@ export async function translateQueryToCPT(
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
-    temperature: 0,
+    ...CLAUDE_REQUEST_DEFAULTS,
     system: CPT_TRANSLATION_SYSTEM_PROMPT,
     messages: [{ role: "user", content: buildTranslationPrompt(query) }],
   });
@@ -304,9 +302,7 @@ export async function assessQuery(
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
-    temperature: 0,
+    ...CLAUDE_REQUEST_DEFAULTS,
     system: GUIDED_SEARCH_SYSTEM_PROMPT,
     messages: [
       {
@@ -345,9 +341,7 @@ export async function clarifyQuery(
   const client = getAnthropicClient();
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
-    temperature: 0,
+    ...CLAUDE_REQUEST_DEFAULTS,
     system: GUIDED_SEARCH_SYSTEM_PROMPT,
     messages: [
       { role: "user", content: buildClarificationPrompt(query, turns) },
