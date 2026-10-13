@@ -28,7 +28,7 @@ Recent history uses short conventional-style subjects such as `feat:`, `fix:`, `
 
 ## Runtime AI Models
 
-The product itself calls AI models (currently one job: translating plain-English queries into billing codes). Every runtime model choice — provider, model ID, and request settings — lives in `lib/ai/models.ts`, keyed by the job it does. Code references the job (`AI_MODELS.billingCodeTranslation`), never a model ID; a unit test fails if a model ID appears anywhere else. To upgrade or switch a model, edit that entry, confirm the new model accepts the same settings, and check output quality before merging. This governs the models the product calls, not the coding agents working on the repo.
+Models the product calls (as opposed to coding agents working on the repo) are defined in `lib/ai/models.ts`. Don't hard-code model IDs elsewhere.
 
 ## Security & Configuration Tips
 

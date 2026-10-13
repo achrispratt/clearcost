@@ -14,7 +14,7 @@ ClearCost — a consumer-facing tool that translates plain English healthcare qu
 - **Styling**: Tailwind CSS v4 + DaisyUI 5
 - **Database**: Supabase (Postgres with PostGIS for geo queries) — **NOT MongoDB/Mongoose**
 - **Auth**: Supabase Auth (Google OAuth). Search is open; saving requires sign-in.
-- **AI**: Claude API via Anthropic SDK (billing code translation). All runtime model choices live in `lib/ai/models.ts`, keyed by job — never hard-code a model ID elsewhere (a test enforces this)
+- **AI**: Claude API via Anthropic SDK (billing code translation). Models the product calls are defined in `lib/ai/models.ts`
 - **Maps**: Google Maps JavaScript API
 - **Data Pipeline**: DuckDB (local Parquet queries) + Trilliant Oria dataset
 - **Deployment**: Vercel
@@ -133,7 +133,7 @@ components/
   Footer.tsx          — Site-wide footer with legal links
   ...                 — SearchBar, LocationInput, ResultCard, FilterBar, MapView, ClarificationStep, etc.
 lib/
-  ai/models.ts        — Runtime AI model registry (one entry per job; single source of truth)
+  ai/models.ts        — Models the product calls, one entry per job
   anthropic.ts        — Claude API client singleton
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
   kb/                 — Translation Knowledge Base (lookup.ts, write-back.ts, events.ts, path-hash.ts)
