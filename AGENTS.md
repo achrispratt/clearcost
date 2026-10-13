@@ -26,6 +26,10 @@ Vitest runs in a Node environment with globals enabled. Name tests `*.test.ts` a
 
 Recent history uses short conventional-style subjects such as `feat:`, `fix:`, `docs:`, `refactor:`, `style:`, and `chore:`; keep the subject imperative and focused, optionally appending an issue reference like `(#144)`. Open PRs from short-lived branches such as `feat/results-table` or `fix/accordion-state`. PRs should include a concise summary, linked issue (`Closes #N` when applicable), screenshots for UI changes, and notes for schema or environment updates. Ensure formatting, lint, type-check, tests, and build all pass before review.
 
+## Runtime AI Models
+
+The product itself calls AI models (currently one job: translating plain-English queries into billing codes). Every runtime model choice — provider, model ID, and request settings — lives in `lib/ai/models.ts`, keyed by the job it does. Code references the job (`AI_MODELS.billingCodeTranslation`), never a model ID; a unit test fails if a model ID appears anywhere else. To upgrade or switch a model, edit that entry, confirm the new model accepts the same settings, and check output quality before merging. This governs the models the product calls, not the coding agents working on the repo.
+
 ## Security & Configuration Tips
 
 Copy `.env.local.example` to `.env.local` and never commit secrets. Required local integrations include Supabase, Anthropic, and Google Maps keys. Apply schema changes through `supabase/schema.sql` or tracked migration files, and document contributor-facing behavior changes in `README.md`, `CONTRIBUTING.md`, or `docs/`.
