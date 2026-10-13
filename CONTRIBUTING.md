@@ -225,7 +225,7 @@ color: #0f766e;
 
 ClearCost deploys to **Vercel** automatically on merge to `main`.
 
-- Production URL: [clearcost-orcin.vercel.app](https://clearcost-orcin.vercel.app)
+- Production URL: [www.clearcost.live](https://www.clearcost.live)
 - Every PR gets a preview deployment
 - Environment variables are configured in the Vercel dashboard
 
