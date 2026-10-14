@@ -9,11 +9,7 @@ import {
   formatDisplayPrice,
   displayName,
 } from "@/lib/format";
-import type {
-  ChargeResult,
-  EpisodeEstimate,
-  GroupedChargeResult,
-} from "@/types";
+import type { ChargeResult, GroupedChargeResult } from "@/types";
 import { InfoCircleIcon } from "./InfoCircleIcon";
 import { Tooltip } from "./Tooltip";
 
@@ -54,33 +50,6 @@ function billingClassLabel(bc: string | undefined): string {
   if (normalized === "professional") return "Professional fee";
   if (normalized === "both") return "Global fee";
   return "Full charge";
-}
-
-const CONFIDENCE_LABEL: Record<EpisodeEstimate["confidence"], string> = {
-  high: "high confidence",
-  medium: "medium confidence",
-  low: "low confidence",
-};
-
-function episodeEstimateNote(estimate: EpisodeEstimate): string {
-  const parts = [
-    `${estimate.label} episode`,
-    CONFIDENCE_LABEL[estimate.confidence],
-  ];
-  const converted = estimate.lines.filter((l) => l.source !== "cash").length;
-  if (converted > 0) {
-    parts.push(
-      `${converted} of ${estimate.lines.length} prices estimated from insured or list rates`
-    );
-  }
-  if (estimate.billingClass === "professional") {
-    parts.push("professional fees only");
-  }
-  let note = parts.join(", ");
-  if (estimate.coverageRatio < 1) {
-    note += ` (${Math.round(estimate.coverageRatio * 100)}% of components priced)`;
-  }
-  return note;
 }
 
 export function ResultCard({
@@ -386,7 +355,7 @@ export function ResultCard({
                         className="text-xs font-medium"
                         style={{ color: "var(--cc-text-secondary)" }}
                       >
-                        Est. all-in cash price:{" "}
+                        Est. all-in:{" "}
                         {formatPrice(
                           result.episodeEstimate.estimatedAllInMedian
                         )}
@@ -395,7 +364,9 @@ export function ResultCard({
                         className="text-[11px]"
                         style={{ color: "var(--cc-text-tertiary)" }}
                       >
-                        {episodeEstimateNote(result.episodeEstimate)}
+                        {result.episodeEstimate.label} episode
+                        {result.episodeEstimate.coverageRatio < 1 &&
+                          ` (${Math.round(result.episodeEstimate.coverageRatio * 100)}% of components priced)`}
                       </p>
                     </div>
                   ) : (
