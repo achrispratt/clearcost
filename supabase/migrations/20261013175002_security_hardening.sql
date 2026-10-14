@@ -1,5 +1,5 @@
 -- Security hardening: least-privilege for the anon/authenticated API roles.
--- Context: PR #156. KB lockdown lives in 20261013_zz_kb_server_only.sql.
+-- Context: PR #156. KB lockdown lives in 20261013182034_kb_server_only.sql.
 
 -- 1. Public reference data is read-only through the API. RLS already blocks
 --    writes (no write policies); revoking the grants is defense in depth.

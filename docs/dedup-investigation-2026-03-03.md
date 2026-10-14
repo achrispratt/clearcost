@@ -129,4 +129,4 @@ Keeps the earliest row per group (`ORDER BY created_at ASC, id ASC`). Processes 
 - `scripts/check-source-dupes.ts` — Diagnostic: inspects full Parquet source columns
 - `scripts/check-rc-impact.ts` — Diagnostic: compares with/without revenue_code in grouping
 - `scripts/check-price-preservation.ts` — Diagnostic: verifies zero price info lost
-- `supabase/migrations/20260303_deduplicate_charges.sql` — Migration (created after execution)
+- `supabase/migrations/20260303000000_deduplicate_charges.sql` — Migration (created after execution)

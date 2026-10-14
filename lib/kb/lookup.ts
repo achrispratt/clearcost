@@ -1,5 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { computeQueryHash, buildPathHash } from "./path-hash";
+import {
+  computeQueryHash,
+  buildPathHash,
+  buildPathHashFromSegments,
+  turnToSegment,
+} from "./path-hash";
 import type {
   ClarificationTurn,
   KBLookupResult,
@@ -77,6 +82,57 @@ export async function kbLookup(
     path_hash: pathHash,
     node: node as KBNode,
   };
+}
+
+/**
+ * Rebuild the question text asked before each turn from the KB tree, so the
+ * Claude prompt never carries client-supplied question ids or text (#163).
+ *
+ * The question before turns[i] is the payload of the node at
+ * canonical + answers[0..i). Returns one entry per turn: the question text,
+ * or null when that node isn't cached (e.g. after a free-text "other" answer,
+ * which is never cached) or isn't a question.
+ */
+export async function getAskedQuestions(
+  canonicalQuery: string,
+  turns: ClarificationTurn[]
+): Promise<(string | null)[]> {
+  const parentHashes: (string | null)[] = [];
+  const segments: string[] = [];
+  let cacheable = true;
+  for (const turn of turns) {
+    parentHashes.push(
+      cacheable ? buildPathHashFromSegments(canonicalQuery, segments) : null
+    );
+    const segment = turnToSegment(turn);
+    if (segment === null) cacheable = false;
+    else segments.push(segment);
+  }
+
+  const hashes = parentHashes.filter((h): h is string => h !== null);
+  if (hashes.length === 0) return turns.map(() => null);
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("kb_nodes")
+    .select("path_hash, payload")
+    .in("path_hash", hashes);
+
+  if (error || !data) return turns.map(() => null);
+
+  const questionByHash = new Map<string, string>();
+  for (const row of data) {
+    const payload: unknown = row.payload;
+    if (
+      isValidPayload(payload) &&
+      payload.type === "question" &&
+      typeof payload.question?.question === "string"
+    ) {
+      questionByHash.set(row.path_hash, payload.question.question);
+    }
+  }
+
+  return parentHashes.map((h) => (h ? (questionByHash.get(h) ?? null) : null));
 }
 
 /**

@@ -6,8 +6,8 @@
  * diagnostic to be bypassed.
  *
  * OPTIONAL: The server guard in /api/clarify already skips these at runtime,
- * and the upsert in writeNode now overwrites them when a question node is
- * written at the same path_hash. This script just pre-cleans the stale data.
+ * and writeNode replaces them when a question node is written at the same
+ * depth-0 path_hash. This script just pre-cleans the stale data.
  *
  * Note: /api/cpt still READS depth-0 resolutions from KB, but since we
  * stopped it from WRITING new ones (Task 5), these will naturally be replaced
