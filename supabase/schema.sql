@@ -836,9 +836,12 @@ returns table (
   component_code_type text,
   component_tier text,
   component_association float,
+  billing_class text,
   cash_price numeric,
   gross_charge numeric,
   avg_negotiated_rate numeric,
+  min_negotiated_rate numeric,
+  max_negotiated_rate numeric,
   min_price numeric,
   max_price numeric
 )
@@ -863,9 +866,12 @@ as $$
     comp.code_type as component_code_type,
     comp.tier as component_tier,
     comp.association as component_association,
+    c.billing_class,
     c.cash_price,
     c.gross_charge,
     c.avg_negotiated_rate,
+    c.min_negotiated_rate,
+    c.max_negotiated_rate,
     c.min_price,
     c.max_price
   from components comp

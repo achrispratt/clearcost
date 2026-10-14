@@ -183,6 +183,12 @@ export interface GroupedChargeResult extends ChargeResult {
 }
 
 // -- Episode Estimate (Turquoise SSP-based all-in cost estimate) --
+/** The single price field every line item of an episode estimate uses. */
+export type EpisodePriceBasis = "cash" | "negotiated";
+
+/** The single billing class every line item of an episode estimate is in. */
+export type EpisodeBillingClass = "facility" | "professional";
+
 export interface EpisodeEstimate {
   episodeId: string;
   principalCode: string;
@@ -193,7 +199,9 @@ export interface EpisodeEstimate {
   estimatedAllInMax?: number;
   componentCount: number;
   priceableCount: number;
-  coverageRatio: number;
+  coverageRatio: number; // hospital-specific priced components / all components
+  priceBasis: EpisodePriceBasis;
+  billingClass: EpisodeBillingClass;
   source: "turquoise_ssp";
 }
 

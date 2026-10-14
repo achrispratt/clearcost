@@ -364,7 +364,10 @@ export function ResultCard({
                         className="text-[11px]"
                         style={{ color: "var(--cc-text-tertiary)" }}
                       >
-                        {result.episodeEstimate.label} episode
+                        {result.episodeEstimate.label} episode,{" "}
+                        {result.episodeEstimate.priceBasis === "cash"
+                          ? "cash prices"
+                          : "avg insured rates"}
                         {result.episodeEstimate.coverageRatio < 1 &&
                           ` (${Math.round(result.episodeEstimate.coverageRatio * 100)}% of components priced)`}
                       </p>

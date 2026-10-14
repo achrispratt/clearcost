@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { median } from "@/lib/cpt/lookup";
-import type { ChargeResult, EpisodeEstimate } from "@/types";
+import type {
+  ChargeResult,
+  EpisodeBillingClass,
+  EpisodeEstimate,
+  EpisodePriceBasis,
+} from "@/types";
 
 // ---------------------------------------------------------------------------
 // Types for Supabase query results
@@ -13,172 +18,274 @@ interface EpisodeDefinitionRow {
   category: string | null;
 }
 
-interface ComponentChargeRow {
+export interface ComponentChargeRow {
   provider_id: string;
   component_code: string;
   component_code_type: string;
   component_tier: string;
   component_association: number;
+  billing_class?: string | null;
   cash_price: number | null;
   gross_charge: number | null;
   avg_negotiated_rate: number | null;
+  min_negotiated_rate?: number | null;
+  max_negotiated_rate?: number | null;
   min_price: number | null;
   max_price: number | null;
 }
 
+/** The principal charge row an estimate is built around. */
+export type PrincipalCharge = Pick<
+  ChargeResult,
+  | "billingClass"
+  | "cashPrice"
+  | "avgNegotiatedRate"
+  | "minNegotiatedRate"
+  | "maxNegotiatedRate"
+>;
+
+const MIN_ASSOCIATION = 0.4;
+const MIN_COVERAGE_RATIO = 0.5;
+
+// Tried in order; on equal coverage the earlier basis wins.
+const PRICE_BASES: EpisodePriceBasis[] = ["cash", "negotiated"];
+
 // ---------------------------------------------------------------------------
-// Price extraction (matches extractReferencePrice priority in lookup.ts)
+// Billing class normalization
 // ---------------------------------------------------------------------------
 
-function extractComponentPrice(row: ComponentChargeRow): number | undefined {
-  const value =
-    row.cash_price ?? row.min_price ?? row.avg_negotiated_rate ?? row.max_price;
+type NormalizedBillingClass =
+  | "facility"
+  | "professional"
+  | "both"
+  | "unspecified"
+  | "other";
+
+/**
+ * MRF billing_class values are inconsistent ("Facility", "FACILITY",
+ * "faciltiy", "HOSPITAL", null). Collapse them into a small fixed set.
+ */
+export function normalizeBillingClass(
+  raw: string | null | undefined
+): NormalizedBillingClass {
+  const value = raw?.trim().toLowerCase();
+  if (!value) return "unspecified";
+  if (["facility", "faciltiy", "hospital", "institutional"].includes(value)) {
+    return "facility";
+  }
+  if (value === "professional") return "professional";
+  if (value === "both") return "both";
+  return "other";
+}
+
+/**
+ * The billing class an estimate is built in. Unlabeled rows are treated as
+ * facility charges (hospital MRFs are predominantly facility). "Both" rows
+ * already bundle facility + professional, so they can't be combined with
+ * either and get no estimate.
+ */
+export function episodeBillingClassFor(
+  raw: string | null | undefined
+): EpisodeBillingClass | undefined {
+  const normalized = normalizeBillingClass(raw);
+  if (normalized === "facility" || normalized === "unspecified") {
+    return "facility";
+  }
+  if (normalized === "professional") return "professional";
+  return undefined;
+}
+
+/**
+ * Rows for one component code that may be added to an estimate of the given
+ * class. Facility estimates prefer explicitly-labeled facility rows and fall
+ * back to unlabeled rows only when a code has no facility row.
+ */
+function eligibleRowsForClass(
+  rows: ComponentChargeRow[],
+  billingClass: EpisodeBillingClass
+): ComponentChargeRow[] {
+  if (billingClass === "professional") {
+    return rows.filter(
+      (r) => normalizeBillingClass(r.billing_class) === "professional"
+    );
+  }
+  const facility = rows.filter(
+    (r) => normalizeBillingClass(r.billing_class) === "facility"
+  );
+  if (facility.length > 0) return facility;
+  return rows.filter(
+    (r) => normalizeBillingClass(r.billing_class) === "unspecified"
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Price extraction — one basis at a time, never mixed, never gross
+// ---------------------------------------------------------------------------
+
+function positive(value: number | null | undefined): number | undefined {
   if (value == null || Number.isNaN(value) || value <= 0) return undefined;
   return value;
 }
 
-const MIN_COVERAGE_RATIO = 0.5;
-
-// ---------------------------------------------------------------------------
-// Per-provider episode cost aggregation
-// ---------------------------------------------------------------------------
-
-interface ComponentSummary {
-  estimatePrice?: number;
-  minPrice?: number;
-  maxPrice?: number;
+interface PricePoint {
+  estimate: number;
+  min: number;
+  max: number;
 }
 
-function summarizeComponentsForProvider(
-  providerRows: ComponentChargeRow[]
-): Map<string, ComponentSummary> {
-  const byCode = new Map<string, ComponentChargeRow[]>();
-  for (const row of providerRows) {
-    const existing = byCode.get(row.component_code) || [];
-    existing.push(row);
-    byCode.set(row.component_code, existing);
+/** Price of one charge row on a single basis, or undefined if it has none. */
+export function extractComponentPrice(
+  row: ComponentChargeRow,
+  basis: EpisodePriceBasis
+): PricePoint | undefined {
+  if (basis === "cash") {
+    const cash = positive(row.cash_price);
+    return cash != null ? { estimate: cash, min: cash, max: cash } : undefined;
   }
-
-  const summaries = new Map<string, ComponentSummary>();
-  for (const [code, rows] of byCode) {
-    let bestPrice: number | undefined;
-    let bestMin: number | undefined;
-    let bestMax: number | undefined;
-
-    for (const row of rows) {
-      const price = extractComponentPrice(row);
-      if (price != null && (bestPrice == null || price < bestPrice)) {
-        bestPrice = price;
-        const minVal =
-          row.min_price ?? row.cash_price ?? row.avg_negotiated_rate;
-        bestMin = minVal != null && minVal > 0 ? minVal : undefined;
-        const maxVal = row.max_price ?? row.cash_price ?? row.gross_charge;
-        bestMax = maxVal != null && maxVal > 0 ? maxVal : undefined;
-      }
-    }
-
-    summaries.set(code, {
-      estimatePrice: bestPrice,
-      minPrice: bestMin,
-      maxPrice: bestMax,
-    });
-  }
-
-  return summaries;
+  const avg = positive(row.avg_negotiated_rate);
+  if (avg == null) return undefined;
+  return {
+    estimate: avg,
+    min: positive(row.min_negotiated_rate) ?? avg,
+    max: positive(row.max_negotiated_rate) ?? avg,
+  };
 }
 
-function computeLocalFallbacks(
-  allRows: ComponentChargeRow[]
-): Map<string, { median: number; min: number; max: number }> {
-  const byCode = new Map<string, number[]>();
-  for (const row of allRows) {
-    const price = extractComponentPrice(row);
-    if (price == null) continue;
-    const existing = byCode.get(row.component_code) || [];
-    existing.push(price);
-    byCode.set(row.component_code, existing);
+function extractPrincipalPrice(
+  principal: PrincipalCharge,
+  basis: EpisodePriceBasis
+): PricePoint | undefined {
+  if (basis === "cash") {
+    const cash = positive(principal.cashPrice);
+    return cash != null ? { estimate: cash, min: cash, max: cash } : undefined;
   }
+  const avg = positive(principal.avgNegotiatedRate);
+  if (avg == null) return undefined;
+  return {
+    estimate: avg,
+    min: positive(principal.minNegotiatedRate) ?? avg,
+    max: positive(principal.maxNegotiatedRate) ?? avg,
+  };
+}
 
-  const fallbacks = new Map<
-    string,
-    { median: number; min: number; max: number }
-  >();
-  for (const [code, prices] of byCode) {
-    if (prices.length === 0) continue;
-    fallbacks.set(code, {
-      median: median(prices),
-      min: Math.min(...prices),
-      max: Math.max(...prices),
-    });
-  }
-
-  return fallbacks;
+/**
+ * Collapse a hospital's rows for one component code (it may publish several,
+ * e.g. per setting or description) into one price on the given basis.
+ */
+function summarizeComponent(
+  rows: ComponentChargeRow[],
+  basis: EpisodePriceBasis
+): PricePoint | undefined {
+  const points = rows
+    .map((r) => extractComponentPrice(r, basis))
+    .filter((p): p is PricePoint => p != null);
+  if (points.length === 0) return undefined;
+  return {
+    estimate: median(points.map((p) => p.estimate)),
+    min: Math.min(...points.map((p) => p.min)),
+    max: Math.max(...points.map((p) => p.max)),
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Build EpisodeEstimate for a single provider
 // ---------------------------------------------------------------------------
 
-function buildEpisodeEstimate({
+/**
+ * Build one hospital's episode estimate from that hospital's own charges only.
+ *
+ * - Every line item uses the same price basis (cash, or average negotiated).
+ *   Both are tried; the one that prices more of the episode wins, cash on a
+ *   tie. Gross charges are never used.
+ * - Every line item is in the principal charge's billing class.
+ * - Coverage is measured against the episode's full component list, so the
+ *   same hospital always gets the same estimate.
+ *
+ * Returns undefined when the principal charge has no usable class or price.
+ */
+export function buildEpisodeEstimate({
   episodeDef,
-  providerComponents,
-  localFallbacks,
-  totalBillableComponents,
-  basePriceEstimate,
+  componentCodes,
+  providerRows,
+  principal,
 }: {
   episodeDef: EpisodeDefinitionRow;
-  providerComponents: Map<string, ComponentSummary>;
-  localFallbacks: Map<string, { median: number; min: number; max: number }>;
-  totalBillableComponents: number;
-  basePriceEstimate?: number;
-}): EpisodeEstimate {
-  let totalMedian = basePriceEstimate ?? 0;
-  let totalMin = basePriceEstimate ?? 0;
-  let totalMax = basePriceEstimate ?? 0;
-  let priceableCount = basePriceEstimate != null ? 1 : 0;
+  /** Episode component codes, excluding the principal code itself. */
+  componentCodes: string[];
+  /** This provider's component charge rows. */
+  providerRows: ComponentChargeRow[];
+  principal: PrincipalCharge;
+}): EpisodeEstimate | undefined {
+  const billingClass = episodeBillingClassFor(principal.billingClass);
+  if (!billingClass) return undefined;
 
-  const allCodes = new Set([
-    ...providerComponents.keys(),
-    ...localFallbacks.keys(),
-  ]);
+  const rowsByCode = new Map<string, ComponentChargeRow[]>();
+  for (const row of providerRows) {
+    const code = row.component_code.trim().toUpperCase();
+    const existing = rowsByCode.get(code) || [];
+    existing.push(row);
+    rowsByCode.set(code, existing);
+  }
 
-  for (const code of allCodes) {
-    const providerSummary = providerComponents.get(code);
-    const fallback = localFallbacks.get(code);
+  let best:
+    | {
+        basis: EpisodePriceBasis;
+        total: PricePoint;
+        priceableCount: number;
+      }
+    | undefined;
 
-    const estimate = providerSummary?.estimatePrice ?? fallback?.median;
-    const min =
-      providerSummary?.minPrice ??
-      providerSummary?.estimatePrice ??
-      fallback?.min;
-    const max =
-      providerSummary?.maxPrice ??
-      providerSummary?.estimatePrice ??
-      fallback?.max;
+  for (const basis of PRICE_BASES) {
+    const base = extractPrincipalPrice(principal, basis);
+    if (!base) continue;
 
-    if (estimate != null) {
-      totalMedian += estimate;
-      totalMin += min ?? estimate;
-      totalMax += max ?? estimate;
+    const total = { ...base };
+    let priceableCount = 1;
+
+    for (const code of componentCodes) {
+      const rows = eligibleRowsForClass(
+        rowsByCode.get(code) || [],
+        billingClass
+      );
+      const price = summarizeComponent(rows, basis);
+      if (!price) continue;
+      total.estimate += price.estimate;
+      total.min += price.min;
+      total.max += price.max;
       priceableCount++;
+    }
+
+    if (!best || priceableCount > best.priceableCount) {
+      best = { basis, total, priceableCount };
     }
   }
 
-  const componentCount = totalBillableComponents + 1;
+  if (!best) return undefined;
+
+  const componentCount = componentCodes.length + 1;
 
   return {
     episodeId: episodeDef.id,
     principalCode: episodeDef.principal_code,
     label: episodeDef.label,
     category: episodeDef.category ?? undefined,
-    estimatedAllInMedian: priceableCount > 0 ? totalMedian : undefined,
-    estimatedAllInMin: priceableCount > 0 ? totalMin : undefined,
-    estimatedAllInMax: priceableCount > 0 ? totalMax : undefined,
+    estimatedAllInMedian: best.total.estimate,
+    estimatedAllInMin: best.total.min,
+    estimatedAllInMax: best.total.max,
     componentCount,
-    priceableCount,
-    coverageRatio: componentCount > 0 ? priceableCount / componentCount : 0,
+    priceableCount: best.priceableCount,
+    coverageRatio: best.priceableCount / componentCount,
+    priceBasis: best.basis,
+    billingClass,
     source: "turquoise_ssp",
   };
+}
+
+/** Whether an estimate prices enough of the episode to show. */
+export function isEstimateDisplayable(estimate: EpisodeEstimate): boolean {
+  return (
+    estimate.priceableCount > 1 && estimate.coverageRatio >= MIN_COVERAGE_RATIO
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -213,24 +320,33 @@ async function processEpisode({
 
   if (providerIds.size === 0) return;
 
-  const { data: componentRows } = await supabase.rpc(
-    "lookup_episode_component_charges",
-    {
+  const [{ data: componentDefs }, { data: componentRows }] = await Promise.all([
+    supabase
+      .from("episode_components")
+      .select("code")
+      .eq("episode_id", episodeDef.id)
+      .gte("association", MIN_ASSOCIATION)
+      .in("code_type", ["cpt", "hcpcs"]),
+    supabase.rpc("lookup_episode_component_charges", {
       p_principal_code: principalCode,
       p_provider_ids: Array.from(providerIds),
-      p_min_association: 0.4,
-    }
+      p_min_association: MIN_ASSOCIATION,
+    }),
+  ]);
+
+  // SSPs list the principal code as one of their own components; it is
+  // already priced from the result row, so it must not be counted twice.
+  const componentCodes = Array.from(
+    new Set(
+      ((componentDefs as { code: string }[] | null) ?? [])
+        .map((c) => c.code.trim().toUpperCase())
+        .filter((code) => code !== principalCode)
+    )
   );
-
-  if (!componentRows || componentRows.length === 0) return;
-
-  const typedRows = componentRows as ComponentChargeRow[];
-  const billableCodes = new Set(typedRows.map((r) => r.component_code));
-  const totalBillableComponents = billableCodes.size;
-  const localFallbacks = computeLocalFallbacks(typedRows);
+  if (componentCodes.length === 0) return;
 
   const rowsByProvider = new Map<string, ComponentChargeRow[]>();
-  for (const row of typedRows) {
+  for (const row of (componentRows as ComponentChargeRow[] | null) ?? []) {
     const existing = rowsByProvider.get(row.provider_id) || [];
     existing.push(row);
     rowsByProvider.set(row.provider_id, existing);
@@ -238,28 +354,14 @@ async function processEpisode({
 
   for (const idx of matchingIndices) {
     const result = enrichedResults[idx];
-    const providerRows = rowsByProvider.get(result.provider.id) || [];
-    const providerComponents = summarizeComponentsForProvider(providerRows);
-
-    const basePriceEstimate =
-      result.cashPrice ?? result.avgNegotiatedRate ?? result.grossCharge;
-
     const estimate = buildEpisodeEstimate({
       episodeDef,
-      providerComponents,
-      localFallbacks,
-      totalBillableComponents,
-      basePriceEstimate:
-        basePriceEstimate != null && basePriceEstimate > 0
-          ? basePriceEstimate
-          : undefined,
+      componentCodes,
+      providerRows: rowsByProvider.get(result.provider.id) || [],
+      principal: result,
     });
 
-    if (
-      estimate.estimatedAllInMedian != null &&
-      estimate.priceableCount > 1 &&
-      estimate.coverageRatio >= MIN_COVERAGE_RATIO
-    ) {
+    if (estimate && isEstimateDisplayable(estimate)) {
       enrichedResults[idx] = {
         ...result,
         episodeEstimate: estimate,
