@@ -14,6 +14,8 @@ import {
   scopeLabel,
   type PriceEntry,
 } from "@/lib/results/summarize";
+import { describeEpisode } from "@/lib/results/episode-display";
+import { EpisodeEstimateRows } from "./EpisodeEstimateRows";
 
 interface HospitalCardProps {
   entry: PriceEntry;
@@ -83,6 +85,7 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
     const scope = scopeLabel(entry.scope);
     const address = addressOf(entry);
     const variants = (r as GroupedChargeResult).chargeVariants ?? [];
+    const episode = describeEpisode(r.episodeEstimate);
     const estTotal = r.estimatedTotalMedian;
     const detailId = `hospital-${r.id}`;
     const phone = notNull(r.provider.phone) ? r.provider.phone : undefined;
@@ -210,15 +213,18 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
                   </span>
                 </div>
               )}
-              {estTotal != null && estTotal !== entry.price.amount && (
-                <div className="slip-row">
-                  <span>
-                    Estimated total
-                    <span className="slip-note">with likely extras</span>
-                  </span>
-                  <span>{formatPrice(estTotal)}</span>
-                </div>
-              )}
+              {episode && <EpisodeEstimateRows display={episode} />}
+              {!episode &&
+                estTotal != null &&
+                estTotal !== entry.price.amount && (
+                  <div className="slip-row">
+                    <span>
+                      Estimated total
+                      <span className="slip-note">with likely extras</span>
+                    </span>
+                    <span>{formatPrice(estTotal)}</span>
+                  </div>
+                )}
             </div>
 
             {variants.length > 1 && (

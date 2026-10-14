@@ -5,7 +5,9 @@ import type { CPTCode, ChargeResult } from "@/types";
 import { displayName, formatDistance, formatPrice } from "@/lib/format";
 import { getCostContext } from "@/lib/cost-context";
 import type { AnswerSummary, FeeScope } from "@/lib/results/summarize";
+import { describeEpisode } from "@/lib/results/episode-display";
 import { CopyButton } from "./CopyButton";
+import { EpisodeEstimateRows } from "./EpisodeEstimateRows";
 
 interface AnswerCardProps {
   summary: AnswerSummary;
@@ -114,7 +116,7 @@ export function AnswerCard({
   const medicare = results.find(
     (r) => r.medicareFacilityRate != null
   )?.medicareFacilityRate;
-  const episode = summary.lowest?.primary.episodeEstimate;
+  const episode = describeEpisode(summary.lowest?.primary.episodeEstimate);
   const shell = "rounded-2xl border overflow-hidden";
   const shellStyle = {
     background: "var(--cc-surface)",
@@ -301,16 +303,11 @@ export function AnswerCard({
               <span>{formatPrice(medicare)}</span>
             </div>
           )}
-          {episode?.estimatedAllInMedian != null && lowest && (
-            <div className="slip-row">
-              <span>
-                Estimated all-in at {displayName(lowest.primary.provider.name)}
-              </span>
-              <span>
-                {formatPrice(episode.estimatedAllInMedian)}
-                <span className="slip-note">{episode.label}</span>
-              </span>
-            </div>
+          {episode && lowest && (
+            <EpisodeEstimateRows
+              display={episode}
+              at={displayName(lowest.primary.provider.name)}
+            />
           )}
         </div>
         <p
