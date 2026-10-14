@@ -230,21 +230,6 @@ create table if not exists saved_searches (
 create index if not exists idx_saved_searches_user on saved_searches (user_id);
 
 -- ============================================================================
--- TRANSLATION CACHE (query -> deterministic translation payload)
--- DEPRECATED: replaced by kb_synonyms + kb_nodes. Kept for reference until migration is confirmed.
--- ============================================================================
-create table if not exists translation_cache (
-  query_hash text primary key,
-  normalized_query text not null,
-  payload jsonb not null,
-  hit_count integer not null default 0,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create index if not exists idx_translation_cache_updated_at on translation_cache (updated_at desc);
-
--- ============================================================================
 -- KB: SYNONYMS (query normalization — many surface forms → one canonical query)
 -- ============================================================================
 create table if not exists kb_synonyms (
@@ -735,15 +720,11 @@ alter table providers enable row level security;
 alter table charges enable row level security;
 alter table payer_rates enable row level security;
 alter table payers enable row level security;
-alter table translation_cache enable row level security;
 
 create policy "Anyone can view providers" on providers for select using (true);
 create policy "Anyone can view charges" on charges for select using (true);
 create policy "Anyone can view payer rates" on payer_rates for select using (true);
 create policy "Anyone can view payers" on payers for select using (true);
-create policy "Anyone can view translation cache" on translation_cache for select using (true);
-create policy "Anyone can insert translation cache" on translation_cache for insert with check (true);
-create policy "Anyone can update translation cache" on translation_cache for update using (true) with check (true);
 
 -- KB tables RLS
 alter table kb_synonyms   enable row level security;
@@ -819,67 +800,10 @@ create policy "Anyone can view episode components"
   on episode_components for select using (true);
 
 -- ============================================================================
--- RPC: lookup_episode_component_charges()
--- Batch lookup: given a principal procedure code and a set of provider IDs,
--- returns charge data for all episode components at those providers.
--- Used by the episode enrichment step in the search pipeline.
--- Avoids N+1 queries by joining components → charges in a single call.
--- ============================================================================
-create or replace function lookup_episode_component_charges(
-  p_principal_code text,
-  p_provider_ids uuid[],
-  p_min_association float default 0.4
-)
-returns table (
-  provider_id uuid,
-  component_code text,
-  component_code_type text,
-  component_tier text,
-  component_association float,
-  cash_price numeric,
-  gross_charge numeric,
-  avg_negotiated_rate numeric,
-  min_price numeric,
-  max_price numeric
-)
-language sql
-stable
-as $$
-  with episode as (
-    select id from episode_definitions
-    where principal_code = p_principal_code
-    limit 1
-  ),
-  components as (
-    select ec.code, ec.code_type, ec.tier, ec.association
-    from episode_components ec
-    join episode e on e.id = ec.episode_id
-    where ec.association >= p_min_association
-      and ec.code_type in ('cpt', 'hcpcs')
-  )
-  select
-    c.provider_id,
-    comp.code as component_code,
-    comp.code_type as component_code_type,
-    comp.tier as component_tier,
-    comp.association as component_association,
-    c.cash_price,
-    c.gross_charge,
-    c.avg_negotiated_rate,
-    c.min_price,
-    c.max_price
-  from components comp
-  join charges c on (
-    (comp.code_type = 'cpt' and (c.cpt = comp.code or c.hcpcs = comp.code))
-    or (comp.code_type = 'hcpcs' and c.hcpcs = comp.code)
-  )
-  where c.provider_id = any(p_provider_ids);
-$$;
-
--- ============================================================================
 -- RPC: lookup_episode_component_charges_v2()
--- Same as above plus billing_class and the negotiated-rate range. Used by the
--- episode estimator; the v1 function can be dropped once nothing calls it.
+-- Given a principal procedure code and a set of provider IDs, returns charge
+-- data (with billing_class and the negotiated-rate range) for all episode
+-- components at those providers, in one call. Used by the episode estimator.
 -- ============================================================================
 create or replace function lookup_episode_component_charges_v2(
   p_principal_code text,
