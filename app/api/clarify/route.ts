@@ -5,7 +5,11 @@ import {
   clarifyQuery,
   translateQueryToCPT,
 } from "@/lib/cpt/translate";
-import { kbLookup, getKnownCanonicals } from "@/lib/kb/lookup";
+import {
+  kbLookup,
+  getKnownCanonicals,
+  getAskedQuestions,
+} from "@/lib/kb/lookup";
 import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
@@ -104,10 +108,23 @@ export async function POST(request: NextRequest) {
       const knownCanonicals =
         turns.length === 0 ? await getKnownCanonicals() : undefined;
 
+      // Rebuild prior question text from our own KB tree; the client's
+      // questionId is an opaque UI key and never reaches the prompt (#163).
+      const askedQuestions =
+        turns.length > 0
+          ? await getAskedQuestions(
+              kbResult.canonical_query || normalizeQuery(queryText),
+              turns
+            ).catch((err) => {
+              console.error("KB question history lookup failed:", err);
+              return [];
+            })
+          : [];
+
       const result =
         turns.length === 0
           ? await assessQuery(queryText, knownCanonicals)
-          : await clarifyQuery(queryText, turns);
+          : await clarifyQuery(queryText, turns, askedQuestions);
 
       // If Claude matched this query to an existing canonical, verify the
       // tree exists before linking the synonym (prevents orphaned synonyms
