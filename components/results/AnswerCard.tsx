@@ -227,9 +227,11 @@ export function AnswerCard({
         : "Prices";
   const eyebrow = doctorOnly
     ? `Doctors' fees ${place(locationDisplay)}`
-    : `${basisWord} ${place(locationDisplay)}`;
+    : summary.stayDrg
+      ? `${basisWord} for the hospital stay (MS-DRG ${summary.stayDrg}, no major complications) ${place(locationDisplay)}`
+      : `${basisWord} ${place(locationDisplay)}`;
   const lowest = summary.lowest;
-  const count = summary.priced.length;
+  const count = summary.rangeCount ?? summary.priced.length;
 
   return (
     <section className={shell} style={shellStyle} aria-label="Price answer">

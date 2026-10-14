@@ -1,5 +1,8 @@
 import type { CPTCode, ChargeResult } from "@/types";
 import { getDisplayPrice, type DisplayPrice } from "@/lib/format";
+import { inpatientStayFor } from "@/lib/cpt/inpatient-stays";
+
+export { inpatientStayFor };
 
 // ============================================================================
 // Answer-first results: turns the raw charge list into what the page says
@@ -72,7 +75,28 @@ export function collapseSharedPriceLists(
     entries.push(entry);
   }
 
+  // Lead each shared list with the nearest location that plausibly does the
+  // procedure, not a counseling office or foundation center (#172).
+  for (const entry of entries) {
+    if (!isSupportSite(entry.primary)) continue;
+    const clinical = entry.locations.find((l) => !isSupportSite(l));
+    if (clinical) {
+      entry.primary = clinical;
+      entry.locations = [
+        clinical,
+        ...entry.locations.filter((l) => l !== clinical),
+      ];
+    }
+  }
+
   return entries;
+}
+
+const SUPPORT_SITE =
+  /\b(counseling|foundation|infusion|administrative|billing|business office|wellness|fitness|pharmacy)\b/i;
+
+function isSupportSite(r: ChargeResult): boolean {
+  return SUPPORT_SITE.test(r.provider.name ?? "");
 }
 
 // ----------------------------------------------------------------------------
@@ -86,25 +110,13 @@ export function collapseSharedPriceLists(
  * surgeon's fee, so a "price" for them is misleading. Kept deliberately
  * narrow: add a family only when it's clearly an inpatient-stay procedure.
  */
-const INPATIENT_STAY_RANGES: Array<[number, number, string]> = [
-  [33510, 33548, "heart bypass surgery"],
-  [33400, 33496, "heart valve surgery"],
-  [33935, 33945, "heart transplant"],
-  [43107, 43124, "esophagus removal"],
-  [47135, 47135, "liver transplant"],
-  [48150, 48155, "pancreas surgery"],
-  [50360, 50365, "kidney transplant"],
-];
-
 export function inpatientStayLabel(codes: CPTCode[]): string | null {
-  for (const c of codes) {
-    if (c.codeType && c.codeType !== "cpt") continue;
-    if (!/^\d{5}$/.test(c.code)) continue;
-    const n = Number(c.code);
-    const hit = INPATIENT_STAY_RANGES.find(([lo, hi]) => n >= lo && n <= hi);
-    if (hit) return hit[2];
-  }
-  return null;
+  return inpatientStayFor(codes)?.label ?? null;
+}
+
+/** DRG codes are stored without leading zeros in some files ("2" vs "002"). */
+function drgKey(code: string | undefined): string {
+  return (code ?? "").trim().replace(/^0+(?=\d)/, "");
 }
 
 // ----------------------------------------------------------------------------
@@ -128,12 +140,16 @@ export interface AnswerSummary {
   low?: number;
   high?: number;
   median?: number;
+  /** How many entries the low/high/median range is drawn from. */
+  rangeCount?: number;
   lowest?: PriceEntry;
   basis?: PriceBasis;
   /** Main fee scope of the priced lines (what the range covers). */
   scope?: FeeScope;
   /** Set when the procedure is normally billed as a hospital stay. */
   inpatientLabel?: string;
+  /** MS-DRG the stay price comes from, when one is priced. */
+  stayDrg?: string;
 }
 
 function median(sorted: number[]): number {
@@ -171,15 +187,57 @@ export function summarizeAnswer(
     )
     .sort((a, b) => (a.price.amount ?? 0) - (b.price.amount ?? 0));
 
-  const inpatientLabel = inpatientStayLabel(codes) ?? undefined;
-  const hasDrgPricing = results.some((r) => !!r.msDrg);
+  const stay = inpatientStayFor(codes);
+  const inpatientLabel = stay?.label;
 
-  if (inpatientLabel && !hasDrgPricing && results.length > 0) {
-    const amounts = priced.map((e) => e.price.amount as number);
+  if (stay) {
+    // Price the stay from the first typical-severity DRG (in preference
+    // order) that has prices near the user. The single CPT lines (usually
+    // the surgeon's fee) never set a stay price.
+    const stayDrg = stay.typicalDrgs.find((d) =>
+      priced.some((e) => drgKey(e.primary.msDrg) === drgKey(d))
+    );
+    if (stayDrg) {
+      const stayEntries = priced
+        .filter((e) => drgKey(e.primary.msDrg) === drgKey(stayDrg))
+        .map((e) => ({ ...e, scope: "facility" as FeeScope }));
+      const amounts = stayEntries.map((e) => e.price.amount as number);
+      const cashCount = stayEntries.filter(
+        (e) => e.price.type === "cash"
+      ).length;
+      return {
+        state: "priced",
+        entries: entries
+          .filter((e) => drgKey(e.primary.msDrg) === drgKey(stayDrg))
+          .map((e) => ({ ...e, scope: "facility" as FeeScope })),
+        priced: stayEntries,
+        low: amounts[0],
+        high: amounts[amounts.length - 1],
+        median: median(amounts),
+        rangeCount: stayEntries.length,
+        lowest: stayEntries[0],
+        basis:
+          cashCount === stayEntries.length
+            ? "cash"
+            : cashCount === 0
+              ? "insured"
+              : "mixed",
+        scope: "facility",
+        inpatientLabel,
+        stayDrg,
+      };
+    }
+  }
+
+  if (inpatientLabel && results.length > 0) {
+    // "Single lines we found": the CPT lines only, not complicated-stay DRGs.
+    const amounts = priced
+      .filter((e) => !e.primary.msDrg)
+      .map((e) => e.price.amount as number);
     return {
       state: "inpatient_unpriced",
-      entries,
-      priced,
+      entries: entries.filter((e) => !e.primary.msDrg),
+      priced: priced.filter((e) => !e.primary.msDrg),
       low: amounts[0],
       high: amounts[amounts.length - 1],
       inpatientLabel,
@@ -190,26 +248,31 @@ export function summarizeAnswer(
     return { state: "no_prices", entries, priced };
   }
 
-  const amounts = priced.map((e) => e.price.amount as number);
-  const cashCount = priced.filter((e) => e.price.type === "cash").length;
+  // A doctor's fee is a fraction of the procedure price, so when any hospital
+  // lists a hospital-side or complete price, doctor-only lines don't set the
+  // range or the "Lowest" tag (#174). They stay in the list, labeled.
+  const hospitalSide = priced.filter((e) => e.scope !== "professional");
+  const headline = hospitalSide.length > 0 ? hospitalSide : priced;
+
+  const amounts = headline.map((e) => e.price.amount as number);
+  const cashCount = headline.filter((e) => e.price.type === "cash").length;
   const basis: PriceBasis =
-    cashCount === priced.length
+    cashCount === headline.length
       ? "cash"
       : cashCount === 0
         ? "insured"
         : "mixed";
-  const scope = majorityScope(priced);
+  const scope = majorityScope(headline);
 
   return {
-    state: priced.every((e) => e.scope === "professional")
-      ? "doctor_fees_only"
-      : "priced",
+    state: hospitalSide.length === 0 ? "doctor_fees_only" : "priced",
     entries,
     priced,
     low: amounts[0],
     high: amounts[amounts.length - 1],
     median: median(amounts),
-    lowest: priced[0],
+    rangeCount: headline.length,
+    lowest: headline[0],
     basis,
     scope,
   };

@@ -38,6 +38,7 @@ import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { Pool as PgPool } from "pg";
 import { parseLaterality } from "../cpt/parse-laterality";
 import { parseBodySite } from "../cpt/parse-body-site";
+import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
 
 // @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
@@ -839,8 +840,8 @@ async function importCharges(
       batch.push({
         provider_id: providerId,
         description: charge.description || null,
-        setting: charge.setting || null,
-        billing_class: charge.billing_class || null,
+        setting: normalizeSetting(charge.setting),
+        billing_class: normalizeBillingClass(charge.billing_class),
         cpt: charge.cpt || null,
         hcpcs: charge.hcpcs || null,
         ms_drg: charge.ms_drg || null,

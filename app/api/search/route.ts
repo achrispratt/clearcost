@@ -14,11 +14,15 @@ import {
 import { kbLookup } from "@/lib/kb/lookup";
 import { writeSynonym, writeNode } from "@/lib/kb/write-back";
 import { normalizeQuery, computeQueryHash } from "@/lib/kb/path-hash";
-import { normalizeCodeType } from "@/lib/cpt/body-site-laterality-constants";
+import {
+  extractBodySite,
+  extractLaterality,
+  normalizeCodeType,
+} from "@/lib/cpt/body-site-laterality-constants";
 import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
+import { isDoctorFeeComparable } from "@/lib/cpt/medicare-scope";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
 import { enrichWithEpisodeEstimates } from "@/lib/cpt/episode";
-import { getDisplayPrice } from "@/lib/format";
 import { handleApiError } from "@/lib/api-helpers";
 import type {
   BillingCodeType,
@@ -181,27 +185,15 @@ async function enrichWithMedicareBenchmarks(
   if (benchmarks.size === 0) return results;
 
   return results.map((result) => {
-    const code = result.cpt || result.hcpcs;
-    if (!code) return result;
-    const bm = benchmarks.get(code.trim().toUpperCase());
-    // Use non-facility rate (total service value: work + PE + MP).
-    // Facility rate only covers the physician component — not a fair comparison to hospital all-in charges.
-    const benchmarkRate = bm?.nonFacilityRate ?? bm?.facilityRate;
-    if (!benchmarkRate) return result;
-
-    const dp = getDisplayPrice(result);
-    const priceSource = dp.type === "unavailable" ? undefined : dp.type;
-    const multiplier =
-      dp.amount && benchmarkRate > 0
-        ? Math.round((dp.amount / benchmarkRate) * 10) / 10
-        : undefined;
-
-    return {
-      ...result,
-      medicareFacilityRate: benchmarkRate,
-      medicareMultiplier: multiplier,
-      medicareMultiplierSource: priceSource,
-    };
+    const code = (result.cpt || result.hcpcs)?.trim().toUpperCase();
+    if (!code || !isDoctorFeeComparable(code)) return result;
+    // The Physician Fee Schedule's facility rate is what Medicare pays the
+    // doctor when the service happens in a hospital. It is not the hospital's
+    // payment, so it is only shown as the doctor's fee and never divided into
+    // a hospital price (#175).
+    const rate = benchmarks.get(code)?.facilityRate;
+    if (!rate) return result;
+    return { ...result, medicareFacilityRate: rate };
   });
 }
 
@@ -227,6 +219,8 @@ export async function POST(request: NextRequest) {
       codes: directCodes,
       codeType: directCodeType,
       codeGroups: directCodeGroupsRaw,
+      laterality: directLateralityRaw,
+      bodySite: directBodySiteRaw,
     } = body;
     const queryText = typeof query === "string" ? query : "";
 
@@ -246,6 +240,9 @@ export async function POST(request: NextRequest) {
     const providedPricingPlan = normalizePricingPlanInput(
       providedPricingPlanRaw
     );
+    // Left/right and body site from guided search (#176).
+    const directLaterality = extractLaterality(directLateralityRaw);
+    const directBodySite = extractBodySite(directBodySiteRaw);
 
     // Fast path: direct grouped codes, skips AI translation.
     if (directCodeGroups.length > 0) {
@@ -262,6 +259,8 @@ export async function POST(request: NextRequest) {
         interpretation: providedInterpretation,
         codes: directPlanCodes,
         modelPricingPlan: providedPricingPlan,
+        laterality: directLaterality,
+        bodySite: directBodySite,
       });
       const lookupDiagnostics = createLookupDiagnostics();
 
@@ -312,6 +311,8 @@ export async function POST(request: NextRequest) {
         interpretation: providedInterpretation,
         codes: directPlanCodes,
         modelPricingPlan: providedPricingPlan,
+        laterality: directLaterality,
+        bodySite: directBodySite,
       });
       const lookupDiagnostics = createLookupDiagnostics();
 

@@ -74,6 +74,9 @@ export function useResultsSearch() {
   const directPlanParam = searchParams.get("plan") || "";
   const directPlan = parsePricingPlan(directPlanParam);
   const directCodeDescsParam = searchParams.get("codeDescs") || "";
+  // Left/right and body site chosen in guided search (#176)
+  const directSide = searchParams.get("side") || "";
+  const directSite = searchParams.get("site") || "";
   const kbSessionId = searchParams.get("kbSessionId");
   const kbPathHash = searchParams.get("kbPathHash");
 
@@ -172,6 +175,9 @@ export function useResultsSearch() {
           requestBody.pricingPlan = directPlan;
         }
 
+        if (directSide) requestBody.laterality = directSide;
+        if (directSite) requestBody.bodySite = directSite;
+
         if (directCodeGroups.length > 0) {
           requestBody.codeGroups = directCodeGroups;
         } else if (hasDirectCodes) {
@@ -256,6 +262,8 @@ export function useResultsSearch() {
     directCodeType,
     directInterp,
     directPlanParam,
+    directSide,
+    directSite,
     fetchCounter,
   ]);
 
@@ -286,6 +294,8 @@ export function useResultsSearch() {
         if (directInterp) params.set("interp", directInterp);
         if (directPlanParam) params.set("plan", directPlanParam);
         if (directCodeDescsParam) params.set("codeDescs", directCodeDescsParam);
+        if (directSide) params.set("side", directSide);
+        if (directSite) params.set("site", directSite);
 
         router.push(`/results?${params.toString()}`);
 
@@ -317,6 +327,8 @@ export function useResultsSearch() {
       directInterp,
       directPlanParam,
       directCodeDescsParam,
+      directSide,
+      directSite,
       router,
     ]
   );

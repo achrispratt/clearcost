@@ -4,6 +4,7 @@ import {
   normalizeCodeType,
   normalizeCodeValue,
 } from "./body-site-laterality-constants";
+import { inpatientStayFor } from "./inpatient-stays";
 import type {
   BodySite,
   BillingCodeType,
@@ -416,9 +417,25 @@ export function buildPricingPlan({
       ? []
       : normalizedModelPlan?.baseCodeGroups || [];
 
+  // Surgery billed as a hospital stay is priced from the stay's MS-DRGs, so
+  // look those up alongside the CPT lines (#173).
+  const stay = mode === "procedure_first" ? inpatientStayFor(codes) : null;
+  const stayGroups: PricingCodeGroup[] = stay
+    ? [
+        {
+          codeType: "ms_drg",
+          codes: Array.from(
+            new Set(stay.drgs.flatMap((d) => [d, d.replace(/^0+(?=\d)/, "")]))
+          ),
+          label: `Hospital stay: ${stay.label}`,
+        },
+      ]
+    : [];
+
   const baseCodeGroups = dedupeCodeGroups([
     ...modelBaseGroups,
     ...defaultBaseGroups,
+    ...stayGroups,
   ]);
 
   const inferredAdders = buildAddersFromIds(inferAdderIds(text));

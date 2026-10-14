@@ -471,8 +471,10 @@ as $$
       or (p_code_type = 'hcpcs' and c.hcpcs = any(p_codes))
       or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
     )
-    and (p_laterality is null or c.laterality = p_laterality)
-    and (p_body_site is null or c.body_site = p_body_site)
+    -- Rows the hospital didn't tag with a side or body site still apply to
+    -- every side; only rows tagged for a different one are excluded (#176).
+    and (p_laterality is null or c.laterality is null or c.laterality = p_laterality)
+    and (p_body_site is null or c.body_site is null or c.body_site = p_body_site)
   order by np.distance_km asc, c.cash_price asc nulls last
   limit greatest(coalesce(p_limit, 600), 1);
 $$;
