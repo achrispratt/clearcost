@@ -28,6 +28,13 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
   --skip-providers --state WY --limit 1000
 ```
 
+**After any import**, refresh the per-hospital cash ratios the episode estimator uses to turn insured or gross prices into cash equivalents (SQL editor, service role):
+
+```sql
+select refresh_provider_cash_ratios();          -- all hospitals
+select refresh_provider_cash_ratios(array[...]); -- only re-imported hospitals
+```
+
 ## Flags
 
 | Flag                      | Purpose                                                      |
