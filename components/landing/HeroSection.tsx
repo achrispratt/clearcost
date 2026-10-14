@@ -42,15 +42,16 @@ export function HeroSection({ preset }: { preset?: string }) {
               color: "var(--cc-text)",
             }}
           >
-            What do you need priced?
+            Know what you&rsquo;ll pay
+            <br />
+            <span style={{ color: "var(--cc-primary)" }}>before you go.</span>
           </h1>
           <p
             className="mt-4 mb-8 text-[17px] sm:text-[19px] leading-relaxed max-w-[34rem]"
             style={{ color: "var(--cc-text-secondary)" }}
           >
-            Ask the way you&rsquo;d ask a friend. We&rsquo;ll work out the exact
-            procedure with a couple of quick questions, then show what hospitals
-            near you charge, cash and insured.
+            Compare real hospital prices for procedures, scans and tests near
+            you. Free, and no insurance required.
           </p>
           <SearchBar
             key={preset}
@@ -59,10 +60,18 @@ export function HeroSection({ preset }: { preset?: string }) {
             suggestions={SUGGESTIONS}
           />
           <p
-            className="mt-6 text-[13px]"
-            style={{ color: "var(--cc-text-tertiary)" }}
+            className="mt-5 text-[15px] leading-relaxed max-w-[34rem]"
+            style={{ color: "var(--cc-text-secondary)" }}
           >
-            Free. No account needed. Works without insurance.
+            <strong
+              className="font-semibold"
+              style={{ color: "var(--cc-text)" }}
+            >
+              Not sure what it&rsquo;s called?
+            </strong>{" "}
+            Describe it like you would to a friend. We&rsquo;ll work it out with
+            a couple of quick questions, then show what hospitals near you
+            charge.
           </p>
         </div>
 

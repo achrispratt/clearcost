@@ -1,30 +1,29 @@
 /**
  * A real answer from the database, shown as the homepage example so the
- * first screen shows what the product returns. Figures are the knee MRI
- * (CPT 73721) cash prices near Weehawken, NJ, pulled October 2026. Update
- * them by hand if the source rows change.
+ * first screen shows what the product returns. Figures are knee MRI
+ * (CPT 73721) hospital cash prices near New York, NY (40.7128, -74.0060),
+ * pulled October 2026. Update them by hand if the source rows change.
  */
 const EXAMPLE = {
   ask: "I need an MRI of my right knee",
-  place: "Weehawken, NJ",
-  low: "$280",
-  high: "$3,988",
+  place: "New York, NY",
+  from: "$280",
   hospitals: [
-    {
-      name: "Palisades Medical Center",
-      where: "North Bergen · 2.1 mi",
-      price: "$280",
-      lowest: true,
-    },
     {
       name: "Bellevue Hospital Center",
       where: "Manhattan · 2.6 mi",
       price: "$283",
     },
     {
-      name: "Hudson Regional Hospital",
-      where: "Secaucus · 2.9 mi",
-      price: "$3,988",
+      name: "Palisades Medical Center",
+      where: "North Bergen, NJ · 5.7 mi",
+      price: "$280",
+      lowest: true,
+    },
+    {
+      name: "Kings County Hospital Center",
+      where: "Brooklyn · 5.7 mi",
+      price: "$281",
     },
   ],
 };
@@ -53,7 +52,7 @@ export function ExampleAnswer() {
             className="text-[13px] font-medium"
             style={{ color: "var(--cc-text-secondary)" }}
           >
-            Cash prices near {EXAMPLE.place}
+            Cash prices near {EXAMPLE.place} start at
           </p>
           <p
             className="num text-[40px] leading-[1.05] mt-1"
@@ -62,7 +61,7 @@ export function ExampleAnswer() {
               color: "var(--cc-text)",
             }}
           >
-            {EXAMPLE.low} – {EXAMPLE.high}
+            {EXAMPLE.from}
           </p>
         </div>
         <div className="px-5 pb-5">
