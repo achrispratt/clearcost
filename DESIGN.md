@@ -10,7 +10,7 @@
 ## Aesthetic Direction
 
 - **Direction:** Warm Editorial
-- **Decoration level:** Intentional — subtle background gradients, dot-grid texture, map as functional element. No blobs, no stock illustrations.
+- **Decoration level:** Minimal — the itemized slip is the one recurring motif. No dot grids, no eyebrow labels, no icon-in-a-box cards, no blobs, no stock illustrations.
 - **Mood:** Trustworthy, modern, distinctive. Medical authority and calm — the serif headline and teal accent say "we're serious about healthcare." Credible, not clinical.
 - **Reference sites:** Kayak (data density), NerdWallet (editorial authority)
 - **Anti-patterns:** No purple gradients, no 3-column icon grids with centered everything, no decorative blobs, no stock photos of smiling clinicians
@@ -20,7 +20,7 @@
 - **Display/Hero:** Instrument Serif (Google Fonts, weight 400) — classic editorial serif with warmth and authority. Use for hero headlines, section titles, wordmark, savings callouts.
 - **Body/UI:** DM Sans (Google Fonts, variable 100-1000) — clean humanist sans-serif with excellent readability. Use for body text, UI labels, navigation, buttons, filters.
 - **Data/Tables:** DM Sans with `font-variant-numeric: tabular-nums` — ensures price columns align.
-- **Code:** System monospace — for billing codes (CPT 73721), metadata, source attributions.
+- **Code:** System monospace (`.code`) — for billing codes (CPT 73721). Codes never lead; they live in the "For your doctor's office" drawer.
 - **Loading:** Google Fonts via `next/font/google` with `display: "swap"`.
 - **Scale:**
   - Hero: clamp(36px, 5vw, 56px) / Instrument Serif 400
@@ -72,15 +72,21 @@
 
 ## Layout
 
-- **Approach:** Centered editorial — centered hero content, split results view
+- **Approach:** Left-aligned editorial — the homepage opens with the ask box and a real example answer; results lead with an answer card, then hospitals, with the map beside them on desktop
 - **Grid:** Single column with max-width constraint. Results page uses 2-column split (list + map).
 - **Max content width:** 1120px (max-w-5xl)
 - **Border radius:** Hierarchical — sm:4px (badges, code pills), md:8px (cards, buttons, inputs), lg:12px (panels, map, search bar), xl:16px (hero search container)
 - **Key principles:**
-  - Hero is centered with generous vertical padding
-  - Results use left-aligned list + persistent right map pane on desktop
-  - Data density over whitespace in results — price, distance, facility in one scan line
-  - Map is a tool, not decoration — persistent right pane on desktop
+  - Hero is left-aligned: headline, ask box, example asks; a real answer card sits beside it on desktop and below it on phones
+  - Results are answer-first: plain-language price range, itemized slip (what's included, what's billed separately), billing-code drawer, then hospital cards
+  - Hospital cards, not tables: name, area, distance, one price with its type (cash / insured avg / list price). Prices are never colored by rank
+  - One hospital system's identical price list collapses into one card ("Same price at N other locations")
+  - Map is a tool, not decoration — sticky right pane on desktop, full-screen sheet behind a "Map" button on phones
+  - When a procedure is billed as an inpatient stay and we have no stay price, say so and give the questions to ask instead of a number
+
+## Itemized slip
+
+The signature component. A bordered card (`.slip`) of rows (`.slip-row`): label left in secondary text, amount right in semibold tabular numerals, dashed rules between rows, an optional small note under the amount (`.slip-note`). "Billed separately" amounts use the accent color. Used for the answer card, hospital detail, homepage example and how-it-works list.
 
 ## Motion
 
@@ -99,8 +105,9 @@
 
 ## Decisions Log
 
-| Date       | Decision                  | Rationale                                                                                                                                                                                                                             |
-| ---------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-03-23 | Design system documented  | Codified existing Warm Editorial design into DESIGN.md as source of truth.                                                                                                                                                            |
-| 2026-03-23 | Explored coral redesign   | Full consultation with competitive research + Codex + Claude subagent. Coral accent, cream backgrounds, Fraunces + Space Grotesk fonts. All three voices converged on dropping teal.                                                  |
-| 2026-03-24 | Reverted to original teal | After seeing the coral/cream design live, it read "autumnal" — too warm/earthy for a healthcare tool. The original teal + white is cleaner, more professional, and already proven. Keeping original Instrument Serif + DM Sans fonts. |
+| Date       | Decision                  | Rationale                                                                                                                                                                                                                                                                                                                                                |
+| ---------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-23 | Design system documented  | Codified existing Warm Editorial design into DESIGN.md as source of truth.                                                                                                                                                                                                                                                                               |
+| 2026-03-23 | Explored coral redesign   | Full consultation with competitive research + Codex + Claude subagent. Coral accent, cream backgrounds, Fraunces + Space Grotesk fonts. All three voices converged on dropping teal.                                                                                                                                                                     |
+| 2026-03-24 | Reverted to original teal | After seeing the coral/cream design live, it read "autumnal" — too warm/earthy for a healthcare tool. The original teal + white is cleaner, more professional, and already proven. Keeping original Instrument Serif + DM Sans fonts.                                                                                                                    |
+| 2026-10-14 | Itemized answer redesign  | Chris approved after the UI audit. Homepage drops the generic AI template (centered eyebrow, two-tone headline, stat row, numbered cards, dot grid) for a left-aligned ask box and a real example answer. Results lead with a plain answer and itemized slip; codes move to a drawer; tables become cards. Teal, Instrument Serif and DM Sans unchanged. |

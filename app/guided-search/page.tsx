@@ -1,9 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import { ClarificationStep } from "@/components/ClarificationStep";
-import { BreadcrumbTrail } from "@/components/BreadcrumbTrail";
+import { QueryPill } from "@/components/QueryPill";
+import { GuidedChat } from "@/components/guided/GuidedChat";
 import { useClarificationState } from "./useClarificationState";
 
 function GuidedSearchContent() {
@@ -13,198 +12,98 @@ function GuidedSearchContent() {
     lng,
     locationDisplay,
     turns,
+    askedQuestions,
     currentQuestion,
     phase,
     loading,
     error,
-    selectedOption,
-    freeText,
-    handleSubmit,
-    handleBack,
-    handleBreadcrumbClick,
-    handleQueryBreadcrumbClick,
+    handleAnswer,
+    handleFreeTextAnswer,
+    handleEditTurn,
     handleSkip,
     handleNewSearch,
-    handleOptionSelect,
-    handleFreeTextChange,
   } = useClarificationState();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-5">
-      {/* Compact search bar */}
-      <SearchBar
-        onSearch={handleNewSearch}
-        loading={loading}
-        initialQuery={query}
-        initialLocation={
+    <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
+      <QueryPill
+        query={query}
+        location={
           lat && lng ? { lat, lng, display: locationDisplay } : undefined
         }
-        compact
+        loading={loading}
+        onSearch={handleNewSearch}
       />
 
-      {/* Loading state — initial assessment */}
-      {phase === "loading" && loading && (
-        <div className="mt-12 flex flex-col items-center animate-fade-in">
-          <svg
-            className="w-6 h-6 animate-spin mb-4"
-            style={{ color: "var(--cc-primary)" }}
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="2"
-              opacity="0.25"
-            />
-            <path
-              d="M12 2a10 10 0 0 1 10 10"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-          <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
-            Understanding your query...
-          </p>
-        </div>
-      )}
+      <div className="mt-6">
+        {phase === "loading" && loading && (
+          <GuidedChat
+            query={query}
+            turns={[]}
+            askedQuestions={[]}
+            currentQuestion={null}
+            loading
+            onAnswer={handleAnswer}
+            onFreeText={handleFreeTextAnswer}
+            onEditTurn={handleEditTurn}
+          />
+        )}
 
-      {/* Error state */}
-      {error && (
-        <div
-          className="mt-4 p-4 rounded-xl border"
-          style={{
-            background: "var(--cc-error-light)",
-            borderColor: "rgba(220, 38, 38, 0.15)",
-          }}
-        >
-          <p className="text-sm" style={{ color: "var(--cc-error)" }}>
-            {error}
-          </p>
-          <button
-            onClick={handleSkip}
-            className="mt-2 text-sm font-medium underline"
-            style={{ color: "var(--cc-primary)" }}
-          >
-            Skip to results
-          </button>
-        </div>
-      )}
-
-      {/* Clarifying phase */}
-      {phase === "clarifying" && (
-        <div className="mt-6">
-          {/* Pricing tool context banner */}
-          <div
-            className="flex items-start gap-2 rounded-lg border px-3 py-2.5 mb-4"
-            style={{
-              background: "var(--cc-primary-light)",
-              borderColor: "var(--cc-primary-muted)",
-            }}
-          >
-            <svg
-              className="w-4 h-4 shrink-0 mt-0.5"
-              style={{ color: "var(--cc-primary)" }}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 16v-4M12 8h.01" />
-            </svg>
-            <p
-              className="text-[13px] leading-relaxed"
-              style={{ color: "var(--cc-primary)" }}
-            >
-              These questions help us find the right billing code for your price
-              search. This is not a medical assessment.
-            </p>
-          </div>
-
-          <BreadcrumbTrail
+        {phase === "clarifying" && (
+          <GuidedChat
             query={query}
             turns={turns}
+            askedQuestions={askedQuestions}
+            currentQuestion={currentQuestion}
             loading={loading}
-            onQueryClick={handleQueryBreadcrumbClick}
-            onBreadcrumbClick={handleBreadcrumbClick}
+            onAnswer={handleAnswer}
+            onFreeText={handleFreeTextAnswer}
+            onEditTurn={handleEditTurn}
           />
+        )}
 
-          {/* Current question */}
-          {currentQuestion && (
-            <ClarificationStep
-              question={currentQuestion}
-              selectedOption={selectedOption}
-              freeText={freeText}
-              onSelect={handleOptionSelect}
-              onFreeTextChange={handleFreeTextChange}
-              onSubmit={handleSubmit}
-              onBack={handleBack}
-              backLabel={turns.length === 0 ? "Back to search" : "Previous"}
-              isTerminal={turns.length >= 5}
-              loading={loading}
-            />
-          )}
+        {error && (
+          <div
+            className="mt-4 p-4 rounded-xl border"
+            style={{
+              background: "var(--cc-error-light)",
+              borderColor: "rgba(220, 38, 38, 0.15)",
+            }}
+          >
+            <p className="text-sm" style={{ color: "var(--cc-error)" }}>
+              {error}
+            </p>
+          </div>
+        )}
 
-          {/* Skip link */}
-          <div className="mt-6 text-center">
+        {(phase === "clarifying" || error) && (
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
             <button
+              type="button"
               onClick={handleSkip}
-              className="text-xs underline transition-colors"
-              style={{ color: "var(--cc-text-tertiary)" }}
+              className="text-sm font-medium underline underline-offset-2"
+              style={{ color: "var(--cc-primary)" }}
             >
-              Skip — show all results
+              Skip the questions and show prices
             </button>
           </div>
+        )}
 
-          {/* Disclaimer */}
-          <p
-            className="mt-8 text-xs text-center leading-relaxed"
-            style={{ color: "var(--cc-text-tertiary)" }}
-          >
-            ClearCost is a price comparison tool, not a medical service. Always
-            consult a healthcare provider for medical decisions.
-          </p>
-        </div>
-      )}
+        <p
+          className="mt-10 text-[12px] leading-relaxed"
+          style={{ color: "var(--cc-text-tertiary)" }}
+        >
+          These questions only find the right billing code for a price. They
+          aren&rsquo;t medical advice. Talk to a doctor about your care.
+        </p>
+      </div>
     </div>
   );
 }
 
 export default function GuidedSearchPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex justify-center py-16">
-          <svg
-            className="w-6 h-6 animate-spin"
-            style={{ color: "var(--cc-primary)" }}
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="2"
-              opacity="0.25"
-            />
-            <path
-              d="M12 2a10 10 0 0 1 10 10"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-      }
-    >
+    <Suspense fallback={null}>
       <GuidedSearchContent />
     </Suspense>
   );

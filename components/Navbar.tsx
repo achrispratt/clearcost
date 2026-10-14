@@ -38,7 +38,7 @@ export function Navbar() {
           </svg>
         </div>
         <span
-          className="text-lg group-hover:opacity-80 transition-opacity hidden sm:inline"
+          className="text-lg group-hover:opacity-80 transition-opacity"
           style={{
             fontFamily: "var(--font-instrument-serif), Georgia, serif",
             color: "var(--cc-text)",
@@ -51,7 +51,7 @@ export function Navbar() {
       {/* Search slot — injected by results page via NavbarContext */}
       {searchSlot && <div className="flex-1 min-w-0">{searchSlot}</div>}
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 ml-auto">
         <Link
           href="/saved"
           className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-[var(--cc-surface-alt)] transition-colors"

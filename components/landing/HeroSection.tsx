@@ -2,9 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/SearchBar";
-import { formatApproxCount } from "@/lib/format";
+import { ExampleAnswer } from "./ExampleAnswer";
 
-export function HeroSection() {
+const SUGGESTIONS = [
+  "Knee MRI",
+  "Colonoscopy",
+  "Mammogram",
+  "Blood work",
+  "Hip replacement",
+];
+
+export function HeroSection({ preset }: { preset?: string }) {
   const router = useRouter();
 
   const handleSearch = (
@@ -21,83 +29,59 @@ export function HeroSection() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-center px-4 py-16 sm:py-24 relative hero-gradient">
-      {/* Dot grid background */}
-      <div className="absolute inset-0 dot-grid opacity-40 pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col items-center text-center w-full max-w-3xl mx-auto">
-        {/* Label */}
-        <span
-          className="text-xs font-semibold tracking-widest uppercase mb-6 animate-fade-up"
-          style={{
-            color: "var(--cc-primary)",
-            animationDelay: "0s",
-          }}
-        >
-          Healthcare Pricing Transparency
-        </span>
-
-        {/* Heading */}
-        <h1
-          className="text-4xl sm:text-5xl md:text-6xl leading-tight mb-5 animate-fade-up"
-          style={{
-            fontFamily: "var(--font-instrument-serif), Georgia, serif",
-            color: "var(--cc-text)",
-            animationDelay: "0.08s",
-          }}
-        >
-          Know what you&rsquo;ll pay
-          <br />
-          <span style={{ color: "var(--cc-primary)" }}>before you go.</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p
-          className="text-base sm:text-lg max-w-lg mb-10 animate-fade-up"
-          style={{
-            color: "var(--cc-text-secondary)",
-            animationDelay: "0.16s",
-          }}
-        >
-          Compare real hospital prices across {formatApproxCount(5400)}{" "}
-          providers. Search in plain English. No insurance required.
-        </p>
-
-        {/* Search Bar */}
-        <div
-          className="w-full animate-fade-up"
-          style={{ animationDelay: "0.24s" }}
-        >
-          <SearchBar onSearch={handleSearch} />
+    <section
+      id="ask"
+      className="scroll-mt-16 px-4 lg:px-6 pt-10 pb-16 sm:pt-16 lg:pt-20 lg:pb-24"
+    >
+      <div className="max-w-[1120px] mx-auto grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 items-start">
+        <div className="min-w-0 animate-fade-up">
+          <h1
+            className="text-[44px] sm:text-[56px] lg:text-[64px] leading-[1.02] tracking-[-0.01em]"
+            style={{
+              fontFamily: "var(--font-instrument-serif), Georgia, serif",
+              color: "var(--cc-text)",
+            }}
+          >
+            Know what you&rsquo;ll pay
+            <br />
+            <span style={{ color: "var(--cc-primary)" }}>before you go.</span>
+          </h1>
+          <p
+            className="mt-4 mb-8 text-[17px] sm:text-[19px] leading-relaxed max-w-[34rem]"
+            style={{ color: "var(--cc-text-secondary)" }}
+          >
+            Compare real hospital prices for procedures, scans and tests near
+            you. Free, and no insurance required.
+          </p>
+          <SearchBar
+            key={preset}
+            initialQuery={preset}
+            onSearch={handleSearch}
+            suggestions={SUGGESTIONS}
+          />
+          <p
+            className="mt-5 text-[15px] leading-relaxed max-w-[34rem]"
+            style={{ color: "var(--cc-text-secondary)" }}
+          >
+            <strong
+              className="font-semibold"
+              style={{ color: "var(--cc-text)" }}
+            >
+              Not sure what it&rsquo;s called?
+            </strong>{" "}
+            Describe it like you would to a friend. We&rsquo;ll work it out with
+            a couple of quick questions, then show what hospitals near you
+            charge.
+          </p>
         </div>
 
-        {/* Stats Row */}
         <div
-          className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 mt-10 animate-fade-up"
-          style={{ animationDelay: "0.32s" }}
+          className="min-w-0 animate-fade-up"
+          style={{ animationDelay: "0.1s" }}
         >
-          {[
-            { value: formatApproxCount(5400), label: "hospitals" },
-            { value: formatApproxCount(10_000_000), label: "prices" },
-            { value: formatApproxCount(1000), label: "procedures" },
-          ].map((stat, i) => (
-            <div key={i} className="flex items-baseline gap-1.5">
-              <span
-                className="text-lg sm:text-xl font-semibold"
-                style={{ color: "var(--cc-text)" }}
-              >
-                {stat.value}
-              </span>
-              <span
-                className="text-sm"
-                style={{ color: "var(--cc-text-tertiary)" }}
-              >
-                {stat.label}
-              </span>
-            </div>
-          ))}
+          <ExampleAnswer />
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -25,6 +25,11 @@ export function useClarificationState() {
   const locationDisplay = searchParams.get("loc") || "";
 
   const [turns, setTurns] = useState<ClarificationTurn[]>([]);
+  // askedQuestions[i] is the question that turns[i] answered, so the chat
+  // can show the conversation so far.
+  const [askedQuestions, setAskedQuestions] = useState<ClarificationQuestion[]>(
+    []
+  );
   const [currentQuestion, setCurrentQuestion] =
     useState<ClarificationQuestion | null>(null);
   const [allCodes, setAllCodes] = useState<CPTCode[]>([]);
@@ -38,7 +43,6 @@ export function useClarificationState() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [freeText, setFreeText] = useState("");
 
   const responseCache = useRef<Map<string, TranslationResponse>>(new Map());
   const kbMeta = useRef<{ sessionId: string | null; pathHash: string | null }>({
@@ -126,7 +130,6 @@ export function useClarificationState() {
         setCurrentQuestion(data.nextQuestion);
         setPhase("clarifying");
         setSelectedOption(null);
-        setFreeText("");
         return;
       }
 
@@ -194,19 +197,39 @@ export function useClarificationState() {
     fetchOrCacheQuestion([]);
   }, [query, lat, lng, fetchOrCacheQuestion]);
 
-  const handleSubmit = async () => {
-    if (!currentQuestion) return;
-    if (!selectedOption && !freeText.trim()) return;
-
-    const newTurn: ClarificationTurn = {
-      questionId: currentQuestion.id,
-      selectedOption: freeText.trim() ? "other" : selectedOption || "",
-      freeText: freeText.trim() || undefined,
-    };
-
+  const answer = (newTurn: ClarificationTurn) => {
+    if (!currentQuestion || loading) return;
     const updatedTurns = [...turns, newTurn];
+    setAskedQuestions((prev) => [
+      ...prev.slice(0, turns.length),
+      currentQuestion,
+    ]);
     setTurns(updatedTurns);
     fetchOrCacheQuestion(updatedTurns);
+  };
+
+  /** Tap an option: answers and moves on in one step. */
+  const handleAnswer = (label: string) => {
+    if (!currentQuestion) return;
+    setSelectedOption(label);
+    answer({ questionId: currentQuestion.id, selectedOption: label });
+  };
+
+  const handleFreeTextAnswer = (text: string) => {
+    if (!currentQuestion || !text.trim()) return;
+    answer({
+      questionId: currentQuestion.id,
+      selectedOption: "other",
+      freeText: text.trim(),
+    });
+  };
+
+  /** Re-answer question `index`: drop that answer and everything after it. */
+  const handleEditTurn = (index: number) => {
+    const targetTurns = turns.slice(0, index);
+    setTurns(targetTurns);
+    setSelectedOption(null);
+    fetchOrCacheQuestion(targetTurns);
   };
 
   const handleBack = () => {
@@ -218,23 +241,7 @@ export function useClarificationState() {
     const previousTurns = turns.slice(0, -1);
     setTurns(previousTurns);
     setSelectedOption(null);
-    setFreeText("");
     fetchOrCacheQuestion(previousTurns);
-  };
-
-  const handleBreadcrumbClick = (stepIndex: number) => {
-    const targetTurns = turns.slice(0, stepIndex + 1);
-    setTurns(targetTurns);
-    setSelectedOption(null);
-    setFreeText("");
-    fetchOrCacheQuestion(targetTurns);
-  };
-
-  const handleQueryBreadcrumbClick = () => {
-    setTurns([]);
-    setSelectedOption(null);
-    setFreeText("");
-    fetchOrCacheQuestion([]);
   };
 
   const handleSkip = () => {
@@ -277,37 +284,23 @@ export function useClarificationState() {
     router.push(`/guided-search?${params.toString()}`);
   };
 
-  const handleOptionSelect = (label: string) => {
-    setSelectedOption(label);
-    setFreeText("");
-  };
-
-  const handleFreeTextChange = (value: string) => {
-    setFreeText(value);
-    if (value.trim()) {
-      setSelectedOption(null);
-    }
-  };
-
   return {
     query,
     lat,
     lng,
     locationDisplay,
     turns,
+    askedQuestions,
     currentQuestion,
     phase,
     loading,
     error,
     selectedOption,
-    freeText,
-    handleSubmit,
+    handleAnswer,
+    handleFreeTextAnswer,
+    handleEditTurn,
     handleBack,
-    handleBreadcrumbClick,
-    handleQueryBreadcrumbClick,
     handleSkip,
     handleNewSearch,
-    handleOptionSelect,
-    handleFreeTextChange,
   };
 }

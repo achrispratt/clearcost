@@ -12,6 +12,8 @@ interface SearchBarProps {
   initialQuery?: string;
   initialLocation?: { lat: number; lng: number; display: string };
   compact?: boolean;
+  /** Example asks shown under the form; tapping one fills the query. */
+  suggestions?: string[];
 }
 
 const placeholders = [
@@ -27,6 +29,7 @@ export function SearchBar({
   initialQuery = "",
   initialLocation,
   compact,
+  suggestions,
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const [location, setLocation] = useState<{
@@ -166,7 +169,7 @@ export function SearchBar({
   return (
     <form
       onSubmit={handleSubmit}
-      className={compact ? "w-full" : "w-full max-w-2xl mx-auto"}
+      className={compact ? "w-full" : "w-full max-w-2xl"}
     >
       <div
         className={`search-container flex flex-col sm:flex-row items-stretch border bg-[var(--cc-surface)] overflow-hidden ${
@@ -247,7 +250,7 @@ export function SearchBar({
         <button
           type="submit"
           disabled={isDisabled}
-          className={`w-full sm:w-auto text-white font-medium transition-all cursor-pointer disabled:cursor-not-allowed ${
+          className={`sm:w-auto text-white font-medium transition-all cursor-pointer disabled:cursor-not-allowed ${
             compact
               ? "m-1.5 px-4 py-2 rounded-lg text-sm"
               : "m-2 px-6 py-3 rounded-xl hover:brightness-110"
@@ -262,6 +265,37 @@ export function SearchBar({
           {getButtonContent(compact ? "compact" : "full")}
         </button>
       </div>
+
+      {suggestions && suggestions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <span
+            className="text-[13px]"
+            style={{ color: "var(--cc-text-tertiary)" }}
+          >
+            Try
+          </span>
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setQuery(s);
+                setValidationErrors((prev) => ({ ...prev, query: undefined }));
+                if (location && !isDisabled) onSearch(s, location);
+                else queryInputRef.current?.focus();
+              }}
+              className="text-[13px] rounded-full border px-3 py-1 transition-colors hover:border-[var(--cc-primary)] hover:text-[var(--cc-primary)]"
+              style={{
+                borderColor: "var(--cc-border)",
+                background: "var(--cc-surface)",
+                color: "var(--cc-text-secondary)",
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       {(validationErrors.query || validationErrors.location) && (
         <div className="flex justify-between px-2 pt-1.5 gap-4">
