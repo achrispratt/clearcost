@@ -1,0 +1,23 @@
+# Files `gcloud builds submit` must not upload. Without this file gcloud falls
+# back to .gitignore, which is easy to drift. The local Parquet lake is ~81 GB.
+.gcloudignore
+.git/
+.github/
+.husky/
+.claude/
+.vercel/
+node_modules/
+.next/
+out/
+build/
+coverage/
+.env*
+*.pem
+lib/data/parquet/
+lib/data/mrf_lake/
+lib/data/*.duckdb
+lib/data/*.duckdb.wal
+lib/data/*.zip
+lib/data/*.log
+lib/data/import-progress.json
+**/*.parquet

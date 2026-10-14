@@ -1,0 +1,139 @@
+openapi: 3.1.0
+info:
+  title: ClearCost Price API (draft)
+  version: 0.1.0
+  description: >
+    Read-only procedure price data for AI agents and partners. Draft for
+    docs/gcp-migration/README.md section 4; not implemented. Every price row
+    carries a ClearCost-tracked bookingUrl. Prices are hospital-published
+    standard charges and are estimates, not quotes.
+servers:
+  - url: https://api.clearcost.example/v1
+security:
+  - apiKey: []
+paths:
+  /procedures/{code}/prices:
+    get:
+      operationId: searchProcedurePrices
+      summary: Prices for one billing code near a location
+      parameters:
+        - {
+            name: code,
+            in: path,
+            required: true,
+            schema: { type: string, example: "73721" },
+          }
+        - {
+            name: codeType,
+            in: query,
+            schema: { type: string, enum: [cpt, hcpcs, ms_drg], default: cpt },
+          }
+        - { name: lat, in: query, required: true, schema: { type: number } }
+        - { name: lng, in: query, required: true, schema: { type: number } }
+        - {
+            name: radiusMiles,
+            in: query,
+            schema: { type: number, default: 25, maximum: 75 },
+          }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, default: 20, maximum: 50 },
+          }
+      responses:
+        "200":
+          description: Matching facilities, nearest and cheapest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PriceResponse" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /bundles/{bundleId}/prices:
+    get:
+      operationId: getBundlePrice
+      summary: All-in price for a procedure bundle (e.g. knee MRI with read) near a location
+      parameters:
+        - {
+            name: bundleId,
+            in: path,
+            required: true,
+            schema: { type: string, example: "knee-mri-without-contrast" },
+          }
+        - { name: lat, in: query, required: true, schema: { type: number } }
+        - { name: lng, in: query, required: true, schema: { type: number } }
+        - {
+            name: radiusMiles,
+            in: query,
+            schema: { type: number, default: 25, maximum: 75 },
+          }
+      responses:
+        "200":
+          description: Bundle totals per facility
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PriceResponse" }
+        "404": { description: Unknown bundle }
+        "429": { $ref: "#/components/responses/RateLimited" }
+components:
+  securitySchemes:
+    apiKey: { type: apiKey, in: header, name: X-ClearCost-Key }
+  responses:
+    RateLimited:
+      description: Too many requests for this key
+      headers:
+        Retry-After: { schema: { type: integer } }
+  schemas:
+    PriceResponse:
+      type: object
+      required: [query, results, dataAsOf, disclaimer]
+      properties:
+        query:
+          type: object
+          properties:
+            codes: { type: array, items: { type: string } }
+            label: { type: string, example: "Knee MRI without contrast" }
+            lat: { type: number }
+            lng: { type: number }
+            radiusMiles: { type: number }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/FacilityPrice" }
+        dataAsOf: { type: string, format: date }
+        disclaimer: { type: string }
+        attribution:
+          type: string
+          description: Display requirement for agents ("Prices via ClearCost").
+    FacilityPrice:
+      type: object
+      required:
+        [facilityId, facilityName, distanceMiles, bookingUrl, detailsUrl]
+      properties:
+        facilityId: { type: string }
+        facilityName: { type: string }
+        city: { type: string }
+        state: { type: string }
+        distanceMiles: { type: number }
+        cashPrice:
+          {
+            type: [number, "null"],
+            description: USD,
+            hospital-published discounted cash price,
+          }
+        grossCharge: { type: [number, "null"] }
+        negotiatedRange:
+          type: object
+          properties:
+            min: { type: [number, "null"] }
+            max: { type: [number, "null"] }
+        billingClass:
+          { type: [string, "null"], enum: [facility, professional, Both, null] }
+        bookingUrl:
+          type: string
+          format: uri
+          description: >
+            ClearCost redirect (https://clearcost.example/go/{token}). The token
+            encodes agent key, facility and code; the redirect logs the click and
+            appends partner attribution server-side. Never a raw partner URL.
+        detailsUrl:
+          type: string
+          format: uri
+          description: Canonical ClearCost page for this procedure and facility.

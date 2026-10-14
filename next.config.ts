@@ -63,6 +63,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle for the Cloud Run Docker image (see Dockerfile).
+  // Only set by that build; Vercel builds are unaffected.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   // Pin Turbopack's workspace root to this project. Next otherwise infers the
   // root by walking up for a lockfile; a stray parent lockfile or stale .next
   // cache can make it resolve modules from the parent dir — breaking dev and
