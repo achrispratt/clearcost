@@ -150,10 +150,9 @@ export interface ChargeResult {
   estimatedTotalMin?: number;
   estimatedTotalMax?: number;
 
-  // Medicare benchmark (CMS Physician Fee Schedule)
+  // What Medicare pays the doctor (CMS Physician Fee Schedule facility rate).
+  // Only set for surgery and visit codes; never a hospital-price benchmark.
   medicareFacilityRate?: number;
-  medicareMultiplier?: number;
-  medicareMultiplierSource?: "cash" | "insured" | "gross";
 
   // Episode bundling (Turquoise SSP)
   episodeEstimate?: EpisodeEstimate;

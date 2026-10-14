@@ -17,6 +17,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { readFileSync } from "fs";
 import { Pool as PgPool } from "pg";
+import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -294,8 +295,8 @@ async function main() {
       batch.push({
         provider_id: providerId,
         description: charge.description || null,
-        setting: charge.setting || null,
-        billing_class: charge.billing_class || null,
+        setting: normalizeSetting(charge.setting),
+        billing_class: normalizeBillingClass(charge.billing_class),
         cpt: charge.cpt || null,
         hcpcs: charge.hcpcs || null,
         ms_drg: charge.ms_drg || null,

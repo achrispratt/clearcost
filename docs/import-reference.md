@@ -35,6 +35,17 @@ select refresh_provider_cash_ratios();          -- all hospitals
 select refresh_provider_cash_ratios(array[...]); -- only re-imported hospitals
 ```
 
+### Hospital-stay prices (MS-DRG)
+
+Surgery billed as a hospital stay (bypass, valve, transplants, esophagus and pancreas surgery) is priced from its MS-DRGs, not the CPT line (#173). Those DRGs aren't in the main code list, so load them with a targeted import, then refresh the cash ratios as above:
+
+```
+npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
+  --codes lib/data/import-sets/inpatient-stay-drgs.json
+```
+
+Imports store `billing_class` and `setting` lowercased with typos fixed (`lib/data/normalize-charge.ts`), so SQL can compare them directly.
+
 ## Flags
 
 | Flag                      | Purpose                                                      |

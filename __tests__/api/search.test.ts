@@ -55,6 +55,7 @@ import { POST } from "@/app/api/search/route";
 import { kbLookup } from "@/lib/kb/lookup";
 import { translateQueryToCPT } from "@/lib/cpt/translate";
 import { lookupWithPricingPlan } from "@/lib/cpt/lookup";
+import { buildPricingPlan } from "@/lib/cpt/pricing-plan";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/search", {
@@ -108,6 +109,41 @@ describe("POST /api/search", () => {
     expect(res.status).toBe(200);
     expect(translateQueryToCPT).not.toHaveBeenCalled();
     expect(kbLookup).not.toHaveBeenCalled();
+  });
+
+  it("fast path: passes guided-search laterality to the pricing plan (#176)", async () => {
+    vi.mocked(lookupWithPricingPlan).mockResolvedValue([]);
+
+    await POST(
+      makeRequest({
+        query: "knee MRI",
+        codeGroups: [{ codeType: "cpt", codes: ["73721"] }],
+        laterality: "left",
+        bodySite: "knee",
+        location: { lat: 30.27, lng: -97.74 },
+      })
+    );
+
+    expect(buildPricingPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ laterality: "left", bodySite: "knee" })
+    );
+  });
+
+  it("fast path: ignores laterality values it doesn't know", async () => {
+    vi.mocked(lookupWithPricingPlan).mockResolvedValue([]);
+
+    await POST(
+      makeRequest({
+        query: "knee MRI",
+        codes: ["73721"],
+        laterality: "sideways",
+        location: { lat: 30.27, lng: -97.74 },
+      })
+    );
+
+    expect(buildPricingPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ laterality: undefined })
+    );
   });
 
   it("standard path: KB miss triggers Claude translation", async () => {

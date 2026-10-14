@@ -61,10 +61,7 @@ export function FilterBar({
             (getDisplayPriceAmount(b) ?? 0) - (getDisplayPriceAmount(a) ?? 0)
           );
         case "estimated-total":
-          return (
-            (a.estimatedTotalMedian ?? getDisplayPriceAmount(a) ?? Infinity) -
-            (b.estimatedTotalMedian ?? getDisplayPriceAmount(b) ?? Infinity)
-          );
+          return estimatedTotal(a) - estimatedTotal(b);
         case "distance":
           return (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity);
         case "name":
@@ -236,5 +233,15 @@ export function FilterBar({
         )}
       </div>
     </div>
+  );
+}
+
+/** The total the card shows: the all-in estimate when there is one. */
+function estimatedTotal(r: ChargeResult): number {
+  return (
+    r.episodeEstimate?.estimatedAllInMedian ??
+    r.estimatedTotalMedian ??
+    getDisplayPriceAmount(r) ??
+    Infinity
   );
 }

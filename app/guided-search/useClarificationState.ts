@@ -49,6 +49,9 @@ export function useClarificationState() {
     sessionId: null,
     pathHash: null,
   });
+  // Latest left/right and body site Claude resolved; carried to /results so
+  // the price lookup filters on them (#176).
+  const variant = useRef<{ laterality?: string; bodySite?: string }>({});
 
   const navigateToResults = useCallback(
     (params: URLSearchParams) => {
@@ -66,6 +69,10 @@ export function useClarificationState() {
         loc: locationDisplay,
         ...extra,
       });
+      if (variant.current.laterality)
+        params.set("side", variant.current.laterality);
+      if (variant.current.bodySite)
+        params.set("site", variant.current.bodySite);
       return params;
     },
     [query, lat, lng, locationDisplay]
@@ -115,6 +122,8 @@ export function useClarificationState() {
   const handleResponse = useCallback(
     (data: TranslationResponse) => {
       setInterpretation(data.interpretation || "");
+      if (data.laterality) variant.current.laterality = data.laterality;
+      if (data.bodySite) variant.current.bodySite = data.bodySite;
       if (data.pricingPlan) {
         setPricingPlan(data.pricingPlan);
       }
