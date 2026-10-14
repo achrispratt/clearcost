@@ -52,27 +52,42 @@ export async function writeNode(params: {
 
   const pathHash = buildPathHashFromSegments(canonicalQuery, answerSegments);
   const supabase = createAdminClient();
+  const row = {
+    path_hash: pathHash,
+    canonical_query: canonicalQuery,
+    answer_path: answerSegments,
+    depth,
+    node_type: nodeType,
+    payload,
+    hit_count: 0,
+    version: 1,
+    source,
+    updated_at: new Date().toISOString(),
+  };
 
-  const { error } = await supabase.from("kb_nodes").upsert(
-    {
-      path_hash: pathHash,
-      canonical_query: canonicalQuery,
-      answer_path: answerSegments,
-      depth,
-      node_type: nodeType,
-      payload,
-      hit_count: 0,
-      version: 1,
-      source,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "path_hash",
-    }
-  );
+  // First write wins: an existing node is never overwritten, so one crafted
+  // request can't replace the node every later user on that path is served (#163).
+  const { error } = await supabase
+    .from("kb_nodes")
+    .upsert(row, { onConflict: "path_hash", ignoreDuplicates: true });
 
   if (error) {
     console.error("KB node write failed:", error);
+    return pathHash;
+  }
+
+  // One exception: a depth-0 question replaces a depth-0 resolution (written
+  // by /api/search), which guided search skips anyway. Without this, a query
+  // first seen on /results could never cache its first diagnostic question.
+  if (depth === 0 && nodeType === "question") {
+    const { error: replaceError } = await supabase
+      .from("kb_nodes")
+      .update(row)
+      .eq("path_hash", pathHash)
+      .eq("node_type", "resolution");
+    if (replaceError) {
+      console.error("KB depth-0 resolution replace failed:", replaceError);
+    }
   }
 
   return pathHash;

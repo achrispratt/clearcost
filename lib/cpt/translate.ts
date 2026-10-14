@@ -348,16 +348,18 @@ export async function assessQuery(
 /**
  * Guided search: multi-turn clarification.
  * Sends the full conversation history and gets back either the next question
- * or final billing codes.
+ * or final billing codes. `askedQuestions` is the server-rebuilt question text
+ * for each turn (see getAskedQuestions in lib/kb/lookup.ts).
  */
 export async function clarifyQuery(
   query: string,
   turns: ClarificationTurn[],
+  askedQuestions: (string | null)[] = [],
   model: ModelConfig = translationModel
 ): Promise<TranslationResponse> {
   const text = await callModel(
     GUIDED_SEARCH_SYSTEM_PROMPT,
-    buildClarificationPrompt(query, turns),
+    buildClarificationPrompt(query, turns, askedQuestions),
     model
   );
   const parsed = parseJsonResponse(text);

@@ -329,23 +329,33 @@ Remember: help them figure out what procedure to price-shop for. Be warm and hel
 /**
  * Follow-up — continuing the conversation with accumulated context.
  * Includes the original query plus all previous question/answer turns.
+ *
+ * `askedQuestions[i]` is the question text shown before turns[i], rebuilt
+ * server-side from the KB (null when not cached). Client-supplied question
+ * ids/text never reach the prompt; only the patient's own answers do.
  */
 export function buildClarificationPrompt(
   originalQuery: string,
-  turns: ClarificationTurn[]
+  turns: ClarificationTurn[],
+  askedQuestions: (string | null)[] = []
 ): string {
   let prompt = `A patient is looking for healthcare pricing. Their original query: "${originalQuery}"
 
 Here is the conversation so far:\n`;
 
-  for (const turn of turns) {
-    prompt += `\nQuestion (${turn.questionId}): [asked previously]\n`;
-    if (turn.freeText) {
+  turns.forEach((turn, i) => {
+    const asked = askedQuestions[i];
+    prompt += asked
+      ? `\nQuestion: "${asked}"\n`
+      : `\nQuestion: [asked previously; text unavailable]\n`;
+    // Same rule as the KB cache key (turnToSegment): free text only counts
+    // for "other" answers, which are never cached.
+    if (turn.selectedOption === "other" && turn.freeText) {
       prompt += `Patient's answer: "${turn.freeText}" (typed their own response)\n`;
     } else {
       prompt += `Patient's answer: "${turn.selectedOption}"\n`;
     }
-  }
+  });
 
   prompt += `
 Based on the conversation history above:
