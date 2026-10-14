@@ -26,6 +26,16 @@ const bypass: CPTCode[] = [
   { code: "33533", description: "CABG arterial", category: "Surgery" },
 ];
 
+function stayRow(msDrg: string, cashPrice: number): ChargeResult {
+  return charge({
+    cpt: undefined,
+    msDrg,
+    setting: "inpatient",
+    description: "CORONARY BYPASS WITHOUT CARDIAC CATHETERIZATION",
+    cashPrice,
+  });
+}
+
 describe("feeScope", () => {
   it("normalizes billing class values from hospital files", () => {
     expect(feeScope("Facility")).toBe("facility");
@@ -168,9 +178,17 @@ describe("summarizeAnswer", () => {
     const summary = summarizeAnswer(
       [
         charge({ cpt: "33533", cashPrice: 6186, billingClass: "professional" }),
-        charge({ cpt: undefined, msDrg: "235", cashPrice: 120000 }),
-        charge({ cpt: undefined, msDrg: "236", cashPrice: 52000 }),
-        charge({ cpt: undefined, msDrg: "236", cashPrice: 61000 }),
+        stayRow("235", 120000),
+        stayRow("236", 52000),
+        stayRow("236", 61000),
+        // A revenue code filed in the DRG column is not a stay price.
+        charge({
+          cpt: undefined,
+          msDrg: "236",
+          setting: "inpatient",
+          description: "NURSERY LEVEL II",
+          cashPrice: 900,
+        }),
       ],
       bypass
     );
@@ -185,10 +203,7 @@ describe("summarizeAnswer", () => {
 
   it("doesn't price a stay from the major-complications DRG alone", () => {
     const summary = summarizeAnswer(
-      [
-        charge({ cpt: "33533", cashPrice: 6186 }),
-        charge({ cpt: undefined, msDrg: "235", cashPrice: 120000 }),
-      ],
+      [charge({ cpt: "33533", cashPrice: 6186 }), stayRow("235", 120000)],
       bypass
     );
     expect(summary.state).toBe("inpatient_unpriced");
@@ -215,10 +230,7 @@ describe("summarizeAnswer", () => {
   });
 
   it("prices an inpatient procedure normally when DRG rows exist", () => {
-    const summary = summarizeAnswer(
-      [charge({ cpt: undefined, msDrg: "236", cashPrice: 45000 })],
-      bypass
-    );
+    const summary = summarizeAnswer([stayRow("236", 45000)], bypass);
     expect(summary.state).toBe("priced");
   });
 

@@ -194,12 +194,16 @@ export function summarizeAnswer(
     // Price the stay from the first typical-severity DRG (in preference
     // order) that has prices near the user. The single CPT lines (usually
     // the surgeon's fee) never set a stay price.
+    const isStayRow = (r: ChargeResult, drg: string) =>
+      drgKey(r.msDrg) === drgKey(drg) &&
+      r.setting?.trim().toLowerCase() === "inpatient" &&
+      stay.describes.test(r.description ?? "");
     const stayDrg = stay.typicalDrgs.find((d) =>
-      priced.some((e) => drgKey(e.primary.msDrg) === drgKey(d))
+      priced.some((e) => isStayRow(e.primary, d))
     );
     if (stayDrg) {
       const stayEntries = priced
-        .filter((e) => drgKey(e.primary.msDrg) === drgKey(stayDrg))
+        .filter((e) => isStayRow(e.primary, stayDrg))
         .map((e) => ({ ...e, scope: "facility" as FeeScope }));
       const amounts = stayEntries.map((e) => e.price.amount as number);
       const cashCount = stayEntries.filter(
@@ -208,7 +212,7 @@ export function summarizeAnswer(
       return {
         state: "priced",
         entries: entries
-          .filter((e) => drgKey(e.primary.msDrg) === drgKey(stayDrg))
+          .filter((e) => isStayRow(e.primary, stayDrg))
           .map((e) => ({ ...e, scope: "facility" as FeeScope })),
         priced: stayEntries,
         low: amounts[0],

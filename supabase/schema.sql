@@ -469,7 +469,10 @@ as $$
     (
       (p_code_type = 'cpt' and (c.cpt = any(p_codes) or c.hcpcs = any(p_codes)))
       or (p_code_type = 'hcpcs' and c.hcpcs = any(p_codes))
-      or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
+      -- Some files put revenue codes in the DRG column (0460 pulmonary
+      -- function shows up as DRG 460); a real DRG price is an inpatient stay.
+      or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes)
+          and lower(trim(c.setting)) = 'inpatient')
     )
     -- Rows the hospital didn't tag with a side or body site still apply to
     -- every side; only rows tagged for a different one are excluded (#176).

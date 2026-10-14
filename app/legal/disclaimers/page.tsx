@@ -32,7 +32,7 @@ export default function DisclaimersPage() {
           Medical &amp; Data Disclaimers
         </h1>
         <p className="text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
-          Last updated: March 2026
+          Last updated: October 2026
         </p>
       </div>
 
@@ -212,10 +212,11 @@ export default function DisclaimersPage() {
             5. Professional Fees
           </h2>
           <p className="mb-3" style={{ color: "var(--cc-text)" }}>
-            Hospital charges shown on ClearCost typically represent facility
-            fees only — the portion billed by the hospital for use of its
-            facilities, equipment, and support staff. Facility fees generally
-            represent approximately 70–80% of the total cost of a procedure.
+            Many hospital charges shown on ClearCost are facility fees only —
+            the portion billed by the hospital for use of its facilities,
+            equipment, and support staff. Where a hospital labels a charge as a
+            facility fee or a professional (doctor&apos;s) fee, ClearCost says
+            so next to the price.
           </p>
           <p className="mb-3" style={{ color: "var(--cc-text)" }}>
             Professional fees — charged separately by the individual clinicians
@@ -224,11 +225,36 @@ export default function DisclaimersPage() {
             independently and do not appear in hospital MRFs. These fees are not
             included in the prices shown unless otherwise noted.
           </p>
-          <p style={{ color: "var(--cc-text)" }}>
+          <p className="mb-3" style={{ color: "var(--cc-text)" }}>
             Your total cost for a procedure will typically include both a
             facility component and one or more professional fee components.
             Where professional fee estimates are available, ClearCost will
             indicate this separately.
+          </p>
+          <p className="mb-3" style={{ color: "var(--cc-text)" }}>
+            <strong>Estimated totals.</strong> For some procedures ClearCost
+            shows an estimated total that adds up the services commonly billed
+            together with the procedure (for example imaging, lab work or
+            anesthesia). These totals are modeled, not a package price published
+            by the hospital. Each line uses that hospital&apos;s own published
+            price for the service. When the hospital publishes no cash price for
+            a line, ClearCost converts its insured or list price into an
+            estimated cash price and labels that line with lower confidence.
+            Lines with no published price are listed as missing rather than
+            filled in from other hospitals. You may not need every service
+            included, and you may need services that are not.
+          </p>
+          <p className="mb-3" style={{ color: "var(--cc-text)" }}>
+            <strong>Hospital stays.</strong> Some surgery is billed as a
+            hospital stay under a single MS-DRG code. Where ClearCost shows a
+            hospital-stay price, it is the hospital&apos;s published price for
+            an uncomplicated stay; stays with complications can cost
+            substantially more.
+          </p>
+          <p style={{ color: "var(--cc-text)" }}>
+            An estimated total is general information, not a quote, a bill or a
+            Good Faith Estimate. Ask the provider for a written Good Faith
+            Estimate before you schedule care.
           </p>
         </section>
 

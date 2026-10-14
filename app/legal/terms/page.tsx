@@ -32,7 +32,7 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
-          Last updated: March 2026
+          Last updated: October 2026
         </p>
       </div>
 
@@ -251,9 +251,10 @@ export default function TermsPage() {
             </p>
             <p>
               Prices displayed may not include all fees associated with a
-              procedure. Hospital facility charges typically represent
-              approximately 70–80% of the total cost of a procedure. Additional
-              fees — such as professional fees from physicians, radiologists,
+              procedure. Estimated totals combine a hospital&apos;s published
+              prices for services commonly billed together and are modeled, not
+              quoted, as described in our Medical Disclaimers. Additional fees —
+              such as professional fees from physicians, radiologists,
               anesthesiologists, or other providers — are often billed
               separately and are not reflected in the prices shown.
             </p>

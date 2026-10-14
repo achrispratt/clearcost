@@ -1,6 +1,8 @@
 -- Laterality/body-site filters keep untagged rows (#176).
 -- Most hospitals publish one row per code with no side; the old strict filter
 -- dropped them, so a "left knee MRI" search lost ~2/3 of hospitals.
+-- DRG matches are limited to inpatient rows, since outpatient "DRG" rows are
+-- revenue codes (#177).
 create or replace function public.search_charges_nearby(
   p_code_type text,             -- 'cpt', 'hcpcs', or 'ms_drg'
   p_codes text[],               -- Array of billing codes to search for
@@ -112,7 +114,10 @@ as $$
     (
       (p_code_type = 'cpt' and (c.cpt = any(p_codes) or c.hcpcs = any(p_codes)))
       or (p_code_type = 'hcpcs' and c.hcpcs = any(p_codes))
-      or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes))
+      -- Some files put revenue codes in the DRG column (0460 pulmonary
+      -- function shows up as DRG 460); a real DRG price is an inpatient stay.
+      or (p_code_type = 'ms_drg' and c.ms_drg = any(p_codes)
+          and lower(trim(c.setting)) = 'inpatient')
     )
     -- Rows the hospital didn't tag with a side or body site still apply to
     -- every side; only rows tagged for a different one are excluded (#176).

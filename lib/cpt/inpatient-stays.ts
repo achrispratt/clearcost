@@ -16,6 +16,12 @@ export interface InpatientStay {
    * and would overstate what most patients pay (#173).
    */
   typicalDrgs: string[];
+  /**
+   * What a real DRG row for this stay says. Some hospital files put revenue
+   * codes in the DRG column (0460 pulmonary function shows up as DRG 460),
+   * so a stay price only counts when the row describes the stay.
+   */
+  describes: RegExp;
 }
 
 const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
@@ -26,6 +32,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "heart bypass surgery",
       drgs: ["231", "232", "233", "234", "235", "236"],
       typicalDrgs: ["236", "234", "232"],
+      describes: /bypass|cabg|coronary/i,
     },
   ],
   [
@@ -35,6 +42,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "heart valve surgery",
       drgs: ["216", "217", "218", "219", "220", "221"],
       typicalDrgs: ["221", "220", "218", "217"],
+      describes: /valve|cardiothoracic/i,
     },
   ],
   [
@@ -44,6 +52,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "heart transplant",
       drgs: ["001", "002"],
       typicalDrgs: ["002"],
+      describes: /transplant/i,
     },
   ],
   [
@@ -53,6 +62,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "esophagus removal",
       drgs: ["326", "327", "328"],
       typicalDrgs: ["328", "327"],
+      describes: /stomach|esophag|duodenal/i,
     },
   ],
   [
@@ -62,6 +72,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "liver transplant",
       drgs: ["005", "006"],
       typicalDrgs: ["006"],
+      describes: /transplant/i,
     },
   ],
   [
@@ -71,6 +82,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "pancreas surgery",
       drgs: ["405", "406", "407"],
       typicalDrgs: ["407", "406"],
+      describes: /pancreas|liver|shunt/i,
     },
   ],
   [
@@ -80,6 +92,7 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       label: "kidney transplant",
       drgs: ["652"],
       typicalDrgs: ["652"],
+      describes: /transplant/i,
     },
   ],
 ];
