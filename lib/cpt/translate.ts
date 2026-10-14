@@ -318,31 +318,19 @@ export async function translateQueryToCPT(
 /**
  * Guided search: initial assessment of a user query.
  * Returns either high-confidence codes or the first clarifying question.
- *
- * When knownCanonicals is provided, Claude also checks if the query matches
- * an existing canonical form (synonym clustering). The match is returned as
- * canonicalMatch on the response.
+ * Matching new phrasings to known queries happens before this, in
+ * lib/kb/semantic.ts, so no other visitors' queries reach this prompt.
  */
 export async function assessQuery(
   query: string,
-  knownCanonicals?: string[],
   model: ModelConfig = translationModel
 ): Promise<TranslationResponse> {
   const text = await callModel(
     GUIDED_SEARCH_SYSTEM_PROMPT,
-    buildGuidedSearchPrompt(query, knownCanonicals),
+    buildGuidedSearchPrompt(query),
     model
   );
-  const parsed = parseJsonResponse(text);
-  const response = buildTranslationResponse(parsed, query);
-
-  // Pass through canonicalMatch if Claude identified a synonym
-  const canonicalMatch =
-    typeof parsed.canonicalMatch === "string"
-      ? parsed.canonicalMatch.trim().toLowerCase()
-      : undefined;
-
-  return { ...response, canonicalMatch };
+  return buildTranslationResponse(parseJsonResponse(text), query);
 }
 
 /**

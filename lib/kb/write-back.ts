@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { writeCanonicalEmbedding } from "./semantic";
 import {
   computeQueryHash,
   buildPathHashFromSegments,
@@ -156,6 +157,13 @@ export async function writeBackClarifyResponse(params: {
     nodeType,
     payload,
   });
+
+  // A new tree root: make it findable by semantic match (#164).
+  if (nodeType === "question" && turns.length === 0) {
+    await writeCanonicalEmbedding(canonicalQuery).catch((err) =>
+      console.error("KB canonical embedding write failed:", err)
+    );
+  }
 
   return pathHash;
 }

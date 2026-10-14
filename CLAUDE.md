@@ -55,7 +55,10 @@ Step 0: kbLookup() (lib/kb/lookup.ts)
   Normalize query → hash → check kb_synonyms for canonical form
   Build path_hash (query + answer_path) → check kb_nodes for cached response
   If KB hit → return cached question/resolution (zero AI cost)
-  If KB miss → fall through to Claude
+  If KB miss on a brand-new query → semantic match (lib/kb/semantic.ts):
+    embed via `embed` Edge Function (gte-small) → match_canonical RPC (pgvector)
+    → serve the matched tree's cached first question (500ms timeout guard)
+  Otherwise → fall through to Claude
   ↓
 Step 1: Claude (lib/cpt/translate.ts)
   Turn 0: assessQuery() → first diagnostic question (depth-0 is always a question)
@@ -164,7 +167,7 @@ supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, 
 ## Database (Supabase Postgres + PostGIS)
 
 5 core tables: `providers`, `charges`, `payer_rates`, `payers`, `saved_searches`
-4 KB tables: `kb_synonyms`, `kb_nodes`, `kb_events`, `kb_path_stats` (see Translation KB below)
+5 KB tables: `kb_synonyms`, `kb_nodes`, `kb_events`, `kb_path_stats`, `kb_canonical_embeddings` (see Translation KB below)
 
 2 RPC functions:
 
@@ -179,7 +182,7 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - **billing_class**: "facility", "professional", "Both", or null — determines what cost component a charge represents
 - **All-in cost problem**: Hospital charges often represent only facility fees (~70-80% of total). Professional fees (radiologist, anesthesiologist) billed separately. MVP shows available price with smart contextual callouts.
 - **Hybrid AI approach**: Claude interprets plain English → verified code lookup confirms codes → PostGIS queries prices by location
-- **Translation Knowledge Base (KB)**: Caches AI translation results as a conversation tree. Synonym table maps variant phrasings ("mri knee" → "knee mri") to canonical queries. Node table stores each query+answer_path as a tree node. Repeat searches skip Claude entirely (zero AI cost). Synonym clustering links new queries to existing trees when semantically equivalent. See `lib/kb/` for implementation.
+- **Translation Knowledge Base (KB)**: Caches AI translation results as a conversation tree. Synonym table maps variant phrasings ("mri knee" → "knee mri") to canonical queries. Node table stores each query+answer_path as a tree node. Repeat searches skip Claude entirely (zero AI cost). New phrasings are linked to existing trees by embedding similarity in Postgres (pgvector, `kb_canonical_embeddings`), not by Claude. See `lib/kb/` for implementation.
 
 ## Data Source: Trilliant Oria
 

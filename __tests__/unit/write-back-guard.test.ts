@@ -13,6 +13,10 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
+vi.mock("@/lib/kb/semantic", () => ({
+  writeCanonicalEmbedding: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock("@/lib/kb/path-hash", () => ({
   computeQueryHash: vi.fn().mockReturnValue({
     normalizedQuery: "knee mri",
@@ -23,6 +27,7 @@ vi.mock("@/lib/kb/path-hash", () => ({
 }));
 
 import { writeBackClarifyResponse } from "@/lib/kb/write-back";
+import { writeCanonicalEmbedding } from "@/lib/kb/semantic";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -62,6 +67,7 @@ describe("writeBackClarifyResponse depth-0 guard", () => {
     });
 
     expect(result).toBe("path123");
+    expect(writeCanonicalEmbedding).toHaveBeenCalledWith("knee mri");
   });
 
   it("DOES write resolution node at depth > 0", async () => {

@@ -3,12 +3,14 @@ import { NextRequest } from "next/server";
 
 vi.mock("@/lib/kb/lookup", () => ({
   kbLookup: vi.fn(),
-  getKnownCanonicals: vi.fn().mockResolvedValue([]),
   getAskedQuestions: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/lib/kb/write-back", () => ({
   writeBackClarifyResponse: vi.fn().mockResolvedValue(undefined),
   writeSynonym: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/kb/semantic", () => ({
+  matchCanonical: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/lib/kb/events", () => ({
   logKBEvent: vi.fn().mockResolvedValue(undefined),
@@ -23,6 +25,7 @@ import { POST } from "@/app/api/clarify/route";
 import { kbLookup, getAskedQuestions } from "@/lib/kb/lookup";
 import { assessQuery, clarifyQuery } from "@/lib/cpt/translate";
 import { writeSynonym } from "@/lib/kb/write-back";
+import { matchCanonical } from "@/lib/kb/semantic";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/clarify", {
@@ -223,59 +226,102 @@ describe("POST /api/clarify", () => {
     expect(data.nextQuestion.question).toContain("knee");
   });
 
-  it("handles synonym clustering: writes synonym but falls through for depth-0 resolution", async () => {
-    vi.mocked(kbLookup)
-      .mockResolvedValueOnce({ hit: false })
-      .mockResolvedValueOnce({
-        hit: true,
-        canonical_query: "knee mri",
-        path_hash: "existing-hash",
-        node: {
-          path_hash: "existing-hash",
-          canonical_query: "knee mri",
-          answer_path: [],
-          depth: 0,
-          node_type: "resolution",
-          payload: {
-            type: "resolution" as const,
-            codes: [{ code: "73721", description: "MRI", category: "Imaging" }],
-            interpretation: "Knee MRI",
-            confidence: "high" as const,
-            conversationComplete: true,
-          },
-          hit_count: 5,
-          version: 1,
-          source: "claude",
-          created_at: "2026-01-01",
-          updated_at: "2026-01-01",
+  describe("semantic match (#164)", () => {
+    const cachedQuestion = {
+      path_hash: "hash-knee-mri",
+      canonical_query: "knee mri",
+      answer_path: [],
+      depth: 0,
+      node_type: "question" as const,
+      payload: {
+        type: "question" as const,
+        question: {
+          id: "q1",
+          question: "Which knee?",
+          options: [{ label: "Left" }, { label: "Right" }],
         },
-      });
-
-    vi.mocked(assessQuery).mockResolvedValue({
-      codes: [],
-      interpretation: "You need a knee MRI",
-      confidence: "low" as const,
-      nextQuestion: {
-        id: "q1",
-        question: "Which knee?",
-        options: [{ label: "Left" }, { label: "Right" }],
+        confidence: "low" as const,
       },
-      conversationComplete: false,
-      canonicalMatch: "knee mri",
+      hit_count: 5,
+      version: 1,
+      source: "claude" as const,
+      created_at: "2026-01-01",
+      updated_at: "2026-01-01",
+    };
+
+    it("serves the matched canonical's cached question without Claude", async () => {
+      vi.mocked(kbLookup)
+        .mockResolvedValueOnce({ hit: false })
+        .mockResolvedValueOnce({
+          hit: true,
+          canonical_query: "knee mri",
+          path_hash: "hash-knee-mri",
+          node: cachedQuestion,
+        });
+      vi.mocked(matchCanonical).mockResolvedValueOnce("knee mri");
+
+      const res = await POST(
+        makeRequest({ query: "I need an MRI on my knee" })
+      );
+      const data = await res.json();
+
+      expect(matchCanonical).toHaveBeenCalledWith("I need an MRI on my knee");
+      expect(kbLookup).toHaveBeenLastCalledWith("knee mri", []);
+      expect(data.nextQuestion.question).toBe("Which knee?");
+      expect(data.kbPathHash).toBe("hash-knee-mri");
+      expect(writeSynonym).toHaveBeenCalledWith(
+        "I need an MRI on my knee",
+        "knee mri"
+      );
+      expect(assessQuery).not.toHaveBeenCalled();
     });
 
-    const res = await POST(makeRequest({ query: "I need an MRI on my knee" }));
-    expect(res.status).toBe(200);
+    it("falls through to Claude when the match isn't a cached question", async () => {
+      vi.mocked(kbLookup)
+        .mockResolvedValueOnce({ hit: false })
+        .mockResolvedValueOnce({ hit: false, canonical_query: "knee mri" });
+      vi.mocked(matchCanonical).mockResolvedValueOnce("knee mri");
+      vi.mocked(assessQuery).mockResolvedValue({
+        codes: [],
+        interpretation: "",
+        confidence: "low" as const,
+        conversationComplete: false,
+      });
 
-    const data = await res.json();
-    // Should return Claude's question, NOT the cached resolution
-    expect(data.nextQuestion).toBeDefined();
-    expect(data.nextQuestion.question).toBe("Which knee?");
+      await POST(makeRequest({ query: "I need an MRI on my knee" }));
 
-    // Synonym should still be written
-    expect(writeSynonym).toHaveBeenCalledWith(
-      "I need an MRI on my knee",
-      "knee mri"
-    );
+      expect(assessQuery).toHaveBeenCalledWith("I need an MRI on my knee");
+      expect(writeSynonym).not.toHaveBeenCalled();
+    });
+
+    it("skips matching for known queries and follow-up turns", async () => {
+      vi.mocked(kbLookup).mockResolvedValue({
+        hit: false,
+        canonical_query: "knee pain",
+      });
+      vi.mocked(assessQuery).mockResolvedValue({
+        codes: [],
+        interpretation: "",
+        confidence: "low" as const,
+        conversationComplete: false,
+      });
+      vi.mocked(clarifyQuery).mockResolvedValue({
+        codes: [],
+        interpretation: "",
+        confidence: "low" as const,
+        conversationComplete: false,
+      });
+
+      await POST(makeRequest({ query: "knee pain" }));
+      vi.mocked(kbLookup).mockResolvedValue({ hit: false });
+      await POST(
+        makeRequest({
+          query: "new query",
+          turns: [{ questionId: "q1", selectedOption: "Imaging" }],
+        })
+      );
+
+      expect(matchCanonical).not.toHaveBeenCalled();
+    });
   });
 });

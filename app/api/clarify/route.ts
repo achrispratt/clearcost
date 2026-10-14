@@ -5,11 +5,8 @@ import {
   clarifyQuery,
   translateQueryToCPT,
 } from "@/lib/cpt/translate";
-import {
-  kbLookup,
-  getKnownCanonicals,
-  getAskedQuestions,
-} from "@/lib/kb/lookup";
+import { kbLookup, getAskedQuestions } from "@/lib/kb/lookup";
+import { matchCanonical } from "@/lib/kb/semantic";
 import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
@@ -101,13 +98,44 @@ export async function POST(request: NextRequest) {
       // else: fall through to Claude for the first diagnostic question
     }
 
+    // --- SEMANTIC MATCH — new phrasing of a known query (#164) ---
+    // Only for brand-new queries: embed, find the nearest known canonical
+    // above a strict threshold, and serve its cached first question. Bounded
+    // by a timeout, so a slow embedding just falls through to Claude.
+    if (turns.length === 0 && !kbResult.canonical_query) {
+      const matched = await matchCanonical(queryText);
+      const matchedLookup = matched ? await kbLookup(matched, []) : null;
+      const matchedPayload = matchedLookup?.node?.payload as
+        | KBQuestionPayload
+        | KBResolutionPayload
+        | undefined;
+
+      if (
+        matched &&
+        matchedLookup?.hit &&
+        matchedPayload?.type === "question"
+      ) {
+        writeSynonym(queryText, matched).catch((err) =>
+          console.error("KB synonym clustering write failed:", err)
+        );
+        if (matchedLookup.path_hash) {
+          logKBEvent({
+            pathHash: matchedLookup.path_hash,
+            eventType: "walk",
+            sessionId,
+          }).catch(() => {});
+        }
+
+        return NextResponse.json({
+          ...nodeToResponse(matchedPayload),
+          kbSessionId: sessionId,
+          kbPathHash: matchedLookup.path_hash,
+        });
+      }
+    }
+
     // --- KB MISS — fall through to Claude ---
     try {
-      // For initial assessments (no turns), pass known canonicals so Claude
-      // can identify synonym matches (e.g. "MRI of my knee" → "knee mri")
-      const knownCanonicals =
-        turns.length === 0 ? await getKnownCanonicals() : undefined;
-
       // Rebuild prior question text from our own KB tree; the client's
       // questionId is an opaque UI key and never reaches the prompt (#163).
       const askedQuestions =
@@ -123,49 +151,11 @@ export async function POST(request: NextRequest) {
 
       const result =
         turns.length === 0
-          ? await assessQuery(queryText, knownCanonicals)
+          ? await assessQuery(queryText)
           : await clarifyQuery(queryText, turns, askedQuestions);
 
-      // If Claude matched this query to an existing canonical, verify the
-      // tree exists before linking the synonym (prevents orphaned synonyms
-      // if Claude hallucinated a match)
-      if (result.canonicalMatch && turns.length === 0) {
-        const matchedLookup = await kbLookup(result.canonicalMatch, []);
-        if (matchedLookup.hit && matchedLookup.node) {
-          const matchedPayload = matchedLookup.node.payload as
-            | KBQuestionPayload
-            | KBResolutionPayload;
-
-          // Write the synonym link regardless — it's valid
-          writeSynonym(queryText, result.canonicalMatch).catch((err) =>
-            console.error("KB synonym clustering write failed:", err)
-          );
-
-          // Only return the cached node if it's a question, not a depth-0 resolution
-          if (matchedPayload.type === "question") {
-            if (matchedLookup.path_hash) {
-              logKBEvent({
-                pathHash: matchedLookup.path_hash,
-                eventType: "walk",
-                sessionId,
-              }).catch(() => {});
-            }
-
-            const matchedResponse = nodeToResponse(matchedPayload);
-            return NextResponse.json({
-              ...matchedResponse,
-              kbSessionId: sessionId,
-              kbPathHash: matchedLookup.path_hash,
-            });
-          }
-          // else: depth-0 resolution — fall through and use Claude's response
-        }
-      }
-
       const canonicalQuery =
-        result.canonicalMatch ||
-        kbResult.canonical_query ||
-        normalizeQuery(queryText);
+        kbResult.canonical_query || normalizeQuery(queryText);
 
       writeBackClarifyResponse({
         originalQuery: queryText,
