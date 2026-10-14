@@ -875,3 +875,138 @@ as $$
   )
   where c.provider_id = any(p_provider_ids);
 $$;
+
+-- ============================================================================
+-- RPC: lookup_episode_component_charges_v2()
+-- Same as above plus billing_class and the negotiated-rate range. Used by the
+-- episode estimator; the v1 function can be dropped once nothing calls it.
+-- ============================================================================
+create or replace function lookup_episode_component_charges_v2(
+  p_principal_code text,
+  p_provider_ids uuid[],
+  p_min_association float default 0.4
+)
+returns table (
+  provider_id uuid,
+  component_code text,
+  component_code_type text,
+  component_tier text,
+  component_association float,
+  billing_class text,
+  cash_price numeric,
+  gross_charge numeric,
+  avg_negotiated_rate numeric,
+  min_negotiated_rate numeric,
+  max_negotiated_rate numeric,
+  min_price numeric,
+  max_price numeric
+)
+language sql
+stable
+as $$
+  with episode as (
+    select id from episode_definitions
+    where principal_code = p_principal_code
+    limit 1
+  ),
+  components as (
+    select ec.code, ec.code_type, ec.tier, ec.association
+    from episode_components ec
+    join episode e on e.id = ec.episode_id
+    where ec.association >= p_min_association
+      and ec.code_type in ('cpt', 'hcpcs')
+  )
+  select
+    c.provider_id,
+    comp.code as component_code,
+    comp.code_type as component_code_type,
+    comp.tier as component_tier,
+    comp.association as component_association,
+    c.billing_class,
+    c.cash_price,
+    c.gross_charge,
+    c.avg_negotiated_rate,
+    c.min_negotiated_rate,
+    c.max_negotiated_rate,
+    c.min_price,
+    c.max_price
+  from components comp
+  join charges c on (
+    (comp.code_type = 'cpt' and (c.cpt = comp.code or c.hcpcs = comp.code))
+    or (comp.code_type = 'hcpcs' and c.hcpcs = comp.code)
+  )
+  where c.provider_id = any(p_provider_ids);
+$$;
+
+-- ============================================================================
+-- PROVIDER CASH RATIOS (materialized; refresh after import)
+-- ============================================================================
+-- Per-hospital cash ratios, used to convert an insured or gross price into a
+-- cash-equivalent when a hospital publishes no cash price for an episode line.
+--   ratio_type 'insured' = cash_price / avg_negotiated_rate
+--   ratio_type 'gross'   = cash_price / gross_charge
+-- computed over each hospital's charges that publish both prices.
+-- Computing this live takes ~50s for 50 hospitals, so it is materialized and
+-- refreshed after each import: select refresh_provider_cash_ratios();
+create table if not exists provider_cash_ratios (
+  provider_id uuid not null references providers(id) on delete cascade,
+  ratio_type text not null check (ratio_type in ('insured', 'gross')),
+  pair_count integer not null,
+  q1 double precision not null,
+  median double precision not null,
+  q3 double precision not null,
+  computed_at timestamptz not null default now(),
+  primary key (provider_id, ratio_type)
+);
+
+alter table provider_cash_ratios enable row level security;
+create policy "Anyone can view provider cash ratios"
+  on provider_cash_ratios for select using (true);
+revoke insert, update, delete, truncate, references, trigger
+  on provider_cash_ratios from anon, authenticated;
+
+-- Recompute ratios for the given hospitals, or all hospitals when null.
+create or replace function refresh_provider_cash_ratios(
+  p_provider_ids uuid[] default null
+)
+returns integer
+language plpgsql
+set search_path = public, extensions
+as $$
+declare
+  affected integer;
+begin
+  delete from provider_cash_ratios
+  where p_provider_ids is null or provider_id = any(p_provider_ids);
+
+  insert into provider_cash_ratios (provider_id, ratio_type, pair_count, q1, median, q3)
+  select
+    provider_id,
+    ratio_type,
+    count(*)::integer,
+    percentile_cont(0.25) within group (order by r),
+    percentile_cont(0.5) within group (order by r),
+    percentile_cont(0.75) within group (order by r)
+  from (
+    select c.provider_id, 'insured'::text as ratio_type,
+      (c.cash_price / c.avg_negotiated_rate)::double precision as r
+    from charges c
+    where c.cash_price > 0 and c.avg_negotiated_rate > 0
+      and (p_provider_ids is null or c.provider_id = any(p_provider_ids))
+    union all
+    select c.provider_id, 'gross'::text,
+      (c.cash_price / c.gross_charge)::double precision
+    from charges c
+    where c.cash_price > 0 and c.gross_charge > 0
+      and (p_provider_ids is null or c.provider_id = any(p_provider_ids))
+  ) pairs
+  group by provider_id, ratio_type;
+
+  get diagnostics affected = row_count;
+  return affected;
+end;
+$$;
+
+revoke execute on function refresh_provider_cash_ratios(uuid[])
+  from public, anon, authenticated;
+grant execute on function refresh_provider_cash_ratios(uuid[]) to service_role;
