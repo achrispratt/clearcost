@@ -473,7 +473,7 @@ async function processEpisode({
       .eq("episode_id", episodeDef.id)
       .gte("association", MIN_ASSOCIATION)
       .in("code_type", ["cpt", "hcpcs"]),
-    supabase.rpc("lookup_episode_component_charges", {
+    supabase.rpc("lookup_episode_component_charges_v2", {
       p_principal_code: principalCode,
       p_provider_ids: Array.from(providerIds),
       p_min_association: MIN_ASSOCIATION,
