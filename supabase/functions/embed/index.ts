@@ -4,10 +4,30 @@
 // AI_MODELS.queryEmbedding in lib/ai/models.ts.
 // Deploy: supabase functions deploy embed
 
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
 const MAX_INPUT_CHARS = 500;
 const session = new Supabase.ai.Session("gte-small");
 
+// The gateway (verify_jwt) has already checked the signature; also require the
+// service role so the public anon key can't spend embedding calls.
+function isServiceRole(req: Request): boolean {
+  const token = req.headers.get("Authorization")?.replace(/^Bearer /, "");
+  const payload = token?.split(".")[1];
+  if (!payload) return false;
+  try {
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(json).role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
+  if (!isServiceRole(req)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let input: unknown;
   try {
     ({ input } = await req.json());
