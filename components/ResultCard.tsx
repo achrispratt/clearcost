@@ -368,6 +368,8 @@ export function ResultCard({
                         {result.episodeEstimate.priceBasis === "cash"
                           ? "cash prices"
                           : "avg insured rates"}
+                        {result.episodeEstimate.billingClass ===
+                          "professional" && ", professional fees only"}
                         {result.episodeEstimate.coverageRatio < 1 &&
                           ` (${Math.round(result.episodeEstimate.coverageRatio * 100)}% of components priced)`}
                       </p>
