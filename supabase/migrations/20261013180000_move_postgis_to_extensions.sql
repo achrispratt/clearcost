@@ -5,7 +5,7 @@
 --
 -- No data loss: providers.location is a GENERATED column derived from lat/lng.
 -- The RPCs reference PostGIS in string bodies and resolve it through the
--- search_path pinned in 20261013_security_hardening.sql (apply that first).
+-- search_path pinned in 20261013175002_security_hardening.sql (apply that first).
 
 drop extension postgis cascade;  -- drops providers.location + idx_providers_location
 create extension postgis with schema extensions;
