@@ -4,7 +4,7 @@
 -- Added as a new function because changing the original's return type needs a
 -- DROP; the old function can be dropped once nothing calls it.
 
-create function public.lookup_episode_component_charges_v2(
+create or replace function public.lookup_episode_component_charges_v2(
   p_principal_code text,
   p_provider_ids uuid[],
   p_min_association float default 0.4

@@ -17,6 +17,7 @@ create table if not exists public.provider_cash_ratios (
 );
 
 alter table public.provider_cash_ratios enable row level security;
+drop policy if exists "Anyone can view provider cash ratios" on public.provider_cash_ratios;
 create policy "Anyone can view provider cash ratios"
   on public.provider_cash_ratios for select using (true);
 revoke insert, update, delete, truncate, references, trigger
