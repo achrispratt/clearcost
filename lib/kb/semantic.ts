@@ -10,9 +10,10 @@ import { normalizeQuery } from "./path-hash";
  * Minimum cosine similarity for a match. Deliberately strict: a false match
  * sends the patient down the wrong tree, while a miss only costs a Claude
  * call. Tune with scripts/tune-kb-match-threshold.ts on real query pairs
- * ("knee pain" must NOT match "knee mri").
+ * ("knee pain" must NOT match "knee mri"). Tuned 2026-10-14 on gte-small:
+ * should-match pairs scored >= 0.932, should-not pairs <= 0.908.
  */
-export const MATCH_THRESHOLD = 0.94;
+export const MATCH_THRESHOLD = 0.92;
 
 /** Past this, fall through to Claude so matching never makes search slower. */
 export const EMBED_TIMEOUT_MS = 500;
