@@ -1,6 +1,6 @@
 -- Episode estimator: return billing_class and the negotiated-rate range from
 -- lookup_episode_component_charges() so estimates can keep facility and
--- professional fees apart and price every line on a single basis.
+-- professional fees apart and convert insured prices to cash equivalents.
 -- The return type changes, so the function must be dropped and recreated.
 
 drop function if exists public.lookup_episode_component_charges(text, uuid[], double precision);
