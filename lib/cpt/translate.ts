@@ -1,3 +1,4 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import { AI_MODELS } from "@/lib/ai/models";
 import { getAnthropicClient } from "@/lib/anthropic";
 import {
@@ -25,7 +26,38 @@ import type {
   TranslationResponse,
 } from "@/types";
 
-const translationModel = AI_MODELS.billingCodeTranslation;
+export type ModelConfig = {
+  model: string;
+  params: Omit<
+    Anthropic.MessageCreateParamsNonStreaming,
+    "model" | "system" | "messages"
+  >;
+};
+
+const translationModel: ModelConfig = AI_MODELS.billingCodeTranslation;
+
+/** Sends one prompt and returns the model's text answer (skipping any thinking blocks). */
+async function callModel(
+  system: string,
+  userContent: string,
+  { model, params }: ModelConfig
+): Promise<string> {
+  const message = await getAnthropicClient().messages.create({
+    model,
+    ...params,
+    system,
+    messages: [{ role: "user", content: userContent }],
+  });
+
+  if (message.stop_reason === "refusal") {
+    throw new Error("Model declined the request");
+  }
+  const textBlock = message.content.find((block) => block.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("Model response contained no text");
+  }
+  return textBlock.text;
+}
 
 interface TranslationResult {
   codes: CPTCode[];
@@ -262,24 +294,15 @@ function extractCodes(
  * Single-shot — used by /api/search for backward compatibility.
  */
 export async function translateQueryToCPT(
-  query: string
+  query: string,
+  model: ModelConfig = translationModel
 ): Promise<TranslationResult> {
-  const client = getAnthropicClient();
-
-  const message = await client.messages.create({
-    model: translationModel.model,
-    max_tokens: translationModel.maxTokens,
-    temperature: translationModel.temperature,
-    system: CPT_TRANSLATION_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildTranslationPrompt(query) }],
-  });
-
-  const content = message.content[0];
-  if (content.type !== "text") {
-    throw new Error("Unexpected response type from Claude API");
-  }
-
-  const parsed = parseJsonResponse(content.text);
+  const text = await callModel(
+    CPT_TRANSLATION_SYSTEM_PROMPT,
+    buildTranslationPrompt(query),
+    model
+  );
+  const parsed = parseJsonResponse(text);
 
   return {
     codes: extractCodes(parsed, query),
@@ -302,29 +325,15 @@ export async function translateQueryToCPT(
  */
 export async function assessQuery(
   query: string,
-  knownCanonicals?: string[]
+  knownCanonicals?: string[],
+  model: ModelConfig = translationModel
 ): Promise<TranslationResponse> {
-  const client = getAnthropicClient();
-
-  const message = await client.messages.create({
-    model: translationModel.model,
-    max_tokens: translationModel.maxTokens,
-    temperature: translationModel.temperature,
-    system: GUIDED_SEARCH_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: buildGuidedSearchPrompt(query, knownCanonicals),
-      },
-    ],
-  });
-
-  const content = message.content[0];
-  if (content.type !== "text") {
-    throw new Error("Unexpected response type from Claude API");
-  }
-
-  const parsed = parseJsonResponse(content.text);
+  const text = await callModel(
+    GUIDED_SEARCH_SYSTEM_PROMPT,
+    buildGuidedSearchPrompt(query, knownCanonicals),
+    model
+  );
+  const parsed = parseJsonResponse(text);
   const response = buildTranslationResponse(parsed, query);
 
   // Pass through canonicalMatch if Claude identified a synonym
@@ -343,26 +352,15 @@ export async function assessQuery(
  */
 export async function clarifyQuery(
   query: string,
-  turns: ClarificationTurn[]
+  turns: ClarificationTurn[],
+  model: ModelConfig = translationModel
 ): Promise<TranslationResponse> {
-  const client = getAnthropicClient();
-
-  const message = await client.messages.create({
-    model: translationModel.model,
-    max_tokens: translationModel.maxTokens,
-    temperature: translationModel.temperature,
-    system: GUIDED_SEARCH_SYSTEM_PROMPT,
-    messages: [
-      { role: "user", content: buildClarificationPrompt(query, turns) },
-    ],
-  });
-
-  const content = message.content[0];
-  if (content.type !== "text") {
-    throw new Error("Unexpected response type from Claude API");
-  }
-
-  const parsed = parseJsonResponse(content.text);
+  const text = await callModel(
+    GUIDED_SEARCH_SYSTEM_PROMPT,
+    buildClarificationPrompt(query, turns),
+    model
+  );
+  const parsed = parseJsonResponse(text);
   return buildTranslationResponse(parsed, query);
 }
 
