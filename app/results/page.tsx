@@ -1,13 +1,17 @@
 "use client";
 
-import { Suspense, useCallback, useEffect } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import { ResultsList } from "@/components/ResultsList";
-import { useNavbarSlot } from "@/components/NavbarContext";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { QueryPill } from "@/components/QueryPill";
 import { FilterBar } from "@/components/FilterBar";
 import { MapView } from "@/components/MapView";
 import { SaveButton } from "@/components/SaveButton";
-import { InterpretationBadge } from "@/components/InterpretationBadge";
+import { AnswerCard } from "@/components/results/AnswerCard";
+import { CodesDrawer } from "@/components/results/CodesDrawer";
+import {
+  HospitalList,
+  HospitalListSkeleton,
+} from "@/components/results/HospitalList";
+import { summarizeAnswer } from "@/lib/results/summarize";
 import { useResultsSearch } from "./useResultsSearch";
 import { useResultSelection } from "./useResultSelection";
 
@@ -25,8 +29,6 @@ function ResultsContent() {
     interpretation,
     loading,
     error,
-    view,
-    setView,
     handleNewSearch,
     handleFilteredResults,
     radius,
@@ -34,6 +36,37 @@ function ResultsContent() {
     logResultClick,
     logSaveSearch,
   } = useResultsSearch();
+
+  const {
+    selectedProviderId,
+    markerClickCount,
+    handleMarkerClick,
+    handleCardSelect,
+  } = useResultSelection();
+
+  const [mapOpen, setMapOpen] = useState(false);
+
+  // Arriving from the guided chat keeps its scroll position; start at the
+  // answer instead.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // The phone map covers the page; stop the list scrolling underneath it.
+  useEffect(() => {
+    if (!mapOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mapOpen]);
+  const [linesShown, setLinesShown] = useState(false);
+
+  const summary = useMemo(
+    () => summarizeAnswer(filteredResults, cptCodes),
+    [filteredResults, cptCodes]
+  );
 
   const handleExpandRadius = useCallback(() => {
     const currentIndex = RADIUS_TIERS.indexOf(radius);
@@ -47,152 +80,178 @@ function ResultsContent() {
     handleRadiusChange(nextRadius);
   }, [radius, handleRadiusChange]);
 
-  const {
-    selectedProviderId,
-    markerClickCount,
-    handleMarkerClick,
-    handleCardSelect,
-  } = useResultSelection();
+  const onMarkerClick = useCallback(
+    (providerId: string) => {
+      handleMarkerClick(providerId);
+      setMapOpen(false);
+    },
+    [handleMarkerClick]
+  );
 
-  // Inject search bar + interpretation into the navbar
-  const { setSearchSlot } = useNavbarSlot();
-  useEffect(() => {
-    setSearchSlot(
-      <SearchBar
-        onSearch={handleNewSearch}
-        loading={loading}
-        initialQuery={query}
-        initialLocation={
-          lat && lng ? { lat, lng, display: locationDisplay } : undefined
-        }
-        compact
-      />
-    );
-    return () => setSearchSlot(null);
-  }, [
-    setSearchSlot,
-    handleNewSearch,
-    loading,
-    query,
-    lat,
-    lng,
-    locationDisplay,
-  ]);
+  const inpatient = summary.state === "inpatient_unpriced";
+  const showList = !inpatient || linesShown;
+  const hospitalCount = summary.entries.length;
+  const canExpand = radius < 250;
 
   return (
-    <div>
-      {/* Filter bar + controls — flush below navbar */}
-      <div
-        className="px-4 lg:px-6 border-b flex items-center gap-2 overflow-x-auto"
-        style={{ borderColor: "var(--cc-border)", background: "var(--cc-bg)" }}
-      >
-        {/* Mobile view toggle */}
-        <div className="lg:hidden">
-          <div className="pill-group">
-            <button
-              onClick={() => setView("list")}
-              className={`pill-btn ${view === "list" ? "pill-btn-active" : ""}`}
-            >
-              List
-            </button>
-            <button
-              onClick={() => setView("map")}
-              className={`pill-btn ${view === "map" ? "pill-btn-active" : ""}`}
-            >
-              Map
-            </button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        {!loading && results.length > 0 && (
-          <FilterBar
-            results={results}
-            onFilteredResults={handleFilteredResults}
-            radius={radius}
-            onRadiusChange={handleRadiusChange}
-          />
-        )}
-
-        {/* Results count */}
-        {!loading && filteredResults.length > 0 && (
-          <span
-            className="text-[12px] whitespace-nowrap"
-            style={{ color: "var(--cc-text-tertiary)" }}
-          >
-            {filteredResults.length} result
-            {filteredResults.length !== 1 ? "s" : ""}
-          </span>
-        )}
-
-        <div className="flex-1" />
-
-        {/* Interpretation — label + code pill with explanation popover */}
-        {interpretation && !loading && (
-          <div className="hidden sm:inline-flex items-center">
-            <InterpretationBadge
-              interpretation={interpretation}
-              cptCodes={cptCodes}
-            />
-          </div>
-        )}
-
-        {/* Save — small icon button */}
-        {!loading && results.length > 0 && (
-          <SaveButton
+    <div className="max-w-[1440px] mx-auto px-4 lg:px-6 pt-4 pb-24 lg:pb-10">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,600px)_minmax(0,1fr)] lg:gap-6">
+        {/* Answer + hospitals */}
+        <div className="min-w-0 space-y-4">
+          <QueryPill
             query={query}
-            location={locationDisplay}
-            cptCodes={cptCodes.map((c) => c.code)}
-            lat={lat}
-            lng={lng}
-            onSave={logSaveSearch}
+            location={
+              lat && lng ? { lat, lng, display: locationDisplay } : undefined
+            }
+            loading={loading}
+            onSearch={handleNewSearch}
           />
-        )}
-      </div>
 
-      {/* Error state */}
-      {error && (
-        <div
-          className="mx-4 mt-2 p-3 rounded-lg border"
-          style={{
-            background: "var(--cc-error-light)",
-            borderColor: "rgba(220, 38, 38, 0.15)",
-          }}
-        >
-          <p className="text-sm" style={{ color: "var(--cc-error)" }}>
-            {error}
-          </p>
+          {error && (
+            <div
+              className="p-3 rounded-lg border"
+              style={{
+                background: "var(--cc-error-light)",
+                borderColor: "rgba(220, 38, 38, 0.15)",
+              }}
+            >
+              <p className="text-sm" style={{ color: "var(--cc-error)" }}>
+                {error}
+              </p>
+            </div>
+          )}
+
+          {loading ? (
+            <HospitalListSkeleton />
+          ) : (
+            !error && (
+              <>
+                <AnswerCard
+                  summary={summary}
+                  codes={cptCodes}
+                  results={filteredResults}
+                  interpretation={interpretation}
+                  locationDisplay={locationDisplay}
+                  onShowLines={() => setLinesShown((v) => !v)}
+                  linesShown={linesShown}
+                />
+
+                <CodesDrawer codes={cptCodes} />
+
+                {results.length > 0 && showList && (
+                  <div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
+                      <h2
+                        className="text-[22px] leading-tight mr-auto"
+                        style={{
+                          fontFamily:
+                            "var(--font-instrument-serif), Georgia, serif",
+                          color: "var(--cc-text)",
+                        }}
+                      >
+                        {hospitalCount}{" "}
+                        {hospitalCount === 1 ? "place" : "places"} nearby
+                      </h2>
+                      <SaveButton
+                        query={query}
+                        location={locationDisplay}
+                        cptCodes={cptCodes.map((c) => c.code)}
+                        lat={lat}
+                        lng={lng}
+                        onSave={logSaveSearch}
+                      />
+                    </div>
+                    <FilterBar
+                      results={results}
+                      onFilteredResults={handleFilteredResults}
+                      radius={radius}
+                      onRadiusChange={handleRadiusChange}
+                    />
+                  </div>
+                )}
+
+                {showList && filteredResults.length > 0 && (
+                  <HospitalList
+                    entries={summary.entries}
+                    lowestId={summary.lowest?.primary.id}
+                    selectedProviderId={selectedProviderId}
+                    markerClickCount={markerClickCount}
+                    onCardSelect={handleCardSelect}
+                    onResultClick={logResultClick}
+                  />
+                )}
+
+                {filteredResults.length > 0 &&
+                  hospitalCount < 3 &&
+                  canExpand &&
+                  showList && (
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--cc-text-secondary)" }}
+                    >
+                      Only {hospitalCount} found.{" "}
+                      <button
+                        type="button"
+                        onClick={handleExpandRadius}
+                        className="font-semibold underline"
+                        style={{ color: "var(--cc-primary)" }}
+                      >
+                        Look farther away
+                      </button>
+                    </p>
+                  )}
+
+                {filteredResults.length === 0 && (
+                  <div
+                    className="rounded-2xl border px-5 py-8"
+                    style={{
+                      background: "var(--cc-surface)",
+                      borderColor: "var(--cc-border)",
+                    }}
+                  >
+                    <p
+                      className="text-[26px] leading-tight"
+                      style={{
+                        fontFamily:
+                          "var(--font-instrument-serif), Georgia, serif",
+                        color: "var(--cc-text)",
+                      }}
+                    >
+                      No prices found
+                      {locationDisplay ? ` near ${locationDisplay}` : ""}.
+                    </p>
+                    <p
+                      className="mt-2 text-[15px]"
+                      style={{ color: "var(--cc-text-secondary)" }}
+                    >
+                      Hospitals nearby haven&rsquo;t published a price for this
+                      yet, or it&rsquo;s outside the area you picked.
+                    </p>
+                    {canExpand && (
+                      <button
+                        type="button"
+                        onClick={handleExpandRadius}
+                        className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg text-white"
+                        style={{ background: "var(--cc-primary)" }}
+                      >
+                        Look farther away
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )
+          )}
         </div>
-      )}
 
-      {/* Content section — split view on desktop, toggle on mobile */}
-      <div className="max-w-full px-4 lg:px-6">
-        <div className="lg:flex lg:gap-4">
-          {/* Left column: Results list */}
+        {/* Desktop map: a tool beside the answer, not the page */}
+        <aside className="hidden lg:block min-w-0">
           <div
-            className={`lg:w-1/2 lg:overflow-y-auto lg:pr-2 ${
-              view === "map" ? "hidden lg:block" : ""
-            }`}
-            style={{ maxHeight: "calc(100vh - 120px)" }}
-          >
-            <ResultsList
-              results={filteredResults}
-              loading={loading}
-              selectedProviderId={selectedProviderId}
-              markerClickCount={markerClickCount}
-              onCardSelect={handleCardSelect}
-              onResultClick={logResultClick}
-              locationDisplay={locationDisplay}
-              onExpandRadius={radius < 250 ? handleExpandRadius : undefined}
-            />
-          </div>
-
-          {/* Right column: Map */}
-          <div
-            className={`lg:w-1/2 lg:sticky lg:top-[72px] mt-4 lg:mt-0 ${
-              view === "list" ? "hidden lg:block" : ""
-            }`}
-            style={{ height: "calc(100vh - 120px)" }}
+            className="sticky top-[72px] rounded-xl overflow-hidden border"
+            style={{
+              height: "calc(100vh - 96px)",
+              borderColor: "var(--cc-border)",
+            }}
           >
             <MapView
               results={filteredResults}
@@ -202,8 +261,70 @@ function ResultsContent() {
               className="h-full"
             />
           </div>
-        </div>
+        </aside>
       </div>
+
+      {/* Phone map: a full-screen sheet behind one button */}
+      {!loading && filteredResults.length > 0 && showList && !mapOpen && (
+        <button
+          type="button"
+          onClick={() => setMapOpen(true)}
+          className="lg:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg"
+          style={{ background: "var(--cc-text)" }}
+        >
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Map
+        </button>
+      )}
+      {mapOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-[60] flex flex-col animate-fade-in"
+          style={{ background: "var(--cc-bg)" }}
+          role="dialog"
+          aria-label="Map of hospitals"
+        >
+          <div
+            className="flex items-center justify-between px-4 py-3 border-b"
+            style={{ borderColor: "var(--cc-border)" }}
+          >
+            <span
+              className="text-sm font-semibold"
+              style={{ color: "var(--cc-text)" }}
+            >
+              {hospitalCount} {hospitalCount === 1 ? "place" : "places"} nearby
+            </span>
+            <button
+              type="button"
+              onClick={() => setMapOpen(false)}
+              className="text-sm font-semibold px-3 py-1.5 rounded-lg"
+              style={{ color: "var(--cc-primary)" }}
+            >
+              Back to list
+            </button>
+          </div>
+          <div className="flex-1 min-h-0">
+            <MapView
+              results={filteredResults}
+              center={{ lat, lng }}
+              onMarkerClick={onMarkerClick}
+              selectedProviderId={selectedProviderId}
+              className="h-full"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -212,28 +333,8 @@ export default function ResultsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-16">
-          <svg
-            className="w-6 h-6 animate-spin"
-            style={{ color: "var(--cc-primary)" }}
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="2"
-              opacity="0.25"
-            />
-            <path
-              d="M12 2a10 10 0 0 1 10 10"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
+        <div className="max-w-[1440px] mx-auto px-4 lg:px-6 pt-4">
+          <HospitalListSkeleton />
         </div>
       }
     >
