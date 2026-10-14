@@ -10,7 +10,23 @@ This evaluates moving ClearCost from Vercel + Supabase (Postgres/PostGIS) to Clo
 2. **Put BigQuery behind the user-facing search: no, not as the primary serving store.** BigQuery is an excellent _warehouse_ for the full 274M-row / 6.4B-payer-row dataset, but it is a poor fit for the hot path. Every query is a job with a few hundred ms of fixed overhead, there is no spatial index, partitioning by state is not directly possible (BigQuery cannot partition on a string), and the app's transactional tables (Knowledge Base, saved searches) need row-level upserts BigQuery is not built for. Sub-400ms p95 for multi-code bundles is not realistic on BigQuery alone, BI Engine included.
 3. **Recommended shape: BigQuery as warehouse + ingest, a small Postgres (or precomputed JSON) as the serving layer.** Use BigQuery to compute the serving slice and the "top bundles × metro" price cards, then publish those to Postgres/PostGIS (Supabase or Cloud SQL) and to static JSON in GCS behind Cloud CDN. That same precomputed data powers the programmatic SEO pages and the agent API.
 4. **Auth to Identity Platform: feasible, but do it last.** It touches sign-in, sign-up, password reset, OAuth callback, middleware, saved searches and RLS, and needs a user-hash import. It saves little money at your current MAU.
-5. **The premise that Postgres storage is the cost problem is weak.** Supabase disk is roughly $0.125/GB-month beyond the plan's included amount (check current pricing). Even the full 274M standard-charges rows with indexes is on the order of 100 GB, roughly $13/month of disk. Compute size (RAM to keep indexes hot) is the real lever, and that is a sizing decision, not a reason to change databases.
+5. **The premise that Postgres storage is the cost problem is weak.** The live database is 5.1 GB (11.7M `charges` rows, measured 2026-10-14), inside the Pro plan's included 8 GB. Extra Supabase disk is $0.125/GB. Even an estimated ~100 GB for the full 274M standard-charges rows would be about $12/month of disk. Compute size (RAM to keep indexes hot) is the real lever, and that is a sizing decision, not a reason to change databases.
+
+## Verified facts (checked 2026-10-14)
+
+| Claim                              | Source says                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BigQuery can partition by state    | No. Only DATE/TIMESTAMP/DATETIME, ingestion time, or INTEGER range ([partitioned tables](https://docs.cloud.google.com/bigquery/docs/partitioned-tables)).                                                                                                                                      |
+| Query cache serves different users | Per-user, per-project, exact query text only, ~24h best-effort. Cross-user cache needs Enterprise editions ([cached results](https://docs.cloud.google.com/bigquery/docs/cached-results)).                                                                                                      |
+| BigQuery query cost                | $6.25/TiB on-demand, first 1 TiB/month free, 10 MB minimum per table referenced and per query. Batch loads free on the shared pool. Storage first 10 GiB free ([pricing](https://cloud.google.com/bigquery/pricing)).                                                                           |
+| BigQuery 200–400 ms                | Google publishes no latency target. Its own short-query example goes from "over 1 second" to 0.5 s with the advanced runtime ([blog](https://cloud.google.com/blog/products/data-analytics/short-query-optimizations-in-bigquery-advanced-runtime)).                                            |
+| Cloud Run free tier                | 180K vCPU-seconds, 360K GiB-seconds, 2M requests per month; idle non-minimum instances are free ([pricing](https://cloud.google.com/run/pricing)).                                                                                                                                              |
+| Cloud SQL is cheaper than Supabase | Not at this size: a 1 vCPU / 3.75 GiB dedicated instance is about $49/month plus ~$0.17/GiB SSD ([usage.ai, rates checked 2026-09-10](https://www.usage.ai/blogs/gcp/cloud-sql/pricing/)). Supabase Pro is $25 with $10 compute credit and 8 GB disk ([pricing](https://supabase.com/pricing)). |
+| Vercel Hobby limits                | Non-commercial, personal use only. Function max duration is 300 s, not 10–15 s ([Hobby plan](https://vercel.com/docs/plans/hobby)).                                                                                                                                                             |
+| Cloud Run "managed MCP server"     | A Google-hosted MCP endpoint for operating Cloud Run (deploy, list, get services). Hosting your own MCP server is a separate, self-built service ([host MCP servers](https://docs.cloud.google.com/run/docs/host-mcp-servers)).                                                                 |
+| Identity Platform free tier        | 50,000 MAU free for email, phone, anonymous and social providers ([pricing](https://cloud.google.com/identity-platform/pricing)).                                                                                                                                                               |
+
+Not verified: whether Sesame or Zocdoc offer a referral program that pays per booking, which needs a direct conversation with them.
 
 ## What the codebase actually looks like today
 
@@ -56,7 +72,7 @@ Caveats worth knowing before you rely on it:
 ### BI Engine and the query cache
 
 - **Query cache:** free, but only hits on byte-identical query text and parameters against unchanged tables, for ~24 hours. Every search has a different lat/lng, so the hit rate on raw searches will be near zero. It only helps if you snap location to a grid (ZIP3, geohash-5 or metro) first, which the app-level cache below does better.
-- **BI Engine:** an in-memory reservation priced per GB-hour (list is roughly $30 per GB per month, check current pricing). It accelerates SQL over the reserved tables, but not every query shape (geography functions and some joins fall back to normal execution). It reduces scan time, not job overhead.
+- **BI Engine:** an in-memory reservation at $0.0416 per GiB-hour (about $30 per GiB per month). The only no-cost BI Engine capacity comes with BigQuery editions slot commitments (5 GiB per 100 slots); on-demand projects get none. It reduces scan time, not job overhead.
 - **Short query optimized mode** (`jobCreationMode = JOB_CREATION_OPTIONAL`) cuts the job overhead for small queries and is worth enabling in the PoC.
 - **Honest estimate:** with partition pruning, clustering, BI Engine and short-query mode, a single-code lookup will likely land in the 300–800 ms range with a long tail. A multi-code bundle that today is 2–4 sequential RPCs will be slower unless rewritten as one query. 200–400 ms p95 is not a safe target. Benchmark it in Phase 2 before committing.
 
@@ -99,7 +115,7 @@ A Cloud Run Job (`infra/gcp/ingest/README.md` outlines it) that:
 
 ## 3. Auth: Supabase Auth → Identity Platform
 
-Identity Platform's free tier covers 50,000 MAU for email/password and social providers (check current terms; SAML/OIDC and phone are billed differently). The plan:
+Identity Platform's free tier covers 50,000 MAU for email/password and social providers (then $0.0055/MAU from 50K to 100K; SMS is billed per message). The plan:
 
 1. **Client:** Firebase JS SDK (`firebase/auth`) with `signInWithPopup(GoogleAuthProvider)`, `createUserWithEmailAndPassword`, `signInWithEmailAndPassword`, `sendPasswordResetEmail`. Replaces the Supabase calls in the five auth files listed above.
 2. **Session:** after sign-in, POST the ID token to a new `/api/session` route that calls `createSessionCookie` (Admin SDK) and sets an HttpOnly cookie. This keeps server components and API routes cookie-based, like today, instead of passing bearer tokens around.
