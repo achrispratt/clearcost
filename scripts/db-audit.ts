@@ -4,7 +4,7 @@
  * Uses server-side RPC functions for all heavy aggregation (GROUP BY inside Postgres)
  * instead of thousands of individual REST API calls. Runs in ~10-30 seconds.
  *
- * Prerequisites: Run supabase/migrations/20260301_audit_rpcs.sql first.
+ * Prerequisites: Run supabase/migrations/20260301000000_audit_rpcs.sql first.
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/db-audit.ts
