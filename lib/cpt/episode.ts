@@ -3,8 +3,10 @@ import { median } from "@/lib/cpt/lookup";
 import type {
   ChargeResult,
   EpisodeBillingClass,
+  EpisodeConfidence,
   EpisodeEstimate,
-  EpisodePriceBasis,
+  EpisodeLine,
+  EpisodeLineSource,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -39,6 +41,7 @@ export type PrincipalCharge = Pick<
   ChargeResult,
   | "billingClass"
   | "cashPrice"
+  | "grossCharge"
   | "avgNegotiatedRate"
   | "minNegotiatedRate"
   | "maxNegotiatedRate"
@@ -46,9 +49,6 @@ export type PrincipalCharge = Pick<
 
 const MIN_ASSOCIATION = 0.4;
 const MIN_COVERAGE_RATIO = 0.5;
-
-// Tried in order; on equal coverage the earlier basis wins.
-const PRICE_BASES: EpisodePriceBasis[] = ["cash", "negotiated"];
 
 // ---------------------------------------------------------------------------
 // Billing class normalization
@@ -119,72 +119,197 @@ function eligibleRowsForClass(
 }
 
 // ---------------------------------------------------------------------------
-// Price extraction — one basis at a time, never mixed, never gross
+// Cash-equivalent pricing
+//
+// Every line is expressed in cash dollars. A real cash price is used when the
+// hospital publishes one; otherwise the insured average (or gross charge) is
+// converted with a cash ratio, preferably this hospital's own, and the line is
+// marked with lower confidence. Lines with nothing usable are reported as
+// missing rather than borrowed from other hospitals.
 // ---------------------------------------------------------------------------
+
+/** Distribution of cash_price / other_price across one hospital's charges. */
+export interface CashRatio {
+  pairCount: number;
+  q1: number;
+  median: number;
+  q3: number;
+}
+
+export interface ProviderCashRatios {
+  insured?: CashRatio; // cash_price / avg_negotiated_rate
+  gross?: CashRatio; // cash_price / gross_charge
+}
+
+// National fallbacks, measured on a 2% sample of charges on 2026-10-14
+// (~97K cash/insured pairs, ~143K cash/gross pairs). Hospitals vary widely
+// (hospital medians span ~0.5x-9.5x), so these always yield low confidence.
+export const NATIONAL_CASH_RATIOS: Required<ProviderCashRatios> = {
+  insured: { pairCount: 0, q1: 0.75, median: 1.13, q3: 1.91 },
+  gross: { pairCount: 0, q1: 0.5, median: 0.65, q3: 1.0 },
+};
+
+// A hospital ratio needs this many priced pairs to be trusted over national.
+const MIN_RATIO_PAIRS = 5;
+// A hospital ratio whose interquartile range spans more than this is noisy.
+const MAX_CONFIDENT_RATIO_SPREAD = 2.5;
+// Estimate-level confidence thresholds.
+const MAX_LOW_CONFIDENCE_SHARE = 0.25;
+const MIN_CONFIDENT_COVERAGE = 0.75;
+
+const CONFIDENCE_RANK: Record<EpisodeConfidence, number> = {
+  high: 2,
+  medium: 1,
+  low: 0,
+};
 
 function positive(value: number | null | undefined): number | undefined {
   if (value == null || Number.isNaN(value) || value <= 0) return undefined;
   return value;
 }
 
-interface PricePoint {
-  estimate: number;
-  min: number;
-  max: number;
+type LinePrice = Omit<EpisodeLine, "code" | "isPrincipal">;
+
+/** Pick the hospital's ratio when it has enough data, else the national one. */
+function resolveRatio(
+  hospital: CashRatio | undefined,
+  national: CashRatio
+): {
+  ratio: CashRatio;
+  scope: "hospital" | "national";
+  confidence: EpisodeConfidence;
+} {
+  if (hospital && hospital.pairCount >= MIN_RATIO_PAIRS && hospital.q1 > 0) {
+    const spread = hospital.q3 / hospital.q1;
+    return {
+      ratio: hospital,
+      scope: "hospital",
+      confidence: spread <= MAX_CONFIDENT_RATIO_SPREAD ? "medium" : "low",
+    };
+  }
+  return { ratio: national, scope: "national", confidence: "low" };
 }
 
-/** Price of one charge row on a single basis, or undefined if it has none. */
-export function extractComponentPrice(
-  row: ComponentChargeRow,
-  basis: EpisodePriceBasis
-): PricePoint | undefined {
-  if (basis === "cash") {
-    const cash = positive(row.cash_price);
-    return cash != null ? { estimate: cash, min: cash, max: cash } : undefined;
-  }
-  const avg = positive(row.avg_negotiated_rate);
-  if (avg == null) return undefined;
+function convert(
+  values: { estimate: number; min: number; max: number }[],
+  source: Exclude<EpisodeLineSource, "cash">,
+  ratioInfo: ReturnType<typeof resolveRatio>
+): LinePrice {
+  const { ratio, scope, confidence } = ratioInfo;
   return {
-    estimate: avg,
-    min: positive(row.min_negotiated_rate) ?? avg,
-    max: positive(row.max_negotiated_rate) ?? avg,
-  };
-}
-
-function extractPrincipalPrice(
-  principal: PrincipalCharge,
-  basis: EpisodePriceBasis
-): PricePoint | undefined {
-  if (basis === "cash") {
-    const cash = positive(principal.cashPrice);
-    return cash != null ? { estimate: cash, min: cash, max: cash } : undefined;
-  }
-  const avg = positive(principal.avgNegotiatedRate);
-  if (avg == null) return undefined;
-  return {
-    estimate: avg,
-    min: positive(principal.minNegotiatedRate) ?? avg,
-    max: positive(principal.maxNegotiatedRate) ?? avg,
+    source,
+    confidence,
+    ratioScope: scope,
+    estimate: median(values.map((v) => v.estimate)) * ratio.median,
+    min: Math.min(...values.map((v) => v.min)) * ratio.q1,
+    max: Math.max(...values.map((v) => v.max)) * ratio.q3,
   };
 }
 
 /**
- * Collapse a hospital's rows for one component code (it may publish several,
- * e.g. per setting or description) into one price on the given basis.
+ * Price one line (a hospital's rows for one code, which may be several, e.g.
+ * per setting) in cash-equivalent dollars. Returns undefined when no row has
+ * a cash, insured or gross price.
  */
-function summarizeComponent(
+export function priceLine(
   rows: ComponentChargeRow[],
-  basis: EpisodePriceBasis
-): PricePoint | undefined {
-  const points = rows
-    .map((r) => extractComponentPrice(r, basis))
-    .filter((p): p is PricePoint => p != null);
-  if (points.length === 0) return undefined;
+  ratios: ProviderCashRatios
+): LinePrice | undefined {
+  const cash = rows
+    .map((r) => positive(r.cash_price))
+    .filter((v): v is number => v != null);
+  if (cash.length > 0) {
+    return {
+      source: "cash",
+      confidence: "high",
+      estimate: median(cash),
+      min: Math.min(...cash),
+      max: Math.max(...cash),
+    };
+  }
+
+  const candidates: { line: LinePrice; spread: number }[] = [];
+
+  const insured = rows.flatMap((r) => {
+    const avg = positive(r.avg_negotiated_rate);
+    if (avg == null) return [];
+    return [
+      {
+        estimate: avg,
+        min: positive(r.min_negotiated_rate) ?? avg,
+        max: positive(r.max_negotiated_rate) ?? avg,
+      },
+    ];
+  });
+  if (insured.length > 0) {
+    const info = resolveRatio(ratios.insured, NATIONAL_CASH_RATIOS.insured);
+    candidates.push({
+      line: convert(insured, "insured_converted", info),
+      spread: info.ratio.q3 / info.ratio.q1,
+    });
+  }
+
+  const gross = rows.flatMap((r) => {
+    const g = positive(r.gross_charge);
+    return g == null ? [] : [{ estimate: g, min: g, max: g }];
+  });
+  if (gross.length > 0) {
+    const info = resolveRatio(ratios.gross, NATIONAL_CASH_RATIOS.gross);
+    candidates.push({
+      line: convert(gross, "gross_converted", info),
+      spread: info.ratio.q3 / info.ratio.q1,
+    });
+  }
+
+  if (candidates.length === 0) return undefined;
+
+  // Best confidence, then hospital-specific ratio, then the tighter ratio.
+  // Ties keep insured first (it is pushed first and sort is stable).
+  candidates.sort(
+    (a, b) =>
+      CONFIDENCE_RANK[b.line.confidence] - CONFIDENCE_RANK[a.line.confidence] ||
+      Number(b.line.ratioScope === "hospital") -
+        Number(a.line.ratioScope === "hospital") ||
+      a.spread - b.spread
+  );
+  return candidates[0].line;
+}
+
+function principalAsRow(principal: PrincipalCharge): ComponentChargeRow {
   return {
-    estimate: median(points.map((p) => p.estimate)),
-    min: Math.min(...points.map((p) => p.min)),
-    max: Math.max(...points.map((p) => p.max)),
+    provider_id: "",
+    component_code: "",
+    component_code_type: "",
+    component_tier: "required",
+    component_association: 1,
+    billing_class: principal.billingClass,
+    cash_price: principal.cashPrice ?? null,
+    gross_charge: principal.grossCharge ?? null,
+    avg_negotiated_rate: principal.avgNegotiatedRate ?? null,
+    min_negotiated_rate: principal.minNegotiatedRate ?? null,
+    max_negotiated_rate: principal.maxNegotiatedRate ?? null,
+    min_price: null,
+    max_price: null,
   };
+}
+
+function overallConfidence(
+  lines: EpisodeLine[],
+  coverageRatio: number
+): EpisodeConfidence {
+  const total = lines.reduce((sum, l) => sum + l.estimate, 0);
+  const lowShare =
+    total > 0
+      ? lines
+          .filter((l) => l.confidence === "low")
+          .reduce((sum, l) => sum + l.estimate, 0) / total
+      : 1;
+  if (lowShare > MAX_LOW_CONFIDENCE_SHARE) return "low";
+  if (coverageRatio < MIN_CONFIDENT_COVERAGE) return "low";
+  if (coverageRatio === 1 && lines.every((l) => l.confidence === "high")) {
+    return "high";
+  }
+  return "medium";
 }
 
 // ---------------------------------------------------------------------------
@@ -192,12 +317,12 @@ function summarizeComponent(
 // ---------------------------------------------------------------------------
 
 /**
- * Build one hospital's episode estimate from that hospital's own charges only.
+ * Build one hospital's cash-equivalent episode estimate from that hospital's
+ * own charges only.
  *
- * - Every line item uses the same price basis (cash, or average negotiated).
- *   Both are tried; the one that prices more of the episode wins, cash on a
- *   tie. Gross charges are never used.
- * - Every line item is in the principal charge's billing class.
+ * - Every line is in cash dollars: a real cash price when published, else a
+ *   converted insured or gross price, flagged with lower confidence.
+ * - Every line is in the principal charge's billing class.
  * - Coverage is measured against the episode's full component list, so the
  *   same hospital always gets the same estimate.
  *
@@ -208,6 +333,7 @@ export function buildEpisodeEstimate({
   componentCodes,
   providerRows,
   principal,
+  ratios = {},
 }: {
   episodeDef: EpisodeDefinitionRow;
   /** Episode component codes, excluding the principal code itself. */
@@ -215,9 +341,14 @@ export function buildEpisodeEstimate({
   /** This provider's component charge rows. */
   providerRows: ComponentChargeRow[];
   principal: PrincipalCharge;
+  /** This provider's cash ratios; national fallbacks apply when absent. */
+  ratios?: ProviderCashRatios;
 }): EpisodeEstimate | undefined {
   const billingClass = episodeBillingClassFor(principal.billingClass);
   if (!billingClass) return undefined;
+
+  const principalLine = priceLine([principalAsRow(principal)], ratios);
+  if (!principalLine) return undefined;
 
   const rowsByCode = new Map<string, ComponentChargeRow[]>();
   for (const row of providerRows) {
@@ -227,56 +358,41 @@ export function buildEpisodeEstimate({
     rowsByCode.set(code, existing);
   }
 
-  let best:
-    | {
-        basis: EpisodePriceBasis;
-        total: PricePoint;
-        priceableCount: number;
-      }
-    | undefined;
+  const lines: EpisodeLine[] = [
+    { code: episodeDef.principal_code, isPrincipal: true, ...principalLine },
+  ];
+  const missingCodes: string[] = [];
 
-  for (const basis of PRICE_BASES) {
-    const base = extractPrincipalPrice(principal, basis);
-    if (!base) continue;
-
-    const total = { ...base };
-    let priceableCount = 1;
-
-    for (const code of componentCodes) {
-      const rows = eligibleRowsForClass(
-        rowsByCode.get(code) || [],
-        billingClass
-      );
-      const price = summarizeComponent(rows, basis);
-      if (!price) continue;
-      total.estimate += price.estimate;
-      total.min += price.min;
-      total.max += price.max;
-      priceableCount++;
-    }
-
-    if (!best || priceableCount > best.priceableCount) {
-      best = { basis, total, priceableCount };
+  for (const code of componentCodes) {
+    const rows = eligibleRowsForClass(rowsByCode.get(code) || [], billingClass);
+    const price = priceLine(rows, ratios);
+    if (price) {
+      lines.push({ code, isPrincipal: false, ...price });
+    } else {
+      missingCodes.push(code);
     }
   }
 
-  if (!best) return undefined;
-
   const componentCount = componentCodes.length + 1;
+  const coverageRatio = lines.length / componentCount;
+  const cashLines = lines.filter((l) => l.source === "cash").length;
 
   return {
     episodeId: episodeDef.id,
     principalCode: episodeDef.principal_code,
     label: episodeDef.label,
     category: episodeDef.category ?? undefined,
-    estimatedAllInMedian: best.total.estimate,
-    estimatedAllInMin: best.total.min,
-    estimatedAllInMax: best.total.max,
+    estimatedAllInMedian: lines.reduce((sum, l) => sum + l.estimate, 0),
+    estimatedAllInMin: lines.reduce((sum, l) => sum + l.min, 0),
+    estimatedAllInMax: lines.reduce((sum, l) => sum + l.max, 0),
     componentCount,
-    priceableCount: best.priceableCount,
-    coverageRatio: best.priceableCount / componentCount,
-    priceBasis: best.basis,
+    priceableCount: lines.length,
+    coverageRatio,
+    cashCoverageRatio: cashLines / componentCount,
+    confidence: overallConfidence(lines, coverageRatio),
     billingClass,
+    lines,
+    missingCodes,
     source: "turquoise_ssp",
   };
 }
@@ -286,6 +402,32 @@ export function isEstimateDisplayable(estimate: EpisodeEstimate): boolean {
   return (
     estimate.priceableCount > 1 && estimate.coverageRatio >= MIN_COVERAGE_RATIO
   );
+}
+
+interface CashRatioRow {
+  provider_id: string;
+  ratio_type: "insured" | "gross";
+  pair_count: number;
+  q1: number;
+  median: number;
+  q3: number;
+}
+
+export function groupCashRatios(
+  rows: CashRatioRow[]
+): Map<string, ProviderCashRatios> {
+  const byProvider = new Map<string, ProviderCashRatios>();
+  for (const row of rows) {
+    const ratios = byProvider.get(row.provider_id) || {};
+    ratios[row.ratio_type] = {
+      pairCount: Number(row.pair_count),
+      q1: Number(row.q1),
+      median: Number(row.median),
+      q3: Number(row.q3),
+    };
+    byProvider.set(row.provider_id, ratios);
+  }
+  return byProvider;
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +462,11 @@ async function processEpisode({
 
   if (providerIds.size === 0) return;
 
-  const [{ data: componentDefs }, { data: componentRows }] = await Promise.all([
+  const [
+    { data: componentDefs },
+    { data: componentRows },
+    { data: ratioRows },
+  ] = await Promise.all([
     supabase
       .from("episode_components")
       .select("code")
@@ -332,6 +478,10 @@ async function processEpisode({
       p_provider_ids: Array.from(providerIds),
       p_min_association: MIN_ASSOCIATION,
     }),
+    supabase
+      .from("provider_cash_ratios")
+      .select("provider_id, ratio_type, pair_count, q1, median, q3")
+      .in("provider_id", Array.from(providerIds)),
   ]);
 
   // SSPs list the principal code as one of their own components; it is
@@ -352,6 +502,10 @@ async function processEpisode({
     rowsByProvider.set(row.provider_id, existing);
   }
 
+  const ratiosByProvider = groupCashRatios(
+    (ratioRows as CashRatioRow[] | null) ?? []
+  );
+
   for (const idx of matchingIndices) {
     const result = enrichedResults[idx];
     const estimate = buildEpisodeEstimate({
@@ -359,6 +513,7 @@ async function processEpisode({
       componentCodes,
       providerRows: rowsByProvider.get(result.provider.id) || [],
       principal: result,
+      ratios: ratiosByProvider.get(result.provider.id),
     });
 
     if (estimate && isEstimateDisplayable(estimate)) {

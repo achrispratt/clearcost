@@ -4,8 +4,14 @@ import type { ChargeResult } from "@/types";
 const mockData: {
   episode_definitions: unknown[];
   episode_components: unknown[];
+  provider_cash_ratios: unknown[];
   rpc: unknown[];
-} = { episode_definitions: [], episode_components: [], rpc: [] };
+} = {
+  episode_definitions: [],
+  episode_components: [],
+  provider_cash_ratios: [],
+  rpc: [],
+};
 
 // Chainable query builder: every filter returns itself, awaiting resolves the
 // table's canned rows.
@@ -21,8 +27,7 @@ function queryBuilder(table: keyof typeof mockData) {
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    from: (table: "episode_definitions" | "episode_components") =>
-      queryBuilder(table),
+    from: (table: Exclude<keyof typeof mockData, "rpc">) => queryBuilder(table),
     rpc: async () => ({ data: mockData.rpc }),
   }),
 }));
@@ -31,9 +36,12 @@ import {
   buildEpisodeEstimate,
   enrichWithEpisodeEstimates,
   episodeBillingClassFor,
-  extractComponentPrice,
+  groupCashRatios,
   isEstimateDisplayable,
+  NATIONAL_CASH_RATIOS,
   normalizeBillingClass,
+  priceLine,
+  type CashRatio,
   type ComponentChargeRow,
   type PrincipalCharge,
 } from "@/lib/cpt/episode";
@@ -93,63 +101,138 @@ describe("normalizeBillingClass", () => {
   });
 });
 
-describe("extractComponentPrice", () => {
-  it("cash basis reads only the cash price", () => {
-    const r = row("A", {
-      cash_price: 250,
-      avg_negotiated_rate: 90,
-      min_price: 40,
-      gross_charge: 900,
-    });
-    expect(extractComponentPrice(r, "cash")).toEqual({
-      estimate: 250,
-      min: 250,
-      max: 250,
-    });
-  });
+// A tight hospital ratio: medium confidence.
+const tightRatio: CashRatio = { pairCount: 20, q1: 0.8, median: 1.0, q3: 1.2 };
 
-  it("negotiated basis reads the average and the negotiated range", () => {
-    const r = row("A", {
-      cash_price: 250,
-      avg_negotiated_rate: 90,
-      min_negotiated_rate: 60,
-      max_negotiated_rate: 130,
-    });
-    expect(extractComponentPrice(r, "negotiated")).toEqual({
-      estimate: 90,
-      min: 60,
-      max: 130,
-    });
-  });
-
-  it("negotiated range falls back to the average when missing", () => {
-    const r = row("A", { avg_negotiated_rate: 90 });
-    expect(extractComponentPrice(r, "negotiated")).toEqual({
-      estimate: 90,
-      min: 90,
-      max: 90,
-    });
-  });
-
-  it("never falls back to gross or other bases", () => {
-    const r = row("A", { gross_charge: 900, min_price: 40, max_price: 80 });
-    expect(extractComponentPrice(r, "cash")).toBeUndefined();
-    expect(extractComponentPrice(r, "negotiated")).toBeUndefined();
-  });
-
-  it("ignores zero and negative prices", () => {
-    expect(extractComponentPrice(row("A", { cash_price: 0 }), "cash")).toBe(
-      undefined
+describe("priceLine", () => {
+  it("uses the cash price when there is one, at high confidence", () => {
+    const line = priceLine(
+      [
+        row("A", {
+          cash_price: 100,
+          avg_negotiated_rate: 50,
+          gross_charge: 900,
+        }),
+        row("A", { cash_price: 300 }),
+        row("A", { cash_price: 200 }),
+      ],
+      { insured: tightRatio }
     );
-    expect(
-      extractComponentPrice(row("A", { avg_negotiated_rate: -5 }), "negotiated")
-    ).toBeUndefined();
+    expect(line).toEqual({
+      source: "cash",
+      confidence: "high",
+      estimate: 200,
+      min: 100,
+      max: 300,
+    });
+  });
+
+  it("converts the insured rate with the hospital's own ratio", () => {
+    // 100 x 1.0 = 100; range 80 x 0.8 = 64 to 130 x 1.2 = 156
+    const line = priceLine(
+      [
+        row("A", {
+          avg_negotiated_rate: 100,
+          min_negotiated_rate: 80,
+          max_negotiated_rate: 130,
+        }),
+      ],
+      { insured: tightRatio }
+    );
+    expect(line).toMatchObject({
+      source: "insured_converted",
+      confidence: "medium",
+      ratioScope: "hospital",
+      estimate: 100,
+      min: 64,
+      max: 156,
+    });
+  });
+
+  it("falls back to the national ratio at low confidence", () => {
+    // Too few pairs to trust the hospital: 100 x 1.13, 100 x 0.75, 100 x 1.91
+    const line = priceLine([row("A", { avg_negotiated_rate: 100 })], {
+      insured: { ...tightRatio, pairCount: 2 },
+    });
+    const n = NATIONAL_CASH_RATIOS.insured;
+    expect(line).toMatchObject({
+      source: "insured_converted",
+      confidence: "low",
+      ratioScope: "national",
+    });
+    expect(line?.estimate).toBeCloseTo(100 * n.median);
+    expect(line?.min).toBeCloseTo(100 * n.q1);
+    expect(line?.max).toBeCloseTo(100 * n.q3);
+  });
+
+  it("marks a noisy hospital ratio low confidence", () => {
+    // q3 / q1 = 4, wider than the 2.5 limit
+    const line = priceLine([row("A", { avg_negotiated_rate: 100 })], {
+      insured: { pairCount: 50, q1: 0.5, median: 1.0, q3: 2.0 },
+    });
+    expect(line).toMatchObject({ confidence: "low", ratioScope: "hospital" });
+  });
+
+  it("prefers the tighter of two equally confident conversions", () => {
+    // gross ratio spread 1.18 beats insured spread 2.0: 500 x 0.6 = 300
+    const line = priceLine(
+      [row("A", { avg_negotiated_rate: 100, gross_charge: 500 })],
+      {
+        insured: { pairCount: 10, q1: 0.6, median: 0.9, q3: 1.2 },
+        gross: { pairCount: 10, q1: 0.55, median: 0.6, q3: 0.65 },
+      }
+    );
+    expect(line).toMatchObject({ source: "gross_converted", estimate: 300 });
+  });
+
+  it("prefers a hospital ratio over a national one", () => {
+    // insured has a hospital ratio, gross only national: insured wins
+    const line = priceLine(
+      [row("A", { avg_negotiated_rate: 100, gross_charge: 500 })],
+      { insured: { pairCount: 50, q1: 0.5, median: 1.0, q3: 2.0 } }
+    );
+    expect(line).toMatchObject({
+      source: "insured_converted",
+      ratioScope: "hospital",
+    });
+  });
+
+  it("returns nothing when no row has any price", () => {
+    expect(priceLine([row("A", { cash_price: 0 })], {})).toBeUndefined();
+    expect(priceLine([], {})).toBeUndefined();
+  });
+});
+
+describe("groupCashRatios", () => {
+  it("groups ratio rows by provider and type", () => {
+    const grouped = groupCashRatios([
+      {
+        provider_id: "p1",
+        ratio_type: "insured",
+        pair_count: 9,
+        q1: 0.8,
+        median: 1,
+        q3: 1.2,
+      },
+      {
+        provider_id: "p1",
+        ratio_type: "gross",
+        pair_count: 7,
+        q1: 0.4,
+        median: 0.5,
+        q3: 0.6,
+      },
+    ]);
+    expect(grouped.get("p1")).toEqual({
+      insured: { pairCount: 9, q1: 0.8, median: 1, q3: 1.2 },
+      gross: { pairCount: 7, q1: 0.4, median: 0.5, q3: 0.6 },
+    });
   });
 });
 
 describe("buildEpisodeEstimate", () => {
-  it("sums cash prices and ignores other fields", () => {
-    // 1000 + 200 + 300 = 1500, all 3 components priced
+  it("sums cash prices at high confidence when everything has cash", () => {
+    // 1000 + 200 + 300 = 1500
     const estimate = buildEpisodeEstimate({
       episodeDef,
       componentCodes: ["A", "B"],
@@ -167,93 +250,71 @@ describe("buildEpisodeEstimate", () => {
       componentCount: 3,
       priceableCount: 3,
       coverageRatio: 1,
-      priceBasis: "cash",
+      cashCoverageRatio: 1,
+      confidence: "high",
       billingClass: "facility",
+      missingCodes: [],
     });
+    expect(estimate?.lines.map((l) => l.code)).toEqual(["73721", "A", "B"]);
+    expect(estimate?.lines[0].isPrincipal).toBe(true);
   });
 
-  it("picks the basis that prices more of the episode", () => {
-    // cash prices principal + A (2 of 4); negotiated prices all 4:
-    // 800 + 150 + 100 + 50 = 1100
+  it("fills cash gaps with converted insured rates and lists what is missing", () => {
+    // principal 1000 cash, A 200 cash, B 100 insured x 1.0, C missing
+    // total 1300; min 1000 + 200 + 80; max 1000 + 200 + 120
     const estimate = buildEpisodeEstimate({
       episodeDef,
       componentCodes: ["A", "B", "C"],
       providerRows: [
-        row("A", { cash_price: 200, avg_negotiated_rate: 150 }),
+        row("A", { cash_price: 200 }),
         row("B", { avg_negotiated_rate: 100 }),
-        row("C", { avg_negotiated_rate: 50 }),
       ],
-      principal: principal({ cashPrice: 1000, avgNegotiatedRate: 800 }),
-    });
-
-    expect(estimate?.priceBasis).toBe("negotiated");
-    expect(estimate?.estimatedAllInMedian).toBe(1100);
-    expect(estimate?.priceableCount).toBe(4);
-  });
-
-  it("prefers cash when both bases price the same number of components", () => {
-    const estimate = buildEpisodeEstimate({
-      episodeDef,
-      componentCodes: ["A"],
-      providerRows: [row("A", { cash_price: 200, avg_negotiated_rate: 150 })],
-      principal: principal({ cashPrice: 1000, avgNegotiatedRate: 800 }),
-    });
-
-    expect(estimate?.priceBasis).toBe("cash");
-    expect(estimate?.estimatedAllInMedian).toBe(1200);
-  });
-
-  it("uses the negotiated basis when the principal has no cash price", () => {
-    // Component cash price of 999 must not leak in: 800 + 150 = 950
-    const estimate = buildEpisodeEstimate({
-      episodeDef,
-      componentCodes: ["A"],
-      providerRows: [row("A", { cash_price: 999, avg_negotiated_rate: 150 })],
-      principal: principal({
-        avgNegotiatedRate: 800,
-        grossCharge: 4000,
-      } as PrincipalCharge),
-    });
-
-    expect(estimate?.priceBasis).toBe("negotiated");
-    expect(estimate?.estimatedAllInMedian).toBe(950);
-  });
-
-  it("sums the negotiated range on the negotiated basis", () => {
-    // min: 600 + 100 = 700, max: 1000 + 200 = 1200
-    const estimate = buildEpisodeEstimate({
-      episodeDef,
-      componentCodes: ["A"],
-      providerRows: [
-        row("A", {
-          avg_negotiated_rate: 150,
-          min_negotiated_rate: 100,
-          max_negotiated_rate: 200,
-        }),
-      ],
-      principal: principal({
-        avgNegotiatedRate: 800,
-        minNegotiatedRate: 600,
-        maxNegotiatedRate: 1000,
-      }),
+      principal: principal({ cashPrice: 1000 }),
+      ratios: { insured: tightRatio },
     });
 
     expect(estimate).toMatchObject({
-      estimatedAllInMedian: 950,
-      estimatedAllInMin: 700,
-      estimatedAllInMax: 1200,
+      estimatedAllInMedian: 1300,
+      estimatedAllInMin: 1280,
+      estimatedAllInMax: 1320,
+      priceableCount: 3,
+      componentCount: 4,
+      coverageRatio: 0.75,
+      cashCoverageRatio: 0.5,
+      confidence: "medium",
+      missingCodes: ["C"],
     });
+    expect(estimate?.lines.find((l) => l.code === "B")?.source).toBe(
+      "insured_converted"
+    );
   });
 
-  it("returns no estimate when the principal only has a gross charge", () => {
+  it("converts the principal when it has no cash price", () => {
+    // national: 800 x 1.13 = 904, plus A 200 cash = 1104
+    // the low-confidence line is most of the dollars, so the estimate is low
     const estimate = buildEpisodeEstimate({
       episodeDef,
       componentCodes: ["A"],
       providerRows: [row("A", { cash_price: 200 })],
-      principal: {
-        billingClass: "facility",
-        grossCharge: 4000,
-      } as PrincipalCharge,
+      principal: principal({ avgNegotiatedRate: 800 }),
+    });
+
+    expect(estimate?.estimatedAllInMedian).toBeCloseTo(
+      800 * NATIONAL_CASH_RATIOS.insured.median + 200
+    );
+    expect(estimate?.lines[0]).toMatchObject({
+      source: "insured_converted",
+      confidence: "low",
+    });
+    expect(estimate?.confidence).toBe("low");
+  });
+
+  it("returns no estimate when the principal has no price at all", () => {
+    const estimate = buildEpisodeEstimate({
+      episodeDef,
+      componentCodes: ["A"],
+      providerRows: [row("A", { cash_price: 200 })],
+      principal: principal(),
     });
     expect(estimate).toBeUndefined();
   });

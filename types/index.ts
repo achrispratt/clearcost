@@ -183,25 +183,53 @@ export interface GroupedChargeResult extends ChargeResult {
 }
 
 // -- Episode Estimate (Turquoise SSP-based all-in cost estimate) --
-/** The single price field every line item of an episode estimate uses. */
-export type EpisodePriceBasis = "cash" | "negotiated";
-
 /** The single billing class every line item of an episode estimate is in. */
 export type EpisodeBillingClass = "facility" | "professional";
+
+/**
+ * Where a line's cash-equivalent price came from:
+ * - cash: the hospital's own published cash price
+ * - insured_converted: avg negotiated rate x a cash/insured ratio
+ * - gross_converted: gross charge x a cash/gross ratio
+ */
+export type EpisodeLineSource =
+  | "cash"
+  | "insured_converted"
+  | "gross_converted";
+
+export type EpisodeConfidence = "high" | "medium" | "low";
+
+/** One priced line of an episode estimate, always in cash-equivalent dollars. */
+export interface EpisodeLine {
+  code: string;
+  isPrincipal: boolean;
+  source: EpisodeLineSource;
+  confidence: EpisodeConfidence;
+  /** Whether the conversion ratio is this hospital's own or a national fallback. */
+  ratioScope?: "hospital" | "national";
+  estimate: number;
+  min: number;
+  max: number;
+}
 
 export interface EpisodeEstimate {
   episodeId: string;
   principalCode: string;
   label: string;
   category?: string;
+  /** Cash-equivalent all-in total (sum of line estimates). */
   estimatedAllInMedian?: number;
   estimatedAllInMin?: number;
   estimatedAllInMax?: number;
   componentCount: number;
   priceableCount: number;
-  coverageRatio: number; // hospital-specific priced components / all components
-  priceBasis: EpisodePriceBasis;
+  coverageRatio: number; // priced components (cash or converted) / all components
+  cashCoverageRatio: number; // components priced from a real cash price / all components
+  confidence: EpisodeConfidence;
   billingClass: EpisodeBillingClass;
+  lines: EpisodeLine[];
+  /** Component codes this hospital has no usable price for. */
+  missingCodes: string[];
   source: "turquoise_ssp";
 }
 
