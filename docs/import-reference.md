@@ -44,6 +44,8 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
   --codes lib/data/import-sets/inpatient-stay-drgs.json
 ```
 
+For MS-DRG rows the import recomputes the negotiated min/avg/max from payer-level rates in `standard_charge_details`, leaving out per-diem contracts (a daily rate, not the stay). Oria's pre-computed averages mix them in and make stays look 5–10× too cheap. See `lib/data/charge-select.ts`.
+
 Imports store `billing_class` and `setting` lowercased with typos fixed (`lib/data/normalize-charge.ts`), so SQL can compare them directly.
 
 ## Flags
