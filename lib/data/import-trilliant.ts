@@ -39,6 +39,7 @@ import { Pool as PgPool } from "pg";
 import { parseLaterality } from "../cpt/parse-laterality";
 import { parseBodySite } from "../cpt/parse-body-site";
 import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
+import { buildChargeSelect } from "./charge-select";
 
 // @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
@@ -818,13 +819,7 @@ async function importCharges(
     let batchNum = 0;
 
     const stream = db.stream(
-      `SELECT charge_id, hospital_id, description, gross_charge, discounted_cash,
-              minimum, maximum, setting, billing_class, modifiers,
-              cpt, hcpcs, ms_drg, rc, ndc, icd,
-              avg_negotiated_rate, min_negotiated_rate, max_negotiated_rate, payer_count
-       FROM standard_charges
-       WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}
-       ${config.limit > 0 ? `LIMIT ${config.limit}` : ""}`
+      buildChargeSelect({ state, codeFilter, limit: config.limit })
     );
 
     let batch: Record<string, unknown>[] = [];
