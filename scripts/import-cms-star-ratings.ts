@@ -122,7 +122,7 @@ const letterWords = (s: string): Set<string> =>
   );
 
 /** House number plus the first street word, e.g. ["1108", "ross"]. */
-function addressKey(address: string | null): string | null {
+export function addressKey(address: string | null): string | null {
   const t = streetTokens(address);
   for (let i = 0; i < t.length; i++) {
     if (/^\d+[a-z]?$/.test(t[i])) {

@@ -24,6 +24,10 @@ create table if not exists providers (
   lng double precision,
   phone text,
   website text,
+  website_source text,      -- public dataset the website came from (scripts/build-hospital-websites.ts)
+  mrf_index_url text,       -- cms-hpt.txt that lists this hospital's price files, when one names it
+  mrf_location_name text,   -- location-name of this hospital's entry in mrf_index_url
+  website_checked_at date,
   provider_type text, -- 'hospital', 'imaging_center', 'ambulatory_surgery_center', 'lab', 'clinic'
   npi text unique,    -- National Provider Identifier
   trilliant_hospital_id bigint unique, -- FK to Trilliant Oria data (null if from other source)

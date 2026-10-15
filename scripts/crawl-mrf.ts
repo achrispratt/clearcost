@@ -27,6 +27,8 @@
  *   --refresh              Re-download files already in the cache
  *   --compare              Match each file to a provider and compare with prod
  *   --provider-id <uuid>   Use this provider for --compare instead of matching
+ *   --providers <n>        Crawl and compare an evenly spread sample of n providers
+ *                          whose stored cms-hpt.txt names them (implies --compare)
  *
  * See docs/mrf-crawler.md.
  */
@@ -52,6 +54,7 @@ import {
   type PriceRow,
 } from "../lib/crawler/compare";
 import { discoverMrfs, downloadMrf, openMrf } from "../lib/crawler/fetch";
+import type { HptTxtEntry } from "../lib/crawler/hpt-txt";
 import { toCrawledCharge } from "../lib/crawler/normalize";
 import { parseCsvMrf } from "../lib/crawler/parse-csv";
 import { parseJsonMrf } from "../lib/crawler/parse-json";
@@ -82,6 +85,7 @@ interface Config {
   refresh: boolean;
   compare: boolean;
   providerId: string | null;
+  providers: number;
 }
 
 function parseArgs(argv: string[]): Config {
@@ -97,6 +101,7 @@ function parseArgs(argv: string[]): Config {
     refresh: false,
     compare: false,
     providerId: null,
+    providers: 0,
   };
   for (let i = 0; i < argv.length; i++) {
     const next = () => {
@@ -143,12 +148,22 @@ function parseArgs(argv: string[]): Config {
       case "--provider-id":
         config.providerId = next();
         break;
+      case "--providers":
+        config.providers = parseInt(next(), 10);
+        config.compare = true;
+        break;
       default:
         throw new Error(`Unknown option ${argv[i]}`);
     }
   }
-  if (config.domains.length === 0 && config.mrfUrls.length === 0) {
-    throw new Error("Give at least one --domain, --domains-file or --mrf-url");
+  if (
+    config.domains.length === 0 &&
+    config.mrfUrls.length === 0 &&
+    config.providers === 0
+  ) {
+    throw new Error(
+      "Give at least one --domain, --domains-file, --mrf-url or --providers"
+    );
   }
   return config;
 }
@@ -263,10 +278,15 @@ interface DrgStat {
   allowedMedian: number | null;
 }
 
-interface FileResult {
+interface Target {
   domain: string | null;
   locationName: string | null;
   mrfUrl: string;
+  /** Provider this file belongs to, when known up front (--providers). */
+  providerId?: string;
+}
+
+interface FileResult extends Target {
   ok: boolean;
   error?: string;
   bytes?: number;
@@ -333,11 +353,7 @@ function checkMemory(label: string): void {
 }
 
 async function crawlFile(
-  target: {
-    domain: string | null;
-    locationName: string | null;
-    mrfUrl: string;
-  },
+  target: Target,
   config: Config,
   codeSet: CodeSet,
   out: NodeJS.WritableStream,
@@ -433,7 +449,7 @@ async function compareWithProd(
   supabase: SupabaseClient
 ): Promise<void> {
   const meta = result.meta!;
-  let providerId = config.providerId;
+  let providerId = result.providerId ?? config.providerId;
   let matchScore: number | null = null;
   if (!providerId) {
     const state =
@@ -539,6 +555,66 @@ function printResult(r: FileResult): void {
 // Main
 // ---------------------------------------------------------------------------
 
+/**
+ * An evenly spread sample of providers whose cms-hpt.txt names them
+ * (scripts/build-hospital-websites.ts), each with its own price file.
+ */
+async function providerTargets(
+  supabase: SupabaseClient,
+  count: number
+): Promise<Target[]> {
+  const rows: {
+    id: string;
+    mrf_index_url: string;
+    mrf_location_name: string;
+  }[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from("providers")
+      .select("id, mrf_index_url, mrf_location_name")
+      .not("mrf_index_url", "is", null)
+      .order("id")
+      .range(from, from + 999);
+    if (error) throw error;
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  const step = Math.max(1, rows.length / count);
+  const sample = Array.from(
+    { length: Math.min(count, rows.length) },
+    (_, i) => rows[Math.floor(i * step)]
+  );
+  console.log(`Sampling ${sample.length} of ${rows.length} providers`);
+
+  const entriesByIndex = new Map<string, HptTxtEntry[] | null>();
+  const targets: Target[] = [];
+  for (const row of sample) {
+    if (!entriesByIndex.has(row.mrf_index_url)) {
+      try {
+        const { entries } = await discoverMrfs(row.mrf_index_url);
+        entriesByIndex.set(row.mrf_index_url, entries);
+      } catch (err) {
+        console.log(`${row.mrf_index_url}: discovery failed — ${err}`);
+        entriesByIndex.set(row.mrf_index_url, null);
+      }
+    }
+    const entry = entriesByIndex
+      .get(row.mrf_index_url)
+      ?.find((e) => e.locationName === row.mrf_location_name);
+    if (!entry) {
+      console.log(`${row.mrf_location_name}: no longer listed, skipped`);
+      continue;
+    }
+    targets.push({
+      domain: new URL(row.mrf_index_url).hostname,
+      locationName: entry.locationName,
+      mrfUrl: entry.mrfUrl,
+      providerId: row.id,
+    });
+  }
+  return targets;
+}
+
 async function main() {
   const config = parseArgs(process.argv.slice(2));
   const codeSet = config.codesFile
@@ -561,11 +637,7 @@ async function main() {
     supabase = createClient(url, key, { auth: { persistSession: false } });
   }
 
-  const targets: {
-    domain: string | null;
-    locationName: string | null;
-    mrfUrl: string;
-  }[] = config.mrfUrls.map((mrfUrl) => ({
+  const targets: Target[] = config.mrfUrls.map((mrfUrl) => ({
     domain: null,
     locationName: null,
     mrfUrl,
@@ -605,6 +677,10 @@ async function main() {
       console.log(`${domain}: discovery failed — ${error}`);
       discovery.push({ domain, ok: false, entries: 0, error });
     }
+  }
+
+  if (config.providers > 0) {
+    targets.push(...(await providerTargets(supabase!, config.providers)));
   }
 
   const outPath =

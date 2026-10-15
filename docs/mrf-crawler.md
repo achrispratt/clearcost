@@ -19,20 +19,21 @@ npx tsx --env-file=.env.local scripts/crawl-mrf.ts \
 npx tsx scripts/crawl-mrf.ts --mrf-url https://example.org/123456789_example_standardcharges.json
 ```
 
-| Option                  | Purpose                                                                    |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `--domain <host>`       | Website whose `/cms-hpt.txt` lists the files (repeatable)                  |
-| `--domains-file <json>` | JSON array of hosts                                                        |
-| `--mrf-url <url>`       | Skip discovery, crawl this file (repeatable)                               |
-| `--location <text>`     | Only `cms-hpt.txt` entries whose location-name contains this text          |
-| `--max-files <n>`       | At most n files per domain (`0` = discovery only)                          |
-| `--codes <json>`        | Code list to keep instead of the default set                               |
-| `--out <file>`          | NDJSON output (default `<cache-dir>/crawl-<time>.ndjson`)                  |
-| `--cache-dir <dir>`     | Download cache, outside the repo (default `<os tmp>/clearcost-mrf`)        |
-| `--max-mb <n>`          | Refuse files larger than this (default 4000)                               |
-| `--refresh`             | Re-download files already in the cache                                     |
-| `--compare`             | Match each file to a provider and compare prices with prod (`select` only) |
-| `--provider-id <uuid>`  | Provider to compare against instead of matching by name                    |
+| Option                  | Purpose                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `--domain <host>`       | Website whose `/cms-hpt.txt` lists the files (repeatable)                                        |
+| `--domains-file <json>` | JSON array of hosts                                                                              |
+| `--mrf-url <url>`       | Skip discovery, crawl this file (repeatable)                                                     |
+| `--location <text>`     | Only `cms-hpt.txt` entries whose location-name contains this text                                |
+| `--max-files <n>`       | At most n files per domain (`0` = discovery only)                                                |
+| `--codes <json>`        | Code list to keep instead of the default set                                                     |
+| `--out <file>`          | NDJSON output (default `<cache-dir>/crawl-<time>.ndjson`)                                        |
+| `--cache-dir <dir>`     | Download cache, outside the repo (default `<os tmp>/clearcost-mrf`)                              |
+| `--max-mb <n>`          | Refuse files larger than this (default 4000)                                                     |
+| `--refresh`             | Re-download files already in the cache                                                           |
+| `--compare`             | Match each file to a provider and compare prices with prod (`select` only)                       |
+| `--provider-id <uuid>`  | Provider to compare against instead of matching by name                                          |
+| `--providers <n>`       | Crawl an evenly spread sample of n providers with a stored `mrf_index_url` (implies `--compare`) |
 
 Each run also writes `<out>.summary.json`: discovery results, per-file format, counts, the #173 DRG report and the comparison.
 
@@ -59,7 +60,12 @@ Memory stays flat: ~120-130 MB RSS on 437-500 MB files. The script aborts if RSS
 
 45 CFR 180.50(d)(6) requires a `cms-hpt.txt` at the root of the website hosting the MRF, with `location-name`, `source-page-url`, `mrf-url`, `contact-name`, `contact-email` per location. Real files add banners and free text, use CRLF, skip blank lines and repeat entries; the parser keys on known `key: value` lines and starts a new entry when a key repeats.
 
-**Domains are not in our data.** `providers.website` exists but is empty in production (0 of 5,419 rows, checked 2026-10-15), and the CMS Hospital General Information dataset has no website column. For now domains come from `--domain` / `--domains-file`. Building the domain list is the first next step (see below).
+**Hospital websites** come from `scripts/build-hospital-websites.ts`, which matches four public datasets to our providers (DoltHub `transparency-in-pricing` and `hospital-price-transparency-v3`, both keyed by CMS Certification Number; DHS HIFLD Hospitals; Wikidata) and then reads each site's `cms-hpt.txt`. Matching is strict: keyed sources must agree on the CMS number plus ZIP or name; the others need the same street address or map spot plus a matching name, and no conflicting brand or facility type. A website no `cms-hpt.txt` confirms is kept only if it still loads. A hospital can also take its file list from a system site already confirmed for another hospital in its state, when exactly one such site lists the identical name. Results land in `providers.website`, `website_source`, `mrf_index_url` and `mrf_location_name` through a generated migration. First run (2026-10-15): 3,160 of 5,419 providers have a website, and 2,663 have a `cms-hpt.txt` entry naming them. Re-run it to refresh:
+
+```
+npx tsx --env-file=.env.local scripts/build-hospital-websites.ts   # writes supabase/migrations/<date>090000_provider_websites.sql
+npx tsx --env-file=.env.local scripts/crawl-mrf.ts --providers 50  # crawl an evenly spread sample and compare with prod
+```
 
 ### Formats
 
@@ -151,7 +157,7 @@ No migration is needed: `charges` already has every column, and `source` disting
 
 ## Next steps
 
-1. Hospital domain list: populate `providers.website` (or a crawl table) from a source that has hospital homepages, then crawl `cms-hpt.txt` for every provider.
+1. Websites for the remaining 2,259 providers (1,452 of them have no CMS number, so only the unkeyed sources can match them): another source, or the hospital's own file header once the loader exists.
 2. Loader (above) behind a dry-run flag, one state at a time.
 3. Incremental refresh keyed on `mrf_last_updated_on` / HTTP `Last-Modified`.
 4. Decide whether to store v3.0 allowed amounts (new column), since formula-priced stays (OHSU) have no dollar rate.
