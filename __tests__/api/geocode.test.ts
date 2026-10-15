@@ -50,7 +50,10 @@ describe("GET /api/geocode", () => {
     vi.stubEnv("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", "test-key");
 
     const { GET } = await import("@/app/api/geocode/route");
-    const req = new NextRequest("http://localhost/api/geocode?address=08624");
+    const req = new NextRequest(
+      "http://localhost/api/geocode?address=" +
+        encodeURIComponent("1 Main St, Trenton")
+    );
     const res = await GET(req);
     const data = await res.json();
 
@@ -64,6 +67,20 @@ describe("GET /api/geocode", () => {
     expect(data.lng).toBeCloseTo(-74.7429, 1);
     expect(data.formatted).toBe("Trenton, NJ 08624, USA");
 
+    vi.unstubAllGlobals();
+  });
+
+  it("answers a bare ZIP locally without calling Google", async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
+    vi.stubEnv("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", "test-key");
+    const { GET } = await import("@/app/api/geocode/route");
+    const res = await GET(
+      new NextRequest("http://localhost/api/geocode?address=08624")
+    );
+    const data = await res.json();
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(data.formatted).toContain("Trenton");
     vi.unstubAllGlobals();
   });
 

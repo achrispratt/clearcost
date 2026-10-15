@@ -4,6 +4,8 @@ import { type NextRequest } from "next/server";
 const RATE_LIMITS: Record<string, number> = {
   "/api/search": 100,
   "/api/clarify": 50,
+  "/api/geocode": 30,
+  "/api/locations": 120,
 };
 
 const WINDOW_MS = 60_000;
