@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { EmergencyBanner } from "@/components/EmergencyBanner";
 import type { ClarificationQuestion, ClarificationTurn } from "@/types";
 
 interface GuidedChatProps {
@@ -260,6 +261,7 @@ export function GuidedChat({
       </div>
 
       <UserBubble>{query}</UserBubble>
+      <EmergencyBanner texts={[query, ...turns.map((t) => t.freeText)]} />
 
       {turns.map((turn, i) => {
         const q = askedQuestions[i];

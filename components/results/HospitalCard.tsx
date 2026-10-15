@@ -149,7 +149,7 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
           </span>
           {(isLowest || scope || others > 0) && (
             <span className="col-span-2 flex flex-wrap gap-1.5 mt-1">
-              {isLowest && <Tag tone="good">Lowest</Tag>}
+              {isLowest && <Tag tone="good">Lowest price</Tag>}
               {scope && (
                 <Tag tone={entry.scope === "professional" ? "warn" : "neutral"}>
                   {scope}
