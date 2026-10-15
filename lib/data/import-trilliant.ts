@@ -28,6 +28,10 @@
  *                          Tracks progress under a separate run key (derived from filename).
  *                          Auto-skips provider import. Idempotent — safe to re-run.
  *                          Use for code list expansion or targeted price refreshes.
+ *
+ * Every charge carries source_charge_id = Oria standard_charges.charge_id and is
+ * written with INSERT ... ON CONFLICT (source_charge_id) DO UPDATE, so retries
+ * and re-runs never duplicate a source row; they refresh it in place (#59).
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -91,9 +95,18 @@ const CHARGE_COLUMNS = [
   "payer_count",
   "source",
   "imported_at",
+  "source_charge_id",
 ] as const;
 
-// Index definitions — must match supabase/schema.sql exactly
+// Columns refreshed when a row with the same source_charge_id already exists
+// (everything except the conflict key; created_at keeps its first value).
+const CHARGE_UPDATE_COLUMNS = CHARGE_COLUMNS.filter(
+  (c) => c !== "source_charge_id"
+);
+
+// Index definitions — must match supabase/schema.sql exactly.
+// idx_charges_source_charge_id is deliberately NOT listed: --fresh must never
+// drop it, because every batch upserts with ON CONFLICT (source_charge_id).
 const CHARGE_INDEXES = [
   {
     name: "idx_charges_cpt",
@@ -145,7 +158,7 @@ interface OraHospital {
 }
 
 interface OraStandardCharge {
-  charge_id: number;
+  charge_id: number | bigint; // DuckDB BIGINT → JS BigInt
   hospital_id: number;
   description: string | null;
   gross_charge: number | null;
@@ -473,6 +486,14 @@ async function verifyImport(pool: PgPool): Promise<void> {
     `  Total charges: ${parseInt(countRes.rows[0].cnt, 10).toLocaleString()}`
   );
 
+  // Lineage coverage: rows imported before #59 have no source_charge_id
+  const lineageRes = await pool.query(
+    "SELECT COUNT(*) as cnt FROM charges WHERE source_charge_id IS NULL"
+  );
+  console.log(
+    `  Charges without source_charge_id (pre-#59, need re-import): ${parseInt(lineageRes.rows[0].cnt, 10).toLocaleString()}`
+  );
+
   // State coverage
   const stateRes = await pool.query(`
     SELECT p.state, COUNT(*) as cnt
@@ -783,6 +804,24 @@ async function importCharges(
 
     const stateStart = Date.now();
 
+    // Pre-import: expected row count from DuckDB for reconciliation, and a
+    // uniqueness check on charge_id. source_charge_id is a unique key, so a
+    // repeated charge_id would make one source row overwrite another. Checked
+    // before the DELETE below so a failure leaves the state's data untouched.
+    const expectedRes = (await db.all(
+      `SELECT COUNT(*) as cnt, COUNT(DISTINCT charge_id) as distinct_ids
+       FROM standard_charges
+       WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}`
+    )) as unknown as { cnt: number | bigint; distinct_ids: number | bigint }[];
+    const expectedCount = Number(expectedRes[0].cnt);
+    const distinctIds = Number(expectedRes[0].distinct_ids);
+    if (distinctIds !== expectedCount) {
+      throw new Error(
+        `${state}: Oria charge_id is not unique (${expectedCount} rows, ${distinctIds} distinct ids) — ` +
+          `cannot upsert on source_charge_id. Aborting before any delete for this state.`
+      );
+    }
+
     // Clean up any partial data from a previous interrupted import.
     // This runs for every non-skipped state — if the state was complete, it was
     // already skipped above. If we're here, the state needs a fresh import.
@@ -805,14 +844,8 @@ async function importCharges(
       );
     }
 
-    // Pre-import: get expected row count from DuckDB for reconciliation
-    const expectedRes = (await db.all(
-      `SELECT COUNT(*) as cnt FROM standard_charges
-       WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}`
-    )) as unknown as { cnt: number }[];
-    const expectedCount = Number(expectedRes[0].cnt);
-
     let stateInserted = 0;
+    let stateUpdated = 0;
     let stateSkipped = 0;
     let consecutiveFailures = 0;
     let circuitBreakerTriggered = false;
@@ -870,18 +903,22 @@ async function importCharges(
           charge.payer_count != null ? Number(charge.payer_count) : null,
         source: "trilliant_oria",
         imported_at: importTimestamp,
+        // Passed as text so a BIGINT beyond 2^53 survives; Postgres casts it.
+        source_charge_id:
+          charge.charge_id != null ? String(charge.charge_id) : null,
       });
 
       if (batch.length >= config.batchSize) {
         // DIRECT AWAIT — guarantees backpressure. Nothing buffers while this runs.
-        const inserted = await flushOneBatch(
+        const { inserted, updated } = await flushOneBatch(
           pgPool,
           batch,
           `charges [${state}]`,
           numCols
         );
-        if (inserted > 0) {
+        if (inserted + updated > 0) {
           stateInserted += inserted;
+          stateUpdated += updated;
           totalInserted += inserted;
           consecutiveFailures = 0;
         } else {
@@ -918,22 +955,28 @@ async function importCharges(
 
     // Flush remaining partial batch
     if (batch.length > 0) {
-      const inserted = await flushOneBatch(
+      const { inserted, updated } = await flushOneBatch(
         pgPool,
         batch,
         `charges [${state}]`,
         numCols
       );
-      if (inserted > 0) {
-        stateInserted += inserted;
-        totalInserted += inserted;
-      }
+      stateInserted += inserted;
+      stateUpdated += updated;
+      totalInserted += inserted;
     }
 
     totalSkipped += stateSkipped;
     const stateDuration = ((Date.now() - stateStart) / 1000).toFixed(1);
     const heapMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-    const processedCount = stateInserted + stateSkipped;
+    const processedCount = stateInserted + stateUpdated + stateSkipped;
+    if (stateUpdated > 0) {
+      // Expected only for a retried batch, or rows the DELETE above didn't
+      // reach (e.g. a provider whose state was corrected after import).
+      console.log(
+        `  ${state}: ${stateUpdated.toLocaleString()} rows already present (same source_charge_id) — updated in place`
+      );
+    }
     console.log(
       `  ${state}: ${stateInserted.toLocaleString()} inserted, ${stateSkipped} skipped ` +
         `(${stateDuration}s) — heap: ${heapMB}MB — running total: ${totalInserted.toLocaleString()}`
@@ -943,7 +986,7 @@ async function importCharges(
     if (processedCount !== expectedCount) {
       console.warn(
         `  ${state}: RECONCILIATION MISMATCH — expected ${expectedCount.toLocaleString()} rows from DuckDB, ` +
-          `processed ${processedCount.toLocaleString()} (${stateInserted.toLocaleString()} inserted + ${stateSkipped} skipped)`
+          `processed ${processedCount.toLocaleString()} (${stateInserted.toLocaleString()} inserted + ${stateUpdated.toLocaleString()} updated + ${stateSkipped} skipped)`
       );
     } else {
       console.log(
@@ -952,11 +995,15 @@ async function importCharges(
     }
 
     // Record successful completion (skip if circuit breaker tripped or limit/test mode)
-    if (!circuitBreakerTriggered && config.limit === 0 && stateInserted > 0) {
+    if (
+      !circuitBreakerTriggered &&
+      config.limit === 0 &&
+      stateInserted + stateUpdated > 0
+    ) {
       saveStateProgress(
         progressKey,
         state,
-        stateInserted,
+        stateInserted + stateUpdated,
         expectedCount,
         stateSkipped
       );
@@ -978,14 +1025,17 @@ async function importCharges(
   );
 }
 
-// Single batch INSERT with retry. Returns number of rows inserted (0 on total failure).
+// Single batch upsert with retry. Returns rows newly inserted vs. updated in
+// place (both 0 on total failure). Upserting on source_charge_id makes a retry
+// idempotent: if an attempt committed but its ack was lost, the retry updates
+// the same rows instead of duplicating them.
 // Each attempt gets a FRESH connection from the pool — no reusing broken ones.
 async function flushOneBatch(
   pgPool: PgPool,
   rows: Record<string, unknown>[],
   label: string,
   numCols: number
-): Promise<number> {
+): Promise<{ inserted: number; updated: number }> {
   // Build the SQL and values array
   // Strip null bytes (0x00) from text fields — Postgres UTF8 rejects them
   const sanitize = (v: unknown) =>
@@ -1002,15 +1052,22 @@ async function flushOneBatch(
     }
     rowPlaceholders.push(`(${placeholders.join(",")})`);
   }
-  const sql = `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")}`;
+  // The WHERE clause matches the partial unique index idx_charges_source_charge_id.
+  // xmax = 0 on a returned row means it was inserted rather than updated.
+  const sql =
+    `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")} ` +
+    `ON CONFLICT (source_charge_id) WHERE source_charge_id IS NOT NULL DO UPDATE SET ` +
+    CHARGE_UPDATE_COLUMNS.map((c) => `${c} = EXCLUDED.${c}`).join(", ") +
+    `, last_updated = now() RETURNING (xmax = 0) AS inserted`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     let client: import("pg").PoolClient | null = null;
     try {
       client = await pgPool.connect();
-      await client.query(sql, values);
+      const res = await client.query<{ inserted: boolean }>(sql, values);
       client.release();
-      return rows.length;
+      const inserted = res.rows.filter((r) => r.inserted).length;
+      return { inserted, updated: res.rows.length - inserted };
     } catch (err: unknown) {
       if (client) client.release(true); // destroy broken connection
       const msg = err instanceof Error ? err.message : String(err);
@@ -1027,7 +1084,7 @@ async function flushOneBatch(
       }
     }
   }
-  return 0;
+  return { inserted: 0, updated: 0 };
 }
 
 // ---------------------------------------------------------------------------
