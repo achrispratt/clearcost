@@ -268,6 +268,38 @@ describe("summarizeAnswer", () => {
     expect(summary.state).toBe("priced");
   });
 
+  it("doesn't price spinal fusion from revenue code 0460 filed as DRG 460", () => {
+    const fusion: CPTCode[] = [
+      { code: "22633", description: "Lumbar fusion", category: "Surgery" },
+    ];
+    const fusionRow = (description: string, cashPrice: number) =>
+      charge({
+        cpt: undefined,
+        msDrg: "460",
+        setting: "inpatient",
+        description,
+        cashPrice,
+      });
+    const summary = summarizeAnswer(
+      [
+        fusionRow("SPINAL FUSION EXCEPT CERVICAL WITHOUT MCC", 48000),
+        fusionRow("PULMONARY FUNCTION TEST", 350),
+        fusionRow("OXIMETRY TEST", 40),
+      ],
+      fusion
+    );
+    expect(summary.state).toBe("priced");
+    expect(summary.stayDrg).toBe("460");
+    expect(summary.low).toBe(48000);
+    expect(summary.entries).toHaveLength(1);
+
+    const revenueOnly = summarizeAnswer(
+      [fusionRow("OXIMETRY TEST", 40)],
+      fusion
+    );
+    expect(revenueOnly.state).toBe("inpatient_unpriced");
+  });
+
   it("reports no prices when nothing usable came back", () => {
     expect(summarizeAnswer([charge({ grossCharge: 100 })], kneeMri).state).toBe(
       "no_prices"
