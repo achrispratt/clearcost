@@ -77,7 +77,27 @@ export async function writeNode(params: {
     return pathHash;
   }
 
-  // One exception: a depth-0 question replaces a depth-0 resolution (written
+  // Exception: a node auto-flagged for re-evaluation (#126) is replaced by
+  // this fresh answer. The RPC archives the old version to kb_node_history,
+  // bumps version and clears the flag; it is a no-op for unflagged nodes.
+  // Runs before the depth-0 replace below so that never touches a flagged row.
+  const { error: replaceFlaggedError } = await supabase.rpc(
+    "kb_replace_flagged_node",
+    {
+      p_path_hash: pathHash,
+      p_canonical_query: canonicalQuery,
+      p_answer_path: answerSegments,
+      p_depth: depth,
+      p_node_type: nodeType,
+      p_payload: payload,
+      p_source: source,
+    }
+  );
+  if (replaceFlaggedError) {
+    reportError(replaceFlaggedError, "KB flagged-node replace failed:");
+  }
+
+  // Another exception: a depth-0 question replaces a depth-0 resolution (written
   // by /api/search), which guided search skips anyway. Without this, a query
   // first seen on /results could never cache its first diagnostic question.
   if (depth === 0 && nodeType === "question") {

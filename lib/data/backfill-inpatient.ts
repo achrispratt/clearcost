@@ -18,6 +18,7 @@ import { fileURLToPath } from "url";
 import { readFileSync } from "fs";
 import { Pool as PgPool } from "pg";
 import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
+import { assertChargeIdsUnique } from "./charge-id-guard";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -51,6 +52,7 @@ const CHARGE_COLUMNS = [
   "max_negotiated_rate",
   "payer_count",
   "source",
+  "source_charge_id",
 ] as const;
 
 const NUM_COLS = CHARGE_COLUMNS.length;
@@ -60,7 +62,7 @@ const NUM_COLS = CHARGE_COLUMNS.length;
 // ---------------------------------------------------------------------------
 
 interface OraStandardCharge {
-  charge_id: number;
+  charge_id: number | bigint; // DuckDB BIGINT → JS BigInt
   hospital_id: number;
   description: string | null;
   gross_charge: number | null;
@@ -83,7 +85,10 @@ interface OraStandardCharge {
 }
 
 // ---------------------------------------------------------------------------
-// flushOneBatch — identical to import-trilliant.ts
+// flushOneBatch — like import-trilliant.ts, but additive: a row whose
+// source_charge_id is already in charges (e.g. loaded by the main import,
+// which now includes inpatient settings) is left alone, so re-runs are safe.
+// Returns rows actually inserted.
 // ---------------------------------------------------------------------------
 
 async function flushOneBatch(
@@ -105,15 +110,17 @@ async function flushOneBatch(
     }
     rowPlaceholders.push(`(${placeholders.join(",")})`);
   }
-  const sql = `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")}`;
+  const sql =
+    `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")} ` +
+    `ON CONFLICT (source_charge_id) WHERE source_charge_id IS NOT NULL DO NOTHING`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     let client: import("pg").PoolClient | null = null;
     try {
       client = await pgPool.connect();
-      await client.query(sql, values);
+      const res = await client.query(sql, values);
       client.release();
-      return rows.length;
+      return res.rowCount ?? 0;
     } catch (err: unknown) {
       if (client) client.release(true);
       const msg = err instanceof Error ? err.message : String(err);
@@ -257,6 +264,14 @@ async function main() {
     return;
   }
 
+  // charge_id must be unique across everything this backfill loads, or one
+  // source row would be dropped as a "duplicate" of another (#59).
+  await assertChargeIdsUnique(
+    db,
+    `(cpt IN (${codeList}) OR hcpcs IN (${codeList}) OR ms_drg IN (${codeList}))
+     AND TRIM(LOWER(setting)) = 'inpatient'`
+  );
+
   // Query all inpatient rows — state by state to keep DuckDB memory manageable
   const stateRows = (await db.all(
     `SELECT DISTINCT h.hospital_state FROM hospitals h WHERE h.status = 'completed' ORDER BY h.hospital_state`
@@ -327,6 +342,9 @@ async function main() {
         payer_count:
           charge.payer_count != null ? Number(charge.payer_count) : null,
         source: "trilliant_oria",
+        // Text, not Number(): charge_id is a BIGINT and may exceed 2^53.
+        source_charge_id:
+          charge.charge_id != null ? String(charge.charge_id) : null,
       });
     }
 

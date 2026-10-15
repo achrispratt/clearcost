@@ -62,6 +62,13 @@ describe("POST /api/kb/events", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects the server-only miss event type", async () => {
+    const res = await POST(
+      makeRequest({ pathHash: "abc", eventType: "miss", sessionId: "sess-1" })
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("accepts all valid event types", async () => {
     const validTypes = ["walk", "result_click", "save", "bounce", "skip"];
     for (const eventType of validTypes) {

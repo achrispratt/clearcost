@@ -139,12 +139,12 @@ lib/
   ai/models.ts        — Models the product calls, one entry per job
   anthropic.ts        — Claude API client singleton
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
-  kb/                 — Translation Knowledge Base (lookup.ts, write-back.ts, events.ts, path-hash.ts)
+  kb/                 — Translation Knowledge Base (lookup.ts, write-back.ts, events.ts, path-hash.ts, path-report.ts)
   seo/                — SEO price pages: curated procedures + metros, page-index.json (which pages publish)
   data/               — Import pipeline, code lists, DuckDB/Parquet data
   supabase/           — Three Supabase clients (browser, server, middleware)
 scripts/              — DB migration utilities + one-time audit/fix scripts from data quality phase
-#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, migrate-translation-cache.ts, build-seo-index.ts
+#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, kb-path-report.ts, migrate-translation-cache.ts, build-seo-index.ts
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
@@ -162,13 +162,15 @@ supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, 
 - `BillingCodeType` = `'cpt' | 'hcpcs' | 'ms_drg'`
 - `KBNode` — Knowledge Base conversation tree node (question or resolution)
 - `KBSynonym` — Query normalization: maps variant phrasings to a canonical query
-- `KBLookupResult` — KB cache hit/miss result with optional node
+- `KBLookupResult` — KB cache hit/miss result with optional node (`flagged: true` when the node exists but is flagged)
 - Legacy aliases (`PriceResult`, `NegotiatedRate`) have been removed
 
 ## Database (Supabase Postgres + PostGIS)
 
 5 core tables: `providers`, `charges`, `payer_rates`, `payers`, `saved_searches`
-4 KB tables: `kb_synonyms`, `kb_nodes`, `kb_events`, `kb_path_stats` (see Translation KB below)
+5 KB tables: `kb_synonyms`, `kb_nodes`, `kb_events`, `kb_path_stats`, `kb_node_history` (see Translation KB below)
+
+KB jobs (pg_cron, daily UTC, migration `20261015050000_kb_growth_machinery.sql`): `kb_rollup_path_stats()` 03:00 (previous + current month, distinct sessions, idempotent upsert) → `kb_flag_resolution_nodes()` 03:15 → `kb_purge_old_events()` 03:30 (rolls up first, then deletes only whole months older than both 30 days and the previous month). View `kb_resolution_confidence` = per resolution node per month rates + #126 confidence score. All service-role only.
 
 2 RPC functions:
 
@@ -184,6 +186,7 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 - **All-in cost problem**: Hospital charges often represent only facility fees (~70-80% of total). Professional fees (radiologist, anesthesiologist) billed separately. MVP shows available price with smart contextual callouts.
 - **Hybrid AI approach**: Claude interprets plain English → verified code lookup confirms codes → PostGIS queries prices by location
 - **Translation Knowledge Base (KB)**: Caches AI translation results as a conversation tree. Synonym table maps variant phrasings ("mri knee" → "knee mri") to canonical queries. Node table stores each query+answer_path as a tree node. Repeat searches skip Claude entirely (zero AI cost). Synonym clustering links new queries to existing trees when semantically equivalent. See `lib/kb/` for implementation.
+- **KB quality loop (#125–#127)**: nodes are first-write-wins, except a resolution node auto-flagged by `kb_flag_resolution_nodes()` (≥50 walks this month, bounce > 25%, bounce rising 2 months running). `kbLookup()` treats a flagged node as a miss (a wrong match is worse than none), Claude re-answers the path, and `writeNode()` calls the `kb_replace_flagged_node` RPC, which archives the old version to `kb_node_history`, bumps `version` and clears the flag. `/api/clarify` logs a server-only `miss` event (path_hash = query hash) on first-turn misses. Review with `npx tsx --env-file=.env.local scripts/kb-path-report.ts` (flagged nodes, high-bounce paths, median bounce) or `--emerging` (repeated misses, fast-growing canonicals). No admin notifications and no A/B testing yet.
 
 ## Data Source: Trilliant Oria
 

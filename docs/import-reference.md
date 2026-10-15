@@ -48,6 +48,17 @@ For MS-DRG rows the import recomputes the negotiated min/avg/max from payer-leve
 
 Imports store `billing_class` and `setting` lowercased with typos fixed (`lib/data/normalize-charge.ts`), so SQL can compare them directly.
 
+### Row lineage and upserts (`source_charge_id`, #59)
+
+Every imported charge stores `source_charge_id` = Oria `standard_charges.charge_id` (partial unique index `idx_charges_source_charge_id`, migration `20261015060000_charges_source_charge_id.sql`). Batches are written with `INSERT ... ON CONFLICT (source_charge_id) WHERE source_charge_id IS NOT NULL DO UPDATE`, refreshing every imported column plus `last_updated`:
+
+- **Retries are idempotent.** If a batch committed but the ack was lost, the retry updates the same rows instead of duplicating them.
+- **Re-runs refresh prices in place.** The state-level DELETE + reimport still runs as before, so normally every row is a fresh insert. Rows the DELETE misses (e.g. a provider whose `state` was corrected after import) are updated rather than duplicated. The per-state log reports `N rows already present … updated in place` and reconciliation counts them.
+- **Uniqueness guard.** Before any TRUNCATE or DELETE, one DuckDB query compares `COUNT(charge_id)` with `COUNT(DISTINCT charge_id)` over the whole code-filtered scope (all states, not only the ones this run imports, since already-loaded states share the unique index), and the import stops if any `charge_id` repeats: one hospital's row would otherwise overwrite another's (`lib/data/charge-id-guard.ts`). As a second line of defense, the upsert's `DO UPDATE ... WHERE charges.provider_id = EXCLUDED.provider_id` never rewrites a row belonging to another hospital (covers collisions with rows from other `--codes` runs); such rows are reported as `NOT written` and show up as a reconciliation mismatch.
+- **Inpatient backfill.** `lib/data/backfill-inpatient.ts` reads the same `standard_charges` source, so it also stores `source_charge_id`, runs the same guard over its scope, and inserts with `ON CONFLICT ... DO NOTHING` (rows the main import already loaded are left alone; re-runs are safe).
+- **Backfill.** Rows imported before #59 have `source_charge_id IS NULL` (post-import verification prints the count). They are only filled by re-importing from the local Oria data (`--fresh`, or state-by-state with `--state`). Those NULL rows are not covered by the upsert, so a partial re-import must still rely on the state DELETE to avoid duplicates.
+- Pass `charge_id` as text, never `Number()`: it is a DuckDB BIGINT and may exceed 2^53.
+
 ## Flags
 
 | Flag                      | Purpose                                                      |
@@ -61,7 +72,7 @@ Imports store `billing_class` and `setting` lowercased with typos fixed (`lib/da
 ## DuckDB Technical Notes
 
 - **Memory**: `SET memory_limit = '2GB'` and `SET threads = 2` to avoid RAM exhaustion on 81GB Parquet. (`generate-snapshot.ts` uses `4GB` — it runs alone, not during imports.)
-- **BigInt**: DuckDB returns BigInt — wrap in `Number()` before passing to Supabase/JSON
+- **BigInt**: DuckDB returns BigInt — wrap in `Number()` before passing to Supabase/JSON (except IDs that may exceed 2^53, like `charge_id`: pass them as `String()`)
 - **CWD**: Oria DuckDB views use relative paths to `parquet/` — must CWD to `lib/data/mrf_lake/` when querying. `import-trilliant.ts` does this automatically.
 - **Column mismatch**: DuckDB uses `hospital_state` on both tables; Supabase uses `state` on `providers`
 - **`final-codes.json` format**: Flat `string[]`, not `{code: string}[]`. Scripts consume values directly.
@@ -78,6 +89,8 @@ Successful state completions are recorded in `lib/data/import-progress.json` (gi
 6. **`--limit N`** runs do NOT record progress — safe for testing
 
 **Self-healing on crash:** If the pipeline crashes mid-state, that state is NOT in the progress file → next run deletes the partial data and reimports from scratch. No manual intervention needed.
+
+**Diff-based resume (not built yet):** with `source_charge_id` populated, a resume could insert only the missing `charge_id`s instead of deleting and reimporting the state. That only matters at Phase 6 scale.
 
 ## Gotchas
 
