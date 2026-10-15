@@ -145,7 +145,7 @@ lib/
   crawler/            — Independent MRF crawler (cms-hpt.txt discovery, streaming JSON/CSV parse, charges-shape rows); CLI: scripts/crawl-mrf.ts, docs/mrf-crawler.md
   supabase/           — Three Supabase clients (browser, server, middleware)
 scripts/              — DB migration utilities + one-time audit/fix scripts from data quality phase
-#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, kb-path-report.ts, migrate-translation-cache.ts, build-seo-index.ts, crawl-mrf.ts
+#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, kb-path-report.ts, migrate-translation-cache.ts, build-seo-index.ts, crawl-mrf.ts, build-hospital-websites.ts
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
