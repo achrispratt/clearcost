@@ -85,12 +85,10 @@ export default function DisclaimersPage() {
               device as defined by the U.S. Food and Drug Administration (FDA).
             </p>
             <p className="mb-3" style={{ color: "var(--cc-text)" }}>
-              ClearCost does not meet the definition of Clinical Decision
-              Support (CDS) software subject to FDA oversight under Section 3060
-              of the 21st Century Cures Act. It is software that determines
-              billing codes and provides and compares costs of healthcare
-              services — a category explicitly exempt from FDA device
-              regulation.
+              ClearCost looks up billing codes and compares the costs of
+              healthcare services, the kind of software FDA describes as not a
+              medical device. It does not diagnose conditions, recommend
+              treatment, or decide how urgently you need care.
             </p>
             <p style={{ color: "var(--cc-text)" }}>
               ClearCost is not intended to diagnose, treat, cure, or prevent any
@@ -327,11 +325,11 @@ export default function DisclaimersPage() {
           <p>
             Questions about these disclaimers? Contact us at{" "}
             <a
-              href="mailto:hello@clearcost.health"
-              className="hover:underline"
+              href="mailto:info@clearcost.live"
+              className="underline"
               style={{ color: "var(--cc-primary)" }}
             >
-              hello@clearcost.health
+              info@clearcost.live
             </a>
             .
           </p>

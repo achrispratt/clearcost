@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { milesToKm, kmToMiles } from "@/lib/units";
 import { haversineMiles } from "@/lib/geo";
+import { plausiblePrice } from "./price-sanity";
 // @ts-expect-error zipcodes has no bundled TypeScript declarations.
 import zipcodes from "zipcodes";
 import type {
@@ -1204,6 +1205,17 @@ interface RpcRow {
 
 function mapRows(rows: RpcRow[]): ChargeResult[] {
   return rows.map((row) => {
+    const code = row.cpt ?? row.hcpcs ?? row.ms_drg;
+    const cashPrice = plausiblePrice(
+      row.cash_price,
+      code,
+      row.min_negotiated_rate
+    );
+    const grossCharge = plausiblePrice(
+      row.gross_charge,
+      code,
+      row.min_negotiated_rate
+    );
     const distanceKm = row.distance_km ?? undefined;
     const distanceMiles =
       distanceKm !== undefined ? kmToMiles(distanceKm) : undefined;
@@ -1231,11 +1243,11 @@ function mapRows(rows: RpcRow[]): ChargeResult[] {
       cpt: row.cpt ?? undefined,
       hcpcs: row.hcpcs ?? undefined,
       msDrg: row.ms_drg ?? undefined,
-      grossCharge: row.gross_charge ?? undefined,
-      cashPrice: row.cash_price ?? undefined,
+      grossCharge,
+      cashPrice,
       isDiscounted:
-        row.cash_price != null && row.gross_charge != null
-          ? row.cash_price !== row.gross_charge
+        cashPrice != null && grossCharge != null
+          ? cashPrice !== grossCharge
           : undefined,
       minPrice: row.min_price ?? undefined,
       maxPrice: row.max_price ?? undefined,

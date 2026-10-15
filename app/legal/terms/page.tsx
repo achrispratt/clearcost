@@ -82,11 +82,11 @@ export default function TermsPage() {
           >
             <p>
               By accessing or using ClearCost (the &ldquo;Service&rdquo;),
-              operated by ClearCost, Inc. (&ldquo;ClearCost,&rdquo;
-              &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;), you
-              agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;).
-              These Terms constitute a legally binding agreement between you and
-              ClearCost. Please read them carefully before using the Service.
+              operated by ClearCost (&ldquo;ClearCost,&rdquo; &ldquo;we,&rdquo;
+              &ldquo;us,&rdquo; or &ldquo;our&rdquo;), you agree to be bound by
+              these Terms of Service (&ldquo;Terms&rdquo;). These Terms
+              constitute a legally binding agreement between you and ClearCost.
+              Please read them carefully before using the Service.
             </p>
             <p>
               If you do not agree to these Terms in their entirety, you must not
@@ -191,10 +191,10 @@ export default function TermsPage() {
             style={{ color: "var(--cc-text-secondary)" }}
           >
             <p>
-              ClearCost is not a medical device, clinical decision support
-              system, healthcare provider, or licensed healthcare professional.
-              No provider-patient relationship is created between you and
-              ClearCost by virtue of your use of the Service.
+              ClearCost is not a medical device, healthcare provider, or
+              licensed healthcare professional. No provider-patient relationship
+              is created between you and ClearCost by virtue of your use of the
+              Service.
             </p>
             <p>
               The guided search clarifying questions are designed solely to
@@ -213,9 +213,9 @@ export default function TermsPage() {
             </p>
             <p>
               ClearCost has not been evaluated or cleared by the U.S. Food and
-              Drug Administration (FDA) and is expressly exempt from FDA
-              regulation as a clinical decision support (CDS) software tool
-              under Section 3060 of the 21st Century Cures Act.
+              Drug Administration (FDA). It is a price-lookup tool: it does not
+              diagnose conditions, recommend treatment, or decide how urgently
+              you need care.
             </p>
           </div>
         </section>
@@ -446,8 +446,8 @@ export default function TermsPage() {
               The ClearCost name, logo, website design, software, user
               interface, and all content created by ClearCost — including the
               AI-generated billing code interpretations, search algorithms, and
-              guided search prompting system — are owned by ClearCost, Inc. and
-              are protected by copyright, trademark, trade secret, and other
+              guided search prompting system — are owned by ClearCost and are
+              protected by copyright, trademark, trade secret, and other
               applicable intellectual property laws.
             </p>
             <p>
@@ -513,7 +513,7 @@ export default function TermsPage() {
               informed about your rights and obligations. The most current
               version of these Terms is always available at{" "}
               <span style={{ color: "var(--cc-primary)" }}>
-                clearcost.com/legal/terms
+                clearcost.live/legal/terms
               </span>
               .
             </p>
@@ -570,11 +570,11 @@ export default function TermsPage() {
               If you have questions about these Terms or the Service, please
               contact us at:{" "}
               <a
-                href="mailto:legal@clearcost.com"
-                className="hover:underline"
+                href="mailto:info@clearcost.live"
+                className="underline"
                 style={{ color: "var(--cc-primary)" }}
               >
-                legal@clearcost.com
+                info@clearcost.live
               </a>
             </p>
           </div>

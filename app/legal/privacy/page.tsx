@@ -30,7 +30,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>
-          Last updated: March 2026
+          Last updated: October 2026
         </p>
       </div>
 
@@ -113,10 +113,10 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>Usage data.</strong>{" "}
-                Standard analytics data including pages visited, features used,
-                browser type, and general geographic region. This data is used
-                in aggregate to understand how the Service is used and to
-                improve it.
+                Our hosting provider keeps standard server logs (pages
+                requested, browser type, and time of request) for security and
+                troubleshooting. ClearCost does not use advertising or
+                cross-site tracking tools.
               </li>
             </ul>
           </div>
@@ -380,9 +380,11 @@ export default function PrivacyPage() {
                 <strong style={{ color: "var(--cc-text)" }}>
                   Search queries.
                 </strong>{" "}
-                Queries you enter are not stored unless you explicitly save a
-                search. Unsaved queries are used in real time to return results
-                and are not persisted to our database.
+                The text of a search and the answers you pick in guided search
+                are stored without your name, account, or IP address, so that
+                the same search can be answered faster next time. A random
+                session ID records which results were opened. Unsaved searches
+                are never linked to your account.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>
@@ -443,18 +445,17 @@ export default function PrivacyPage() {
                   Opt out of data collection.
                 </strong>{" "}
                 You may use ClearCost without creating an account.
-                Unauthenticated use does not result in any persistent data being
-                stored about you by ClearCost.
+                Unauthenticated use stores no information that identifies you.
               </li>
             </ul>
             <p>
               To exercise any of these rights, contact us at{" "}
               <a
-                href="mailto:privacy@clearcost.com"
-                className="hover:underline"
+                href="mailto:info@clearcost.live"
+                className="underline"
                 style={{ color: "var(--cc-primary)" }}
               >
-                privacy@clearcost.com
+                info@clearcost.live
               </a>
               . We will respond to verifiable requests within 30 days.
             </p>
@@ -486,11 +487,11 @@ export default function PrivacyPage() {
               has provided personal information to ClearCost, please contact us
               at{" "}
               <a
-                href="mailto:privacy@clearcost.com"
-                className="hover:underline"
+                href="mailto:info@clearcost.live"
+                className="underline"
                 style={{ color: "var(--cc-primary)" }}
               >
-                privacy@clearcost.com
+                info@clearcost.live
               </a>{" "}
               and we will take steps to remove that information.
             </p>
@@ -527,7 +528,7 @@ export default function PrivacyPage() {
             <p>
               The current version of this Privacy Policy is always available at{" "}
               <span style={{ color: "var(--cc-primary)" }}>
-                clearcost.com/legal/privacy
+                clearcost.live/legal/privacy
               </span>
               .
             </p>
@@ -545,11 +546,11 @@ export default function PrivacyPage() {
           <p>
             Questions about this Privacy Policy? Contact us at{" "}
             <a
-              href="mailto:privacy@clearcost.com"
-              className="hover:underline"
+              href="mailto:info@clearcost.live"
+              className="underline"
               style={{ color: "var(--cc-primary)" }}
             >
-              privacy@clearcost.com
+              info@clearcost.live
             </a>
             .
           </p>

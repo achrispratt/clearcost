@@ -79,12 +79,12 @@ function Headline({
 }) {
   return (
     <div className="px-5 pt-5 pb-4 sm:px-6">
-      <p
+      <h1
         className="text-[13px] font-medium"
         style={{ color: "var(--cc-text-secondary)" }}
       >
         {eyebrow}
-      </p>
+      </h1>
       <p
         className="num text-[40px] sm:text-[48px] leading-[1.05] mt-1"
         style={{

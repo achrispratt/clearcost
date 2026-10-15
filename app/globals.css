@@ -18,7 +18,7 @@
   /* Text */
   --cc-text: #1a1a2e;
   --cc-text-secondary: #5c5c6f;
-  --cc-text-tertiary: #9b9ba8;
+  --cc-text-tertiary: #6e6e7a;
 
   /* Primary — Teal (health, trust, calm) */
   --cc-primary: #0f766e;
@@ -28,7 +28,7 @@
   --cc-primary-subtle: rgba(15, 118, 110, 0.08);
 
   /* Accent — Amber (savings, attention) */
-  --cc-accent: #d97706;
+  --cc-accent: #b45309;
   --cc-accent-light: #fef3c7;
 
   /* Semantic */

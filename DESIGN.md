@@ -49,13 +49,13 @@
 | Border strong  | `--cc-border-strong`  | `#d4d0c8`                  | Emphasized borders, section rules                      |
 | Text           | `--cc-text`           | `#1a1a2e`                  | Primary text — deep ink with blue undertone            |
 | Text secondary | `--cc-text-secondary` | `#5c5c6f`                  | Supporting text, descriptions                          |
-| Text tertiary  | `--cc-text-tertiary`  | `#9b9ba8`                  | Muted text, metadata, captions                         |
+| Text tertiary  | `--cc-text-tertiary`  | `#6e6e7a`                  | Muted text, metadata, captions                         |
 | Primary (Teal) | `--cc-primary`        | `#0f766e`                  | CTAs, links, active states, brand color                |
 | Primary hover  | `--cc-primary-hover`  | `#0d9488`                  | Hover state for primary                                |
 | Primary light  | `--cc-primary-light`  | `#f0fdfa`                  | Primary backgrounds, badges                            |
 | Primary muted  | `--cc-primary-muted`  | `#ccfbf1`                  | Selection highlight, soft tints                        |
 | Primary subtle | `--cc-primary-subtle` | `rgba(15, 118, 110, 0.08)` | Focus rings, hover tints                               |
-| Accent (Amber) | `--cc-accent`         | `#d97706`                  | Contextual warnings, "facility fee only", gross prices |
+| Accent (Amber) | `--cc-accent`         | `#b45309`                  | Contextual warnings, "facility fee only", gross prices |
 | Accent light   | `--cc-accent-light`   | `#fef3c7`                  | Warning backgrounds                                    |
 | Success        | `--cc-success`        | `#059669`                  | Savings, lowest price, Medicare                        |
 | Success light  | `--cc-success-light`  | `#ecfdf5`                  | Success backgrounds                                    |

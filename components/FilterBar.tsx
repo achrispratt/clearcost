@@ -157,7 +157,7 @@ export function FilterBar({
         id="filter-controls"
         className={`flex-wrap items-center gap-3 ${filtersOpen ? "flex mt-3" : "hidden"} sm:flex sm:mt-0`}
       >
-        <div className="flex items-center gap-1.5">
+        <label className="flex items-center gap-1.5">
           <span style={labelStyles}>Within</span>
           <select
             value={radius}
@@ -170,9 +170,9 @@ export function FilterBar({
             <option value={100}>100 mi</option>
             <option value={250}>250 mi</option>
           </select>
-        </div>
+        </label>
 
-        <div className="flex items-center gap-1.5">
+        <label className="flex items-center gap-1.5">
           <span style={labelStyles}>Sort</span>
           <select
             value={sort}
@@ -185,7 +185,7 @@ export function FilterBar({
             <option value="distance">Distance</option>
             <option value="name">Name</option>
           </select>
-        </div>
+        </label>
 
         <label className="flex items-center gap-1.5 cursor-pointer select-none">
           <input
@@ -197,7 +197,7 @@ export function FilterBar({
           <span style={labelStyles}>Cash prices only</span>
         </label>
 
-        <div className="flex items-center gap-1.5">
+        <label className="flex items-center gap-1.5">
           <span style={labelStyles}>Max price</span>
           <select
             value={maxPrice ?? ""}
@@ -213,7 +213,7 @@ export function FilterBar({
             <option value="5000">$5,000</option>
             <option value="10000">$10,000</option>
           </select>
-        </div>
+        </label>
 
         {hasFilters && (
           <button

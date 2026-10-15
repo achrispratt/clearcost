@@ -23,13 +23,13 @@ export const metadata: Metadata = {
   description:
     "Search for healthcare procedures in plain English and compare real prices from hospitals near you.",
   manifest: "/manifest.json",
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
   themeColor: "#0F766E",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({

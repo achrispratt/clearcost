@@ -1,22 +1,17 @@
-"use client";
-
 import Link from "next/link";
 import { AuthButton } from "./AuthButton";
-import { useNavbarSlot } from "./NavbarContext";
 
 export function Navbar() {
-  const { searchSlot } = useNavbarSlot();
-
   return (
     <nav
+      aria-label="Main"
       className="sticky top-0 z-50 border-b px-4 lg:px-6 flex items-center gap-4"
       style={{
         background: "rgba(250, 250, 248, 0.85)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderColor: "var(--cc-border)",
-        height: searchSlot ? "auto" : "56px",
-        padding: searchSlot ? "8px 16px" : undefined,
+        height: "56px",
       }}
     >
       <Link href="/" className="flex items-center gap-2 group shrink-0">
@@ -47,9 +42,6 @@ export function Navbar() {
           ClearCost
         </span>
       </Link>
-
-      {/* Search slot — injected by results page via NavbarContext */}
-      {searchSlot && <div className="flex-1 min-w-0">{searchSlot}</div>}
 
       <div className="flex items-center gap-1 shrink-0 ml-auto">
         <Link

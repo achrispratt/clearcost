@@ -241,6 +241,7 @@ export function MapView({
         position,
         map,
         icon: DEFAULT_ICON,
+        title: group.results[0]?.provider.name ?? "Hospital",
       });
 
       const infoWindow = new google.maps.InfoWindow({
