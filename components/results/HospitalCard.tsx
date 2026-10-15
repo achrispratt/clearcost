@@ -130,6 +130,16 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
             {[r.provider.city, formatDistance(r.distanceMiles)]
               .filter(Boolean)
               .join(" · ")}
+            {r.provider.qualityStars != null && (
+              <span
+                className="whitespace-nowrap"
+                title="CMS Overall Hospital Quality Star Rating"
+              >
+                {" · "}
+                <span aria-hidden="true">★</span> {r.provider.qualityStars}/5
+                <span className="sr-only"> stars</span> CMS quality
+              </span>
+            )}
           </span>
           <span
             className="text-[12px] text-right"

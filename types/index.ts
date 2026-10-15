@@ -106,6 +106,8 @@ export interface Provider {
   phone?: string;
   website?: string;
   providerType?: string;
+  /** CMS Overall Hospital Quality Star Rating (1-5), when CMS rates it. */
+  qualityStars?: number;
 }
 
 // -- Charge Result (main search result item) --

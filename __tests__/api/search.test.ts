@@ -31,6 +31,9 @@ vi.mock("@/lib/cpt/episode", () => ({
     .fn()
     .mockImplementation((r) => Promise.resolve(r)),
 }));
+vi.mock("@/lib/cpt/star-ratings", () => ({
+  lookupStarRatings: vi.fn().mockResolvedValue(new Map()),
+}));
 vi.mock("@/lib/cpt/group-results", () => ({
   groupResultsByProvider: vi.fn().mockImplementation((r) => r),
 }));
