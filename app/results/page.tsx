@@ -9,6 +9,7 @@ import { AnswerCard } from "@/components/results/AnswerCard";
 import { CodesDrawer } from "@/components/results/CodesDrawer";
 import { EmergencyBanner } from "@/components/EmergencyBanner";
 import { ResultsFinePrint } from "@/components/results/ResultsFinePrint";
+import { NotifyMe } from "@/components/results/NotifyMe";
 import {
   HospitalList,
   HospitalListSkeleton,
@@ -240,6 +241,12 @@ function ResultsContent() {
                       >
                         Look farther away
                       </button>
+                    )}
+                    {query && (
+                      <NotifyMe
+                        procedureName={query}
+                        procedureCode={cptCodes[0]?.code}
+                      />
                     )}
                   </div>
                 )}
