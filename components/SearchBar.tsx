@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useId } from "react";
 import { LocationInput } from "./LocationInput";
+import { SuggestionList, handleSuggestionKey } from "./SuggestionList";
+import { suggestProcedures } from "@/lib/procedure-suggestions";
 
 interface SearchBarProps {
   onSearch: (
@@ -46,6 +48,9 @@ export function SearchBar({
     location?: string;
   }>({});
   const queryInputRef = useRef<HTMLInputElement>(null);
+  const [typeahead, setTypeahead] = useState<string[]>([]);
+  const [typeaheadIndex, setTypeaheadIndex] = useState(-1);
+  const typeaheadId = useId();
 
   // Start at index 0 on both server and client so the initial HTML matches
   // (avoids a hydration mismatch). Rotation starts after mount, client-only.
@@ -172,13 +177,13 @@ export function SearchBar({
       className={compact ? "w-full" : "w-full max-w-2xl"}
     >
       <div
-        className={`search-container flex flex-col sm:flex-row items-stretch border bg-[var(--cc-surface)] overflow-hidden ${
+        className={`search-container flex flex-col sm:flex-row items-stretch border bg-[var(--cc-surface)] ${
           compact ? "rounded-xl" : "rounded-2xl shadow-sm"
         }`}
         style={{ borderColor: "var(--cc-border)" }}
       >
         <div
-          className={`flex items-center flex-1 ${compact ? "px-3 gap-2" : "px-4 gap-3"}`}
+          className={`relative flex items-center flex-1 ${compact ? "px-3 gap-2" : "px-4 gap-3"}`}
         >
           <svg
             className={`${compact ? "w-4 h-4" : "w-5 h-5"} shrink-0`}
@@ -196,19 +201,57 @@ export function SearchBar({
           <input
             ref={queryInputRef}
             type="text"
+            role="combobox"
+            aria-label="What do you need?"
+            aria-autocomplete="list"
+            aria-expanded={typeahead.length > 0}
+            aria-controls={typeaheadId}
+            aria-activedescendant={
+              typeaheadIndex >= 0
+                ? `${typeaheadId}-${typeaheadIndex}`
+                : undefined
+            }
+            autoComplete="off"
             value={query}
             onChange={(e) => {
               const val = e.target.value;
               setQuery(val);
+              setTypeahead(suggestProcedures(val));
+              setTypeaheadIndex(-1);
               setValidationErrors((prev) =>
                 prev.query ? { ...prev, query: undefined } : prev
               );
             }}
+            onKeyDown={(e) =>
+              handleSuggestionKey(
+                e,
+                typeahead.length,
+                typeaheadIndex,
+                setTypeaheadIndex,
+                (i) => {
+                  setQuery(typeahead[i]);
+                  setTypeahead([]);
+                },
+                () => setTypeahead([])
+              )
+            }
+            onBlur={() => setTypeahead([])}
             placeholder={placeholder}
             className={`w-full bg-transparent focus:outline-none placeholder:text-[var(--cc-text-tertiary)] ${
               compact ? "py-2.5 text-sm" : "py-4 sm:py-3.5 text-base"
             }`}
             style={{ color: "var(--cc-text)" }}
+          />
+          <SuggestionList
+            id={typeaheadId}
+            label="Procedure suggestions"
+            items={typeahead}
+            activeIndex={typeaheadIndex}
+            onSelect={(i) => {
+              setQuery(typeahead[i]);
+              setTypeahead([]);
+            }}
+            onHover={setTypeaheadIndex}
           />
         </div>
 

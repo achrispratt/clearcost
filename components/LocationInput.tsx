@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useId } from "react";
+import type { LocationSuggestion } from "@/lib/location-suggest";
+import { SuggestionList, handleSuggestionKey } from "./SuggestionList";
 
 interface LocationInputProps {
   onLocationSelect: (location: {
@@ -27,6 +29,11 @@ export function LocationInput({
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const listId = useId();
+  const geocodeSeq = useRef(0); // newer selections win over slow geocodes
 
   // Notify parent of geocoding state changes
   useEffect(() => {
@@ -37,6 +44,7 @@ export function LocationInput({
     async (input: string) => {
       if (!input.trim()) return;
 
+      const seq = ++geocodeSeq.current;
       setGeocoding(true);
       try {
         const response = await fetch(
@@ -44,7 +52,7 @@ export function LocationInput({
         );
         const data = await response.json();
 
-        if (data.lat && data.lng) {
+        if (seq === geocodeSeq.current && data.lat && data.lng) {
           onLocationSelect({
             lat: data.lat,
             lng: data.lng,
@@ -67,6 +75,24 @@ export function LocationInput({
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
       const trimmed = input.trim();
+      if (suggestRef.current) clearTimeout(suggestRef.current);
+      suggestRef.current = setTimeout(async () => {
+        if (trimmed.length < 2) {
+          setSuggestions([]);
+          return;
+        }
+        try {
+          const res = await fetch(
+            `/api/locations?q=${encodeURIComponent(trimmed)}`
+          );
+          const data = await res.json();
+          setSuggestions(data.suggestions ?? []);
+          setActiveIndex(-1);
+        } catch {
+          setSuggestions([]);
+        }
+      }, 120);
+
       if (trimmed.length >= 3) {
         debounceRef.current = setTimeout(() => {
           geocodeAddress(trimmed);
@@ -84,10 +110,29 @@ export function LocationInput({
     [geocodeAddress]
   );
 
-  // Cleanup debounce timer on unmount
+  const selectSuggestion = useCallback(
+    (suggestion: LocationSuggestion) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (suggestRef.current) clearTimeout(suggestRef.current);
+      geocodeSeq.current++;
+      if (inputRef.current) inputRef.current.value = suggestion.label;
+      setSuggestions([]);
+      setActiveIndex(-1);
+      onTextChange?.(suggestion.label);
+      onLocationSelect({
+        lat: suggestion.lat,
+        lng: suggestion.lng,
+        display: suggestion.label,
+      });
+    },
+    [onLocationSelect, onTextChange]
+  );
+
+  // Cleanup debounce timers on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (suggestRef.current) clearTimeout(suggestRef.current);
     };
   }, []);
 
@@ -120,13 +165,32 @@ export function LocationInput({
       <input
         ref={inputRef}
         type="text"
+        role="combobox"
+        aria-label="Location"
+        aria-autocomplete="list"
+        aria-expanded={suggestions.length > 0}
+        aria-controls={listId}
+        aria-activedescendant={
+          activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
+        }
+        autoComplete="off"
         defaultValue={initialValue}
         onChange={(e) => handleInputChange(e.target.value)}
         onBlur={() => {
+          setSuggestions([]);
           if (inputRef.current) handleImmediate(inputRef.current.value);
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && inputRef.current) {
+          const handled = handleSuggestionKey(
+            e,
+            suggestions.length,
+            activeIndex,
+            setActiveIndex,
+            (i) => selectSuggestion(suggestions[i]),
+            () => setSuggestions([])
+          );
+          if (!handled && e.key === "Enter" && inputRef.current) {
+            setSuggestions([]);
             handleImmediate(inputRef.current.value);
           }
         }}
@@ -176,6 +240,14 @@ export function LocationInput({
           </svg>
         )}
       </button>
+      <SuggestionList
+        id={listId}
+        label="Location suggestions"
+        items={suggestions.map((s) => s.label)}
+        activeIndex={activeIndex}
+        onSelect={(i) => selectSuggestion(suggestions[i])}
+        onHover={setActiveIndex}
+      />
     </div>
   );
 }

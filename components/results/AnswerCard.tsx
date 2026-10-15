@@ -242,7 +242,7 @@ export function AnswerCard({
         >
           {lowest && (
             <>
-              Lowest is{" "}
+              Lowest published price is at{" "}
               <strong style={{ color: "var(--cc-text)", fontWeight: 600 }}>
                 {displayName(lowest.primary.provider.name)}
               </strong>

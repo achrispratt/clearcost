@@ -2,17 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 // @ts-expect-error zipcodes has no bundled TypeScript declarations.
 import zipcodes from "zipcodes";
 
+const MAX_ADDRESS_CHARS = 200;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const address = searchParams.get("address");
+  const address = searchParams.get("address")?.trim();
 
   if (!address) {
     return NextResponse.json({ error: "Address is required" }, { status: 400 });
   }
+  if (address.length > MAX_ADDRESS_CHARS) {
+    return NextResponse.json({ error: "Address is too long" }, { status: 400 });
+  }
+
+  // A bare ZIP or "City, ST" never needs a paid Google call.
+  const local = localGeocode(address);
+  if (local) return NextResponse.json(local);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
-    return handleFallbackGeocode(address);
+    return NextResponse.json(
+      {
+        error:
+          "Location not found. Without Google Maps API, enter a US ZIP code or City, ST.",
+      },
+      { status: 404 }
+    );
   }
 
   try {
@@ -36,8 +51,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function extractUsZip(value: string): string | null {
-  const match = value.match(/\b(\d{5})(?:-\d{4})?\b/);
+function bareUsZip(value: string): string | null {
+  const match = value.match(/^(\d{5})(?:-\d{4})?$/);
   return match ? match[1] : null;
 }
 
@@ -58,40 +73,41 @@ function parseCityState(value: string): { city: string; state: string } | null {
   return { city, state };
 }
 
-/** National ZIP/city fallback when no Google Maps API key is configured. */
-function handleFallbackGeocode(address: string) {
-  const zip = extractUsZip(address);
+interface GeocodeResult {
+  lat: number;
+  lng: number;
+  formatted: string;
+}
+
+/** Free local lookup for a bare US ZIP or "City, ST". */
+function localGeocode(address: string): GeocodeResult | null {
+  const zip = bareUsZip(address);
   if (zip) {
     const match = zipcodes.lookup(zip);
     if (match?.latitude != null && match?.longitude != null) {
-      return NextResponse.json({
+      return {
         lat: match.latitude,
         lng: match.longitude,
         formatted: `${match.city}, ${match.state} ${match.zip}`,
-      });
+      };
     }
+    return null;
   }
 
   const cityState = parseCityState(address);
-  if (cityState) {
+  if (cityState && /^[A-Za-z]{2}$/.test(cityState.state)) {
     const matches = zipcodes.lookupByName(cityState.city, cityState.state);
     const primary = Array.isArray(matches) ? matches[0] : null;
 
     if (primary?.latitude != null && primary?.longitude != null) {
       const zipDisplay = primary.zip ? ` ${primary.zip}` : "";
-      return NextResponse.json({
+      return {
         lat: primary.latitude,
         lng: primary.longitude,
         formatted: `${primary.city}, ${primary.state}${zipDisplay}`,
-      });
+      };
     }
   }
 
-  return NextResponse.json(
-    {
-      error:
-        "Location not found. Without Google Maps API, enter a US ZIP code or City, ST.",
-    },
-    { status: 404 }
-  );
+  return null;
 }

@@ -7,6 +7,8 @@ import { MapView } from "@/components/MapView";
 import { SaveButton } from "@/components/SaveButton";
 import { AnswerCard } from "@/components/results/AnswerCard";
 import { CodesDrawer } from "@/components/results/CodesDrawer";
+import { EmergencyBanner } from "@/components/EmergencyBanner";
+import { ResultsFinePrint } from "@/components/results/ResultsFinePrint";
 import {
   HospitalList,
   HospitalListSkeleton,
@@ -106,6 +108,8 @@ function ResultsContent() {
             loading={loading}
             onSearch={handleNewSearch}
           />
+
+          <EmergencyBanner texts={[query]} />
 
           {error && (
             <div
@@ -239,6 +243,8 @@ function ResultsContent() {
                     )}
                   </div>
                 )}
+
+                {results.length > 0 && <ResultsFinePrint results={results} />}
               </>
             )
           )}
