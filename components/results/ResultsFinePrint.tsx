@@ -3,6 +3,8 @@ import type { ChargeResult } from "@/types";
 
 interface ResultsFinePrintProps {
   results: ChargeResult[];
+  /** False on pages where the billing code is fixed, not matched by AI. */
+  aiMatchedCodes?: boolean;
 }
 
 function fileDateRange(results: ChargeResult[]): string | null {
@@ -22,7 +24,10 @@ function fileDateRange(results: ChargeResult[]): string | null {
 }
 
 /** What the prices are, where they come from, and the patient's rights. */
-export function ResultsFinePrint({ results }: ResultsFinePrintProps) {
+export function ResultsFinePrint({
+  results,
+  aiMatchedCodes = true,
+}: ResultsFinePrintProps) {
   const dates = fileDateRange(results);
 
   return (
@@ -47,9 +52,10 @@ export function ResultsFinePrint({ results }: ResultsFinePrintProps) {
         can dispute a bill that comes in $400 or more above it.
       </p>
       <p>
-        Billing codes are matched by AI from what you typed and may differ from
-        what your provider bills. CPT is a registered trademark of the American
-        Medical Association.{" "}
+        {aiMatchedCodes
+          ? "Billing codes are matched by AI from what you typed and may differ from what your provider bills. "
+          : "Your provider may bill a different code for the same visit. "}
+        CPT is a registered trademark of the American Medical Association.{" "}
         <Link
           href="/legal/disclaimers"
           className="underline"

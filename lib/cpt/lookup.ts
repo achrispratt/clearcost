@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { milesToKm, kmToMiles } from "@/lib/units";
 import { haversineMiles } from "@/lib/geo";
@@ -108,6 +109,8 @@ interface RpcExecutionResult<RowType> {
 interface RpcExecutionContext {
   diagnostics?: LookupDiagnostics;
   stage?: string;
+  /** Overrides the cookie-bound client, e.g. for statically cached pages. */
+  supabase?: SupabaseClient;
 }
 
 const ENCOUNTER_LABELS: Record<
@@ -915,7 +918,7 @@ async function executeRpcWithRetry<RowType>({
   rpcParams,
   diagnostics,
 }: {
-  supabase: Awaited<ReturnType<typeof createClient>>;
+  supabase: SupabaseClient;
   rpcName: "search_charges_nearby" | "search_charges_by_description";
   rpcParams: Record<string, unknown>;
   diagnostics?: LookupDiagnostics;
@@ -1002,7 +1005,7 @@ export async function lookupCharges(
   context: RpcExecutionContext = {}
 ): Promise<ChargeResult[]> {
   if (codes.length === 0) return [];
-  const supabase = await createClient();
+  const supabase = context.supabase ?? (await createClient());
   const normalizedCodes = Array.from(
     new Set(
       codes

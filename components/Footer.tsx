@@ -86,6 +86,15 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/prices"
+                  className="text-sm hover:underline"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Prices by City
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/saved"
                   className="text-sm hover:underline"
                   style={{ color: "var(--cc-text-secondary)" }}
