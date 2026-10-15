@@ -59,12 +59,12 @@ export function Footer() {
 
           {/* Navigation */}
           <div>
-            <h3
+            <h2
               className="text-xs font-semibold tracking-widest uppercase mb-4"
               style={{ color: "var(--cc-text-tertiary)" }}
             >
               Navigate
-            </h3>
+            </h2>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -98,12 +98,12 @@ export function Footer() {
 
           {/* Data & Legal */}
           <div>
-            <h3
+            <h2
               className="text-xs font-semibold tracking-widest uppercase mb-4"
               style={{ color: "var(--cc-text-tertiary)" }}
             >
               About the Data
-            </h3>
+            </h2>
             <p
               className="text-sm leading-relaxed"
               style={{ color: "var(--cc-text-secondary)" }}
@@ -116,12 +116,12 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3
+            <h2
               className="text-xs font-semibold tracking-widest uppercase mb-4"
               style={{ color: "var(--cc-text-tertiary)" }}
             >
               Legal
-            </h3>
+            </h2>
             <ul className="space-y-2">
               <li>
                 <Link

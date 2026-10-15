@@ -113,12 +113,12 @@ function CurrentQuestion({
   return (
     <div className="flex flex-col gap-3 animate-fade-up">
       <AssistantBubble>
-        <p
+        <h1
           className="text-[22px] sm:text-[24px] leading-snug"
           style={{ fontFamily: "var(--font-instrument-serif), Georgia, serif" }}
         >
           {question.question}
-        </p>
+        </h1>
         {question.helpText && (
           <p
             className="text-[14px] mt-1.5"

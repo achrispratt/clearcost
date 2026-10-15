@@ -18,7 +18,7 @@ export default function LegalLayout({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
-      <nav className="flex gap-2 mb-8">
+      <nav aria-label="Legal pages" className="flex gap-2 mb-8">
         {LEGAL_PAGES.map((page) => {
           const isActive = pathname === page.href;
           return (

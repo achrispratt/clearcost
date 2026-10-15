@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { median } from "@/lib/cpt/lookup";
+import { plausiblePrice } from "@/lib/cpt/price-sanity";
 import type {
   ChargeResult,
   EpisodeBillingClass,
@@ -216,7 +217,9 @@ export function priceLine(
   ratios: ProviderCashRatios
 ): LinePrice | undefined {
   const cash = rows
-    .map((r) => positive(r.cash_price))
+    .map((r) =>
+      plausiblePrice(r.cash_price, r.component_code, r.min_negotiated_rate)
+    )
     .filter((v): v is number => v != null);
   if (cash.length > 0) {
     return {
@@ -250,7 +253,11 @@ export function priceLine(
   }
 
   const gross = rows.flatMap((r) => {
-    const g = positive(r.gross_charge);
+    const g = plausiblePrice(
+      r.gross_charge,
+      r.component_code,
+      r.min_negotiated_rate
+    );
     return g == null ? [] : [{ estimate: g, min: g, max: g }];
   });
   if (gross.length > 0) {
