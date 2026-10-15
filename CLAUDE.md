@@ -142,9 +142,10 @@ lib/
   kb/                 — Translation Knowledge Base (lookup.ts, write-back.ts, events.ts, path-hash.ts, path-report.ts)
   seo/                — SEO price pages: curated procedures + metros, page-index.json (which pages publish)
   data/               — Import pipeline, code lists, DuckDB/Parquet data
+  crawler/            — Independent MRF crawler (cms-hpt.txt discovery, streaming JSON/CSV parse, charges-shape rows); CLI: scripts/crawl-mrf.ts, docs/mrf-crawler.md
   supabase/           — Three Supabase clients (browser, server, middleware)
 scripts/              — DB migration utilities + one-time audit/fix scripts from data quality phase
-#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, kb-path-report.ts, migrate-translation-cache.ts, build-seo-index.ts
+#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, kb-path-report.ts, migrate-translation-cache.ts, build-seo-index.ts, crawl-mrf.ts
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
