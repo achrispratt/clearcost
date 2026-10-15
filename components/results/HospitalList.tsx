@@ -26,16 +26,22 @@ export function HospitalList({
 
   // A map pin opens that hospital's card and brings it into view. Keyed on
   // the click counter so selecting a card from the list doesn't re-trigger it.
+  const [handledClickCount, setHandledClickCount] = useState(markerClickCount);
+  if (markerClickCount !== handledClickCount) {
+    setHandledClickCount(markerClickCount);
+    const entry = selectedProviderId
+      ? entries.find((e) =>
+          e.locations.some((l) => l.provider.id === selectedProviderId)
+        )
+      : undefined;
+    if (entry) setExpandedId(entry.primary.id);
+  }
+
   useEffect(() => {
-    if (markerClickCount === 0 || !selectedProviderId) return;
-    const entry = entries.find((e) =>
-      e.locations.some((l) => l.provider.id === selectedProviderId)
-    );
-    if (!entry) return;
-    setExpandedId(entry.primary.id);
+    if (markerClickCount === 0 || !expandedId) return;
     requestAnimationFrame(() => {
       itemRefs.current
-        .get(entry.primary.id)
+        .get(expandedId)
         ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

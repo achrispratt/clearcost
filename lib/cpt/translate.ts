@@ -9,6 +9,7 @@ import {
   buildClarificationPrompt,
 } from "./prompts";
 import { normalizePricingPlanInput } from "./pricing-plan";
+import { filterToImportedCodes } from "./code-allowlist";
 import {
   extractLaterality,
   extractBodySite,
@@ -280,7 +281,9 @@ function extractCodes(
   parsed: Record<string, unknown>,
   query: string
 ): CPTCode[] {
-  const rawCodes = mapCodes((parsed.codes as RawCode[]) || []);
+  const rawCodes = filterToImportedCodes(
+    mapCodes((parsed.codes as RawCode[]) || [])
+  );
   const withExplicitCodes = applyExplicitCodeGuardrail(query, rawCodes);
   const withContrastGuardrails = applyContrastGuardrails(
     query,
