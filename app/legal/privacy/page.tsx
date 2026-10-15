@@ -111,6 +111,16 @@ export default function PrivacyPage() {
                 information is collected only if you create an account; account
                 creation is not required to use the Service.
               </li>
+              <li id="waitlist">
+                <strong style={{ color: "var(--cc-text)" }}>
+                  &ldquo;Notify me&rdquo; sign-ups.
+                </strong>{" "}
+                When we can&rsquo;t price a search yet, you can choose to leave
+                your email address. We store it with the procedure you searched
+                for and use it only to email you when that price is available.
+                Because it links your email to a health service, we ask for your
+                consent first, never sell it, and never use it for advertising.
+              </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>Usage data.</strong>{" "}
                 Our hosting provider keeps standard server logs (pages
@@ -393,6 +403,14 @@ export default function PrivacyPage() {
                 Retained until you delete them through the Service or submit a
                 deletion request. You can delete individual saved searches at
                 any time from your account.
+              </li>
+              <li>
+                <strong style={{ color: "var(--cc-text)" }}>
+                  &ldquo;Notify me&rdquo; sign-ups.
+                </strong>{" "}
+                Kept until we send the email you asked for, or until you ask us
+                to delete it by writing to info@clearcost.live, whichever comes
+                first.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>

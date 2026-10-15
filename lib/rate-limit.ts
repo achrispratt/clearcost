@@ -6,6 +6,7 @@ const RATE_LIMITS: Record<string, number> = {
   "/api/clarify": 50,
   "/api/geocode": 30,
   "/api/locations": 120,
+  "/api/waitlist": 5,
 };
 
 const WINDOW_MS = 60_000;

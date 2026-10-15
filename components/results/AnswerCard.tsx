@@ -8,6 +8,7 @@ import type { AnswerSummary, FeeScope } from "@/lib/results/summarize";
 import { describeEpisode } from "@/lib/results/episode-display";
 import { CopyButton } from "./CopyButton";
 import { EpisodeEstimateRows } from "./EpisodeEstimateRows";
+import { NotifyMe } from "./NotifyMe";
 
 interface AnswerCardProps {
   summary: AnswerSummary;
@@ -209,6 +210,10 @@ export function AnswerCard({
               )}
             </div>
           </div>
+          <NotifyMe
+            procedureName={summary.inpatientLabel ?? "this procedure"}
+            procedureCode={codes[0]?.code}
+          />
           <Interpretation text={interpretation} />
         </div>
       </section>
