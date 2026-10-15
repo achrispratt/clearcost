@@ -71,3 +71,7 @@ docs/nsf-sbir-pitch.md
 .gstack/
 .superpowers/
 .claude/worktrees/
+
+# Playwright
+/test-results/
+/playwright-report/
