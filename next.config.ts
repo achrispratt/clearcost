@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 // Flip to false after validating no CSP violations in production
 const IS_CSP_REPORT_ONLY = true;
@@ -36,6 +37,26 @@ const cspDirectives: Record<string, string[]> = {
   "form-action": ["'self'", "https://*.supabase.co"],
   "frame-ancestors": ["'none'"],
 };
+
+/** Origin of a configured URL, or undefined when unset or malformed. */
+function originOf(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+// Analytics and error tracking are off until their keys are set; only then
+// may the browser talk to their hosts. Both are read at build time.
+const analyticsOrigin = process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ? originOf(process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com")
+  : undefined;
+const sentryOrigin = originOf(process.env.NEXT_PUBLIC_SENTRY_DSN);
+for (const origin of [analyticsOrigin, sentryOrigin]) {
+  if (origin) cspDirectives["connect-src"].push(origin);
+}
 
 const cspValue = Object.entries(cspDirectives)
   .map(([directive, sources]) => `${directive} ${sources.join(" ")}`)
@@ -80,4 +101,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Source maps upload only when SENTRY_AUTH_TOKEN is set; without it the
+// build uploads nothing, prints nothing and contacts no Sentry server.
+const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN);
+
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !uploadSourceMaps || !process.env.CI,
+  telemetry: false,
+  sourcemaps: { disable: !uploadSourceMaps },
+  widenClientFileUpload: uploadSourceMaps,
+});

@@ -25,6 +25,7 @@ import { groupResultsByProvider } from "@/lib/cpt/group-results";
 import { enrichWithEpisodeEstimates } from "@/lib/cpt/episode";
 import { lookupStarRatings } from "@/lib/cpt/star-ratings";
 import { handleApiError } from "@/lib/api-helpers";
+import { reportError } from "@/lib/observability";
 import type {
   BillingCodeType,
   ChargeResult,
@@ -421,7 +422,7 @@ export async function POST(request: NextRequest) {
       const canonicalQuery =
         kbResult.canonical_query || normalizeQuery(queryText);
       writeSynonym(queryText, canonicalQuery).catch((err) =>
-        console.error("KB synonym write failed:", err)
+        reportError(err, "KB synonym write failed:")
       );
       writeNode({
         canonicalQuery,
@@ -440,7 +441,7 @@ export async function POST(request: NextRequest) {
           confidence: "high",
           conversationComplete: true,
         },
-      }).catch((err) => console.error("KB node write failed:", err));
+      }).catch((err) => reportError(err, "KB node write failed:"));
     }
 
     maybeLogSearchDiagnostics({

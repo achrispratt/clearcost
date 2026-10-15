@@ -14,6 +14,7 @@ import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
 import { normalizeQuery } from "@/lib/kb/path-hash";
 import { validateQuery, validateTurns } from "@/lib/api-limits";
+import { reportError } from "@/lib/observability";
 import type {
   ClarificationTurn,
   KBQuestionPayload,
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
               kbResult.canonical_query || normalizeQuery(queryText),
               turns
             ).catch((err) => {
-              console.error("KB question history lookup failed:", err);
+              reportError(err, "KB question history lookup failed:");
               return [];
             })
           : [];
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
 
           // Write the synonym link regardless — it's valid
           writeSynonym(queryText, result.canonicalMatch).catch((err) =>
-            console.error("KB synonym clustering write failed:", err)
+            reportError(err, "KB synonym clustering write failed:")
           );
 
           // Only return the cached node if it's a question, not a depth-0 resolution
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
         canonicalQuery,
         turns,
         response: result,
-      }).catch((err) => console.error("KB write-back failed:", err));
+      }).catch((err) => reportError(err, "KB write-back failed:"));
 
       return NextResponse.json({
         ...result,
@@ -184,9 +185,9 @@ export async function POST(request: NextRequest) {
       // falling back to single-shot results is better than showing nothing.
       // The client handles this correctly because it checks nextQuestion first
       // (no question = navigate to results).
-      console.error(
-        "Guided search error, falling back to single-shot:",
-        parseError
+      reportError(
+        parseError,
+        "Guided search error, falling back to single-shot:"
       );
       const fallback = await translateQueryToCPT(queryText);
       return NextResponse.json({
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error("Clarify API error:", error);
+    reportError(error, "Clarify API error:");
     return NextResponse.json(
       { error: "An error occurred. Please try again." },
       { status: 500 }

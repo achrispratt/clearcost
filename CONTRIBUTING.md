@@ -31,13 +31,19 @@ Copy the template and fill in your keys:
 cp .env.local.example .env.local
 ```
 
-| Variable                          | Purpose                                 |
-| --------------------------------- | --------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL                    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Supabase public/anon key                |
-| `SUPABASE_SERVICE_ROLE_KEY`       | Server-side Supabase admin access       |
-| `ANTHROPIC_API_KEY`               | Claude API for billing code translation |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view)      |
+| Variable                          | Purpose                                                                                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL                                                                                                         |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Supabase public/anon key                                                                                                     |
+| `SUPABASE_SERVICE_ROLE_KEY`       | Server-side Supabase admin access                                                                                            |
+| `ANTHROPIC_API_KEY`               | Claude API for billing code translation                                                                                      |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps (geocoding + map view)                                                                                           |
+| `NEXT_PUBLIC_POSTHOG_KEY`         | Optional. PostHog project key; analytics is off when unset                                                                   |
+| `NEXT_PUBLIC_POSTHOG_HOST`        | Optional. PostHog host (default `https://us.i.posthog.com`)                                                                  |
+| `NEXT_PUBLIC_SENTRY_DSN`          | Optional. Sentry DSN for browser errors (also used on the server if `SENTRY_DSN` is unset); error tracking is off when unset |
+| `SENTRY_DSN`                      | Optional. Sentry DSN for server and edge errors                                                                              |
+| `SENTRY_AUTH_TOKEN`               | Optional, build only. Uploads source maps to Sentry; skipped when unset                                                      |
+| `SENTRY_ORG` / `SENTRY_PROJECT`   | Optional, build only. Sentry org and project slugs for the source map upload                                                 |
 
 3. **Database schema:**
 

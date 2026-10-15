@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { reportError } from "@/lib/observability";
 import {
   computeQueryHash,
   buildPathHashFromSegments,
@@ -29,7 +30,7 @@ export async function writeSynonym(
   );
 
   if (error) {
-    console.error("KB synonym write failed:", error);
+    reportError(error, "KB synonym write failed:");
   }
 }
 
@@ -72,7 +73,7 @@ export async function writeNode(params: {
     .upsert(row, { onConflict: "path_hash", ignoreDuplicates: true });
 
   if (error) {
-    console.error("KB node write failed:", error);
+    reportError(error, "KB node write failed:");
     return pathHash;
   }
 
@@ -86,7 +87,7 @@ export async function writeNode(params: {
       .eq("path_hash", pathHash)
       .eq("node_type", "resolution");
     if (replaceError) {
-      console.error("KB depth-0 resolution replace failed:", replaceError);
+      reportError(replaceError, "KB depth-0 resolution replace failed:");
     }
   }
 

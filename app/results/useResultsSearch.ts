@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { track } from "@/lib/analytics";
 import type {
   ChargeResult,
   CPTCode,
@@ -201,6 +202,13 @@ export function useResultsSearch() {
         }
 
         const data = await response.json();
+        const charges: ChargeResult[] = data.results;
+        track("results_viewed", {
+          hospital_count: new Set(charges.map((r) => r.provider.id)).size,
+          has_estimates: charges.some(
+            (r) => r.episodeEstimate != null || r.estimatedTotalMedian != null
+          ),
+        });
         setResults(data.results);
         setFilteredResults(data.results);
 

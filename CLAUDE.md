@@ -17,6 +17,8 @@ ClearCost — a consumer-facing tool that translates plain English healthcare qu
 - **AI**: Claude API via Anthropic SDK (billing code translation). Models the product calls are defined in `lib/ai/models.ts`
 - **Maps**: Google Maps JavaScript API
 - **Data Pipeline**: DuckDB (local Parquet queries) + Trilliant Oria dataset
+- **Analytics**: PostHog (`posthog-js`), conversion events via `track()` in `lib/analytics.ts`. Off unless `NEXT_PUBLIC_POSTHOG_KEY` is set
+- **Error tracking**: Sentry (`@sentry/nextjs`), wired in `instrumentation.ts` / `instrumentation-client.ts`; caught server errors go through `reportError()` in `lib/observability.ts`. Off unless a DSN is set
 - **Deployment**: Vercel
 - **PWA**: manifest.json for add-to-home-screen support
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { reportError } from "@/lib/observability";
 
 /**
  * GET /api/payers
@@ -25,7 +26,7 @@ export async function GET() {
 
     return NextResponse.json(payers);
   } catch (error) {
-    console.error("Fetch payers error:", error);
+    reportError(error, "Fetch payers error:");
     return NextResponse.json(
       { error: "Failed to fetch payers" },
       { status: 500 }

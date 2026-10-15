@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { milesToKm, kmToMiles } from "@/lib/units";
 import { haversineMiles } from "@/lib/geo";
+import { reportError } from "@/lib/observability";
 import { plausiblePrice } from "./price-sanity";
 // @ts-expect-error zipcodes has no bundled TypeScript declarations.
 import zipcodes from "zipcodes";
@@ -1040,13 +1041,16 @@ export async function lookupCharges(
   const canChunkFallback =
     initial.timedOut && normalizedCodes.length > CODE_CHUNK_FALLBACK_SIZE;
   if (!canChunkFallback) {
-    console.error("Charge lookup error:", {
-      stage: context.stage,
-      codeType,
-      codeCount: normalizedCodes.length,
-      errorCode: initial.errorCode,
-      errorMessage: initial.errorMessage,
-    });
+    reportError(
+      new Error(initial.errorMessage ?? initial.errorCode),
+      "Charge lookup error:",
+      {
+        stage: context.stage,
+        codeType,
+        codeCount: normalizedCodes.length,
+        errorCode: initial.errorCode,
+      }
+    );
     return [];
   }
 
@@ -1071,15 +1075,18 @@ export async function lookupCharges(
     });
 
     if (chunkResult.errorCode) {
-      console.error("Charge lookup chunk error:", {
-        stage: context.stage,
-        chunkIndex: chunkIndex + 1,
-        chunkTotal: codeChunks.length,
-        codeType,
-        codeCount: chunk.length,
-        errorCode: chunkResult.errorCode,
-        errorMessage: chunkResult.errorMessage,
-      });
+      reportError(
+        new Error(chunkResult.errorMessage ?? chunkResult.errorCode),
+        "Charge lookup chunk error:",
+        {
+          stage: context.stage,
+          chunkIndex: chunkIndex + 1,
+          chunkTotal: codeChunks.length,
+          codeType,
+          codeCount: chunk.length,
+          errorCode: chunkResult.errorCode,
+        }
+      );
       continue;
     }
 
@@ -1125,12 +1132,15 @@ export async function lookupChargesByDescription(
   });
 
   if (result.errorCode) {
-    console.error("Description lookup error:", {
-      stage: context.stage,
-      searchTerms,
-      errorCode: result.errorCode,
-      errorMessage: result.errorMessage,
-    });
+    reportError(
+      new Error(result.errorMessage ?? result.errorCode),
+      "Description lookup error:",
+      {
+        stage: context.stage,
+        searchTerms,
+        errorCode: result.errorCode,
+      }
+    );
     return [];
   }
 
