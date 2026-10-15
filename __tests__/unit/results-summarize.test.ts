@@ -229,6 +229,26 @@ describe("summarizeAnswer", () => {
     expect(summary.high).toBe(6186);
   });
 
+  it("doesn't price a stay from insured averages until the re-import (#173)", () => {
+    const insuredOnly = charge({
+      cpt: undefined,
+      msDrg: "236",
+      setting: "inpatient",
+      description: "CORONARY BYPASS WITHOUT CARDIAC CATHETERIZATION",
+      avgNegotiatedRate: 9000,
+    });
+    expect(summarizeAnswer([insuredOnly], bypass).state).toBe(
+      "inpatient_unpriced"
+    );
+    const summary = summarizeAnswer(
+      [insuredOnly, stayRow("236", 52000)],
+      bypass
+    );
+    expect(summary.state).toBe("priced");
+    expect(summary.low).toBe(52000);
+    expect(summary.entries).toHaveLength(1);
+  });
+
   it("prices an inpatient procedure normally when DRG rows exist", () => {
     const summary = summarizeAnswer([stayRow("236", 45000)], bypass);
     expect(summary.state).toBe("priced");
