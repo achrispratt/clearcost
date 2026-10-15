@@ -310,7 +310,12 @@ async function wikidata(): Promise<Row[]> {
   )) as { results: { bindings: Record<string, { value: string }>[] } };
   return data.results.bindings.map((b) => {
     const [lng, lat] = b.coord.value.match(/-?[\d.]+/g) ?? [];
-    return { name: b.hLabel.value, url: b.w.value, lat, lng };
+    return {
+      name: b.hLabel.value,
+      url: b.w.value,
+      lat: lat ?? null,
+      lng: lng ?? null,
+    };
   });
 }
 
