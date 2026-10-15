@@ -11,14 +11,8 @@ import { parseLaterality } from "../cpt/parse-laterality";
 import { classifyCode, type CodeSet } from "./codes";
 import { median } from "./compare";
 import type { CrawledCharge, MrfMeta, RawCharge, RawPayerRate } from "./types";
-
-/**
- * Contract types left out of a stay's negotiated stats. A per-diem rate is a
- * daily rate, not the price of the stay; averaging it in made stays look 5-10x
- * too cheap. Same rule as the Trilliant import (#185, lib/data/charge-select.ts
- * on that branch); Oria spells the normalized value "per diem".
- */
-export const EXCLUDED_STAY_METHODOLOGIES = ["per diem"];
+// Per-diem rates are daily, not the price of a stay; same rule as the import (#185).
+import { EXCLUDED_STAY_METHODOLOGIES } from "../data/charge-select";
 
 /** "Per_Diem", "per-diem", " PER DIEM " → "per diem". */
 export function normalizeMethodology(value: string | null): string | null {
