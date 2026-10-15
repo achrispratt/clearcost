@@ -44,6 +44,7 @@ import { parseLaterality } from "../cpt/parse-laterality";
 import { parseBodySite } from "../cpt/parse-body-site";
 import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
 import { buildChargeSelect } from "./charge-select";
+import { assertChargeIdsUnique } from "./charge-id-guard";
 
 // @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
@@ -759,6 +760,14 @@ async function importCharges(
     }
   }
 
+  // charge_id must be unique across the WHOLE import scope (every state, not
+  // just the ones this run imports, since rows already loaded for other
+  // states share the unique index). A repeat would let one hospital's row
+  // overwrite another's via ON CONFLICT (source_charge_id) DO UPDATE — wrong
+  // data is worse than none, so stop before any TRUNCATE or DELETE.
+  // One DuckDB scan over the code-filtered scope.
+  await assertChargeIdsUnique(db, codeFilter);
+
   // Handle existing data based on mode
   if (config.fresh) {
     console.log("  TRUNCATING charges table for fresh import...");
@@ -804,23 +813,12 @@ async function importCharges(
 
     const stateStart = Date.now();
 
-    // Pre-import: expected row count from DuckDB for reconciliation, and a
-    // uniqueness check on charge_id. source_charge_id is a unique key, so a
-    // repeated charge_id would make one source row overwrite another. Checked
-    // before the DELETE below so a failure leaves the state's data untouched.
+    // Pre-import: expected row count from DuckDB for reconciliation
     const expectedRes = (await db.all(
-      `SELECT COUNT(*) as cnt, COUNT(DISTINCT charge_id) as distinct_ids
-       FROM standard_charges
+      `SELECT COUNT(*) as cnt FROM standard_charges
        WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}`
-    )) as unknown as { cnt: number | bigint; distinct_ids: number | bigint }[];
+    )) as unknown as { cnt: number | bigint }[];
     const expectedCount = Number(expectedRes[0].cnt);
-    const distinctIds = Number(expectedRes[0].distinct_ids);
-    if (distinctIds !== expectedCount) {
-      throw new Error(
-        `${state}: Oria charge_id is not unique (${expectedCount} rows, ${distinctIds} distinct ids) — ` +
-          `cannot upsert on source_charge_id. Aborting before any delete for this state.`
-      );
-    }
 
     // Clean up any partial data from a previous interrupted import.
     // This runs for every non-skipped state — if the state was complete, it was
@@ -1058,7 +1056,11 @@ async function flushOneBatch(
     `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")} ` +
     `ON CONFLICT (source_charge_id) WHERE source_charge_id IS NOT NULL DO UPDATE SET ` +
     CHARGE_UPDATE_COLUMNS.map((c) => `${c} = EXCLUDED.${c}`).join(", ") +
-    `, last_updated = now() RETURNING (xmax = 0) AS inserted`;
+    `, last_updated = now()` +
+    // Second line of defense behind assertChargeIdsUnique (which only sees the
+    // current code scope): never let a charge_id rewrite another hospital's row.
+    ` WHERE charges.provider_id = EXCLUDED.provider_id` +
+    ` RETURNING (xmax = 0) AS inserted`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     let client: import("pg").PoolClient | null = null;
@@ -1067,6 +1069,13 @@ async function flushOneBatch(
       const res = await client.query<{ inserted: boolean }>(sql, values);
       client.release();
       const inserted = res.rows.filter((r) => r.inserted).length;
+      const rejected = rows.length - res.rows.length;
+      if (rejected > 0) {
+        // Shows up as a reconciliation mismatch for the state, too.
+        console.error(
+          `  ${label}: ${rejected} rows NOT written — their charge_id already belongs to a different hospital's charge`
+        );
+      }
       return { inserted, updated: res.rows.length - inserted };
     } catch (err: unknown) {
       if (client) client.release(true); // destroy broken connection
