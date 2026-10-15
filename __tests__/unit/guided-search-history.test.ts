@@ -18,7 +18,14 @@ function chain() {
 }
 
 vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ from: () => chain() }),
+  createAdminClient: () => ({
+    from: () => chain(),
+    // kb_replace_flagged_node: a no-op for unflagged nodes (#126)
+    rpc: async (...args: unknown[]) => {
+      calls.push({ method: "rpc", args });
+      return { data: false, error: null };
+    },
+  }),
 }));
 
 import { buildClarificationPrompt } from "@/lib/cpt/prompts";

@@ -12,7 +12,7 @@ import {
 } from "@/lib/kb/lookup";
 import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
 import { logKBEvent } from "@/lib/kb/events";
-import { normalizeQuery } from "@/lib/kb/path-hash";
+import { computeQueryHash, normalizeQuery } from "@/lib/kb/path-hash";
 import { validateQuery, validateTurns } from "@/lib/api-limits";
 import { reportError } from "@/lib/observability";
 import type {
@@ -103,6 +103,17 @@ export async function POST(request: NextRequest) {
     }
 
     // --- KB MISS — fall through to Claude ---
+    // Count first-turn misses per query so emerging, uncached queries can be
+    // spotted (#127; scripts/kb-path-report.ts --emerging). Keyed by the
+    // query hash, whose text kb_synonyms holds once write-back runs.
+    if (turns.length === 0) {
+      logKBEvent({
+        pathHash: computeQueryHash(queryText).queryHash,
+        eventType: "miss",
+        sessionId,
+      }).catch(() => {});
+    }
+
     try {
       // For initial assessments (no turns), pass known canonicals so Claude
       // can identify synonym matches (e.g. "MRI of my knee" → "knee mri")

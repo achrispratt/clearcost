@@ -22,7 +22,9 @@ vi.mock("@/lib/cpt/translate", () => ({
 import { POST } from "@/app/api/clarify/route";
 import { kbLookup, getAskedQuestions } from "@/lib/kb/lookup";
 import { assessQuery, clarifyQuery } from "@/lib/cpt/translate";
-import { writeSynonym } from "@/lib/kb/write-back";
+import { writeBackClarifyResponse, writeSynonym } from "@/lib/kb/write-back";
+import { logKBEvent } from "@/lib/kb/events";
+import { computeQueryHash } from "@/lib/kb/path-hash";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/clarify", {
@@ -103,6 +105,59 @@ describe("POST /api/clarify", () => {
     expect(res.status).toBe(200);
     expect(assessQuery).toHaveBeenCalled();
     expect(clarifyQuery).not.toHaveBeenCalled();
+  });
+
+  it("logs a first-turn miss keyed by query hash (#127)", async () => {
+    vi.mocked(kbLookup).mockResolvedValue({ hit: false });
+    vi.mocked(assessQuery).mockResolvedValue({
+      codes: [],
+      interpretation: "",
+      confidence: "low" as const,
+      nextQuestion: { id: "q1", question: "Which?", options: [] },
+      conversationComplete: false,
+    });
+
+    await POST(
+      makeRequest({ query: "  My Knee  Hurts", kbSessionId: "sess-1" })
+    );
+
+    expect(logKBEvent).toHaveBeenCalledWith({
+      pathHash: computeQueryHash("my knee hurts").queryHash,
+      eventType: "miss",
+      sessionId: "sess-1",
+    });
+  });
+
+  it("re-asks Claude when the node is flagged and writes back to the same path", async () => {
+    vi.mocked(kbLookup).mockResolvedValue({
+      hit: false,
+      flagged: true,
+      canonical_query: "knee mri",
+      path_hash: "flagged123",
+    });
+    const response = {
+      codes: [{ code: "73722", description: "MRI", category: "Imaging" }],
+      interpretation: "Knee MRI with contrast",
+      confidence: "high" as const,
+      conversationComplete: true,
+    };
+    vi.mocked(clarifyQuery).mockResolvedValue(response);
+
+    const turns = [{ questionId: "q1", selectedOption: "Right" }];
+    const res = await POST(makeRequest({ query: "knee mri", turns }));
+    const data = await res.json();
+
+    expect(clarifyQuery).toHaveBeenCalled();
+    expect(data.codes[0].code).toBe("73722");
+    expect(data.kbPathHash).toBe("flagged123");
+    expect(writeBackClarifyResponse).toHaveBeenCalledWith({
+      originalQuery: "knee mri",
+      canonicalQuery: "knee mri",
+      turns,
+      response,
+    });
+    // only first-turn misses are counted
+    expect(logKBEvent).not.toHaveBeenCalled();
   });
 
   it("calls clarifyQuery on KB miss with turns", async () => {

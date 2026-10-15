@@ -25,7 +25,7 @@ function isValidPayload(
  * Look up a query + turns in the KB.
  * 1. Hash the query → look up kb_synonyms for canonical form.
  * 2. Build path_hash from canonical + turns → look up kb_nodes.
- * 3. If hit, bump hit_count and return the node.
+ * 3. If hit, bump hit_count and return the node. A flagged node is a miss.
  */
 export async function kbLookup(
   query: string,
@@ -62,6 +62,18 @@ export async function kbLookup(
 
   if (nodeError || !node || !isValidPayload(node.payload)) {
     return { hit: false, canonical_query: canonicalQuery, path_hash: pathHash };
+  }
+
+  // A node auto-flagged for high, rising bounce rates (#126) is not served:
+  // a wrong match is worse than none. Treating it as a miss sends the path to
+  // Claude, and write-back replaces the node (old version archived).
+  if (node.flagged_at) {
+    return {
+      hit: false,
+      canonical_query: canonicalQuery,
+      path_hash: pathHash,
+      flagged: true,
+    };
   }
 
   // Bump hit_count (fire-and-forget)

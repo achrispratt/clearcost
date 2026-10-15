@@ -319,7 +319,15 @@ export interface TranslationResponse {
 // -- Knowledge Base (Translation KB) --
 export type KBNodeType = "question" | "resolution";
 export type KBSource = "claude" | "admin" | "migrated";
-export type KBEventType = "walk" | "result_click" | "save" | "bounce" | "skip";
+// "miss" is logged server-side only (path_hash = query_hash of the query);
+// the public /api/kb/events route accepts the other five.
+export type KBEventType =
+  | "walk"
+  | "result_click"
+  | "save"
+  | "bounce"
+  | "skip"
+  | "miss";
 
 export interface KBSynonym {
   query_hash: string;
@@ -340,6 +348,9 @@ export interface KBNode {
   source: KBSource;
   created_at: string;
   updated_at: string;
+  flagged_at?: string | null; // set by kb_flag_resolution_nodes(); served as a miss
+  flag_reason?: string | null;
+  replaced_at?: string | null; // when this version replaced a flagged one
 }
 
 export interface KBQuestionPayload {
@@ -369,6 +380,7 @@ export interface KBLookupResult {
   canonical_query?: string;
   path_hash?: string;
   node?: KBNode;
+  flagged?: boolean; // node exists but is flagged for re-evaluation
 }
 
 // -- Saved Search (user bookmark) --

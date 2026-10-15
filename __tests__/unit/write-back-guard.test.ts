@@ -10,6 +10,7 @@ vi.mock("@/lib/supabase/admin", () => ({
         }),
       }),
     }),
+    rpc: vi.fn().mockResolvedValue({ data: false, error: null }),
   }),
 }));
 
