@@ -4,6 +4,7 @@ import { milesToKm, kmToMiles } from "@/lib/units";
 import { haversineMiles } from "@/lib/geo";
 import { reportError } from "@/lib/observability";
 import { plausiblePrice } from "./price-sanity";
+import { applyPriceBands, loadPriceReference } from "./price-bands";
 // @ts-expect-error zipcodes has no bundled TypeScript declarations.
 import zipcodes from "zipcodes";
 import type {
@@ -1035,7 +1036,7 @@ export async function lookupCharges(
   });
 
   if (!initial.errorCode) {
-    return mapRows(initial.rows);
+    return withPriceBands(supabase, mapRows(initial.rows));
   }
 
   const canChunkFallback =
@@ -1093,8 +1094,7 @@ export async function lookupCharges(
     allChunkRows.push(...chunkResult.rows);
   }
 
-  const chunkedResults = dedupeResultsById(mapRows(allChunkRows));
-  return chunkedResults;
+  return withPriceBands(supabase, dedupeResultsById(mapRows(allChunkRows)));
 }
 
 /**
@@ -1144,7 +1144,7 @@ export async function lookupChargesByDescription(
     return [];
   }
 
-  return mapRows(result.rows);
+  return withPriceBands(supabase, mapRows(result.rows));
 }
 
 /**
@@ -1214,6 +1214,13 @@ interface RpcRow {
   source: string | null;
   last_updated: string | null;
   distance_km: number | null;
+}
+
+async function withPriceBands(
+  supabase: SupabaseClient,
+  results: ChargeResult[]
+): Promise<ChargeResult[]> {
+  return applyPriceBands(results, await loadPriceReference(supabase, results));
 }
 
 function mapRows(rows: RpcRow[]): ChargeResult[] {

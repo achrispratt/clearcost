@@ -1241,6 +1241,12 @@ begin
   group by provider_id, ratio_type;
 
   get diagnostics affected = row_count;
+
+  -- A full refresh also refreshes the per-code typical prices below.
+  if p_provider_ids is null then
+    perform refresh_code_price_reference();
+  end if;
+
   return affected;
 end;
 $$;
@@ -1248,3 +1254,57 @@ $$;
 revoke execute on function refresh_provider_cash_ratios(uuid[])
   from public, anon, authenticated;
 grant execute on function refresh_provider_cash_ratios(uuid[]) to service_role;
+
+-- National typical price per billing code and fee type (#194). Prices more
+-- than 10x off it are treated as missing (lib/cpt/price-bands.ts). Refreshed
+-- by refresh_provider_cash_ratios() above.
+create table if not exists public.code_price_reference (
+  code text not null,
+  professional boolean not null,
+  typical_price numeric(12, 2) not null,
+  sample_size integer not null,
+  refreshed_at timestamptz not null default now(),
+  primary key (code, professional)
+);
+
+alter table public.code_price_reference enable row level security;
+drop policy if exists "Anyone can view code price reference" on public.code_price_reference;
+create policy "Anyone can view code price reference"
+  on public.code_price_reference for select using (true);
+revoke insert, update, delete, truncate, references, trigger
+  on public.code_price_reference from anon, authenticated;
+
+create or replace function public.refresh_code_price_reference()
+returns integer
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  affected integer;
+begin
+  delete from code_price_reference where true;
+
+  insert into code_price_reference (code, professional, typical_price, sample_size)
+  select
+    upper(trim(coalesce(c.cpt, c.hcpcs))),
+    coalesce(lower(c.billing_class) = 'professional', false),
+    percentile_cont(0.5) within group (
+      order by coalesce(c.cash_price, c.avg_negotiated_rate)
+    ),
+    count(*)::integer
+  from charges c
+  where coalesce(c.cpt, c.hcpcs) is not null
+    and coalesce(c.cash_price, c.avg_negotiated_rate) >= 1
+  group by 1, 2
+  -- With fewer rows the median isn't a reliable reference.
+  having count(*) >= 20;
+
+  get diagnostics affected = row_count;
+  return affected;
+end;
+$$;
+
+revoke execute on function public.refresh_code_price_reference()
+  from public, anon, authenticated;
+grant execute on function public.refresh_code_price_reference() to service_role;
