@@ -171,6 +171,12 @@ function majorityScope(entries: PriceEntry[]): FeeScope {
   );
 }
 
+// The stay rows in production still carry insured averages that mix per-day
+// contracts into whole-stay prices (kidney transplant ~$6k instead of ~$26k).
+// Until they're re-imported with the per-diem fix from #185, only cash prices
+// set a stay price; flip this once the re-import is verified (#173).
+const STAY_INSURED_RATES_RELIABLE = false;
+
 export function summarizeAnswer(
   results: ChargeResult[],
   codes: CPTCode[]
@@ -194,16 +200,17 @@ export function summarizeAnswer(
     // Price the stay from the first typical-severity DRG (in preference
     // order) that has prices near the user. The single CPT lines (usually
     // the surgeon's fee) never set a stay price.
-    const isStayRow = (r: ChargeResult, drg: string) =>
-      drgKey(r.msDrg) === drgKey(drg) &&
-      r.setting?.trim().toLowerCase() === "inpatient" &&
-      stay.describes.test(r.description ?? "");
+    const isStayRow = (e: PriceEntry, drg: string) =>
+      drgKey(e.primary.msDrg) === drgKey(drg) &&
+      e.primary.setting?.trim().toLowerCase() === "inpatient" &&
+      stay.describes.test(e.primary.description ?? "") &&
+      (STAY_INSURED_RATES_RELIABLE || e.price.type === "cash");
     const stayDrg = stay.typicalDrgs.find((d) =>
-      priced.some((e) => isStayRow(e.primary, d))
+      priced.some((e) => isStayRow(e, d))
     );
     if (stayDrg) {
       const stayEntries = priced
-        .filter((e) => isStayRow(e.primary, stayDrg))
+        .filter((e) => isStayRow(e, stayDrg))
         .map((e) => ({ ...e, scope: "facility" as FeeScope }));
       const amounts = stayEntries.map((e) => e.price.amount as number);
       const cashCount = stayEntries.filter(
@@ -212,7 +219,7 @@ export function summarizeAnswer(
       return {
         state: "priced",
         entries: entries
-          .filter((e) => isStayRow(e.primary, stayDrg))
+          .filter((e) => isStayRow(e, stayDrg))
           .map((e) => ({ ...e, scope: "facility" as FeeScope })),
         priced: stayEntries,
         low: amounts[0],
