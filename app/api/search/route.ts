@@ -23,6 +23,7 @@ import { lookupMedicareBenchmarks } from "@/lib/cpt/medicare";
 import { isDoctorFeeComparable } from "@/lib/cpt/medicare-scope";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
 import { enrichWithEpisodeEstimates } from "@/lib/cpt/episode";
+import { lookupStarRatings } from "@/lib/cpt/star-ratings";
 import { handleApiError } from "@/lib/api-helpers";
 import type {
   BillingCodeType,
@@ -36,13 +37,18 @@ const SPARSE_RESULT_THRESHOLD = 3;
 const EXPANDED_RADIUS_MILES = 250;
 
 async function enrichAndGroup(results: ChargeResult[]) {
-  const [withMedicare, withEpisodes] = await Promise.all([
+  const [withMedicare, withEpisodes, starRatings] = await Promise.all([
     enrichWithMedicareBenchmarks(results),
     enrichWithEpisodeEstimates(results),
+    lookupStarRatings(results),
   ]);
   // Merge: Medicare writes medicareFacilityRate/Multiplier, episodes write episodeEstimate
   const merged = withMedicare.map((r, i) => ({
     ...r,
+    provider: {
+      ...r.provider,
+      qualityStars: starRatings.get(r.provider.id),
+    },
     episodeEstimate: withEpisodes[i]?.episodeEstimate,
   }));
   return groupResultsByProvider(merged);
