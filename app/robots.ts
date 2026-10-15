@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL = "https://www.clearcost.live";
+import { SITE_URL } from "@/lib/seo/links";
 
 export default function robots(): MetadataRoute.Robots {
   return {

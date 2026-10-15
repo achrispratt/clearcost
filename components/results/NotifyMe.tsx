@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { track } from "@/lib/analytics";
 
 interface NotifyMeProps {
   procedureName: string;
@@ -51,6 +52,9 @@ export function NotifyMe({ procedureName, procedureCode }: NotifyMeProps) {
           consent,
         }),
       });
+      if (res.ok) {
+        track("waitlist_signup", { procedure_code: procedureCode ?? null });
+      }
       setStatus(res.ok ? "done" : "error");
     } catch {
       setStatus("error");

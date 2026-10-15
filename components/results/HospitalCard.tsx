@@ -15,6 +15,7 @@ import {
   type PriceEntry,
 } from "@/lib/results/summarize";
 import { describeEpisode } from "@/lib/results/episode-display";
+import { track } from "@/lib/analytics";
 import { EpisodeEstimateRows } from "./EpisodeEstimateRows";
 
 interface HospitalCardProps {
@@ -93,6 +94,8 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
       r.provider.website && /^https?:\/\//i.test(r.provider.website)
         ? r.provider.website
         : undefined;
+    const trackCta = (cta: "call" | "directions" | "website") =>
+      track("cta_clicked", { cta, provider_id: r.provider.id });
 
     return (
       <li
@@ -296,6 +299,7 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
               {r.provider.lat != null && r.provider.lng != null && (
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${r.provider.lat},${r.provider.lng}`}
+                  onClick={() => trackCta("directions")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[13px] font-semibold px-3 py-1.5 rounded-lg text-white"
@@ -307,6 +311,7 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
               {phone && (
                 <a
                   href={`tel:${phone}`}
+                  onClick={() => trackCta("call")}
                   className="text-[13px] font-semibold px-3 py-1.5 rounded-lg border"
                   style={{
                     borderColor: "var(--cc-primary)",
@@ -319,6 +324,7 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
               {website && (
                 <a
                   href={website}
+                  onClick={() => trackCta("website")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[13px] font-medium px-3 py-1.5 rounded-lg"

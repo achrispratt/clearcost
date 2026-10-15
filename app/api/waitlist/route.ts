@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { reportError } from "@/lib/observability";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_CHARS = 254;
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   );
 
   if (error) {
-    console.error("Waitlist insert failed:", error);
+    reportError(error, "Waitlist insert failed:");
     return NextResponse.json({ error: "Could not save" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

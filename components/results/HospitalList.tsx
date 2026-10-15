@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PriceEntry } from "@/lib/results/summarize";
+import { track } from "@/lib/analytics";
 import { HospitalCard } from "./HospitalCard";
 
 interface HospitalListProps {
@@ -49,13 +50,18 @@ export function HospitalList({
 
   const toggle = useCallback(
     (entry: PriceEntry) => {
-      setExpandedId((prev) =>
-        prev === entry.primary.id ? null : entry.primary.id
-      );
-      onCardSelect?.(entry.primary.provider.id);
+      const r = entry.primary;
+      if (expandedId !== r.id) {
+        track("estimate_expanded", {
+          provider_id: r.provider.id,
+          codes: [r.cpt, r.hcpcs, r.msDrg].filter((c): c is string => !!c),
+        });
+      }
+      setExpandedId(expandedId === r.id ? null : r.id);
+      onCardSelect?.(r.provider.id);
       onResultClick?.();
     },
-    [onCardSelect, onResultClick]
+    [expandedId, onCardSelect, onResultClick]
   );
 
   return (

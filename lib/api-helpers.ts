@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { reportError } from "@/lib/observability";
 
 /**
  * Checks auth and returns the user + supabase client, or an error response.
@@ -24,7 +25,7 @@ export async function requireAuth() {
 
 /** Standardized API error handler. Logs and returns a consistent JSON error response. */
 export function handleApiError(error: unknown, context: string) {
-  console.error(`${context}:`, error);
+  reportError(error, `${context}:`);
   const message = error instanceof Error ? error.message : "An error occurred";
   return NextResponse.json({ error: message }, { status: 500 });
 }

@@ -17,6 +17,8 @@ ClearCost — a consumer-facing tool that translates plain English healthcare qu
 - **AI**: Claude API via Anthropic SDK (billing code translation). Models the product calls are defined in `lib/ai/models.ts`
 - **Maps**: Google Maps JavaScript API
 - **Data Pipeline**: DuckDB (local Parquet queries) + Trilliant Oria dataset
+- **Analytics**: PostHog (`posthog-js`), conversion events via `track()` in `lib/analytics.ts`. Off unless `NEXT_PUBLIC_POSTHOG_KEY` is set
+- **Error tracking**: Sentry (`@sentry/nextjs`), wired in `instrumentation.ts` / `instrumentation-client.ts`; caught server errors go through `reportError()` in `lib/observability.ts`. Off unless a DSN is set
 - **Deployment**: Vercel
 - **PWA**: manifest.json for add-to-home-screen support
 
@@ -126,6 +128,7 @@ app/
   auth/callback/      — Supabase OAuth callback handler
   guided-search/      — Diagnostic clarification page (pre-results Q&A)
   legal/              — Legal pages: Terms of Service, Privacy Policy, Medical Disclaimers
+  prices/             — SEO price pages: /prices, /prices/[procedure], /prices/[procedure]/[city], /prices/in/[city]
   results/            — Search results page
   saved/              — Saved searches page
 components/
@@ -137,10 +140,11 @@ lib/
   anthropic.ts        — Claude API client singleton
   cpt/                — Translation logic (prompts.ts, translate.ts, lookup.ts)
   kb/                 — Translation Knowledge Base (lookup.ts, write-back.ts, events.ts, path-hash.ts)
+  seo/                — SEO price pages: curated procedures + metros, page-index.json (which pages publish)
   data/               — Import pipeline, code lists, DuckDB/Parquet data
   supabase/           — Three Supabase clients (browser, server, middleware)
 scripts/              — DB migration utilities + one-time audit/fix scripts from data quality phase
-#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, migrate-translation-cache.ts
+#                       Active/reusable: db-audit.ts, stability-smoke.ts, seed-kb.ts, migrate-translation-cache.ts, build-seo-index.ts
 types/index.ts        — All shared TypeScript interfaces
 supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, RLS)
 ```
@@ -193,6 +197,8 @@ Schema is in `supabase/schema.sql`. Project ref: `rzfelzmkdbicrfghofyf`.
 ### Import Details
 
 Import pipeline uses `import-trilliant.ts` (Node.js INSERT via Supabase pooler port 6543). MVP imports ~4.8% of full Oria dataset (1,002 codes × all settings → ~8.15M rows after dedup). Setting filter was removed — code list is the quality gate. See `docs/prd.md` Section 4.2.1 for data scope breakdown.
+
+**After every import:** run `select refresh_provider_cash_ratios();`, then rebuild the SEO page index (`npx tsx --env-file=.env.local scripts/build-seo-index.ts`) and commit `lib/seo/page-index.json`. The index decides which procedure + city pages publish (3+ priced hospitals within 25 miles, prices more than 10x off the national typical left out).
 
 **Full import reference** (flags, DuckDB quirks, resume workflow, gotchas): see `docs/import-reference.md`
 

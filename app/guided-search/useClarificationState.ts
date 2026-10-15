@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { track } from "@/lib/analytics";
 import type {
   ClarificationTurn,
   ClarificationQuestion,
@@ -201,8 +202,16 @@ export function useClarificationState() {
     [query, handleResponse]
   );
 
+  // One search_performed per query + place; re-renders don't repeat it.
+  const trackedSearch = useRef("");
   useEffect(() => {
-    if (!query || !lat || !lng) return;
+    if (!query) return;
+    const searchKey = `${query}|${lat}|${lng}`;
+    if (trackedSearch.current !== searchKey) {
+      trackedSearch.current = searchKey;
+      track("search_performed", { query, has_location: !!(lat && lng) });
+    }
+    if (!lat || !lng) return;
     fetchOrCacheQuestion([]);
   }, [query, lat, lng, fetchOrCacheQuestion]);
 

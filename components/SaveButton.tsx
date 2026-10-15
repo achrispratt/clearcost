@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { track } from "@/lib/analytics";
 
 interface SaveButtonProps {
   query: string;
@@ -46,6 +47,7 @@ export function SaveButton({
       if (!response.ok) throw new Error("Failed to save");
 
       setSaved(true);
+      track("estimate_saved", { code_count: cptCodes.length });
       onSave?.();
       toast.success("Search saved!");
     } catch {

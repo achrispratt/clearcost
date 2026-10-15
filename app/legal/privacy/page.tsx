@@ -128,6 +128,29 @@ export default function PrivacyPage() {
                 troubleshooting. ClearCost does not use advertising or
                 cross-site tracking tools.
               </li>
+              <li id="analytics">
+                <strong style={{ color: "var(--cc-text)" }}>
+                  Product analytics.
+                </strong>{" "}
+                We record a small set of actions so we can tell whether
+                ClearCost is useful: that a search was run (its text and whether
+                a location was set), how many hospitals were shown, and when you
+                open a price, tap Call, Directions or Website, save a search, or
+                ask to be notified. These events are tied to a random ID kept in
+                your browser, not to your name, email, or account, and never
+                include your coordinates or email address. Page addresses are
+                recorded without their search details. We do not record your
+                screen or what you type into forms.
+              </li>
+              <li>
+                <strong style={{ color: "var(--cc-text)" }}>
+                  Error reports.
+                </strong>{" "}
+                When something breaks, a technical report (the error, the page
+                it happened on without its search details, and your browser
+                type) is sent to our error tracking service so we can fix it.
+                Error reports do not include your name, email, or location.
+              </li>
             </ul>
           </div>
         </section>
@@ -167,9 +190,9 @@ export default function PrivacyPage() {
                 <strong style={{ color: "var(--cc-text)" }}>
                   Service improvement.
                 </strong>{" "}
-                Aggregated, anonymized usage data helps us understand which
-                features are used, identify technical issues, and improve the
-                Service over time.
+                Product analytics and error reports, which are not linked to
+                your identity, help us understand which features are used, fix
+                technical issues, and improve the Service over time.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>
@@ -365,6 +388,52 @@ export default function PrivacyPage() {
                   Vercel&apos;s Privacy Policy.
                 </p>
               </div>
+              <div
+                className="rounded-lg p-4 border"
+                style={{
+                  background: "var(--cc-surface)",
+                  borderColor: "var(--cc-border)",
+                }}
+              >
+                <p
+                  className="font-semibold text-sm mb-1"
+                  style={{ color: "var(--cc-text)" }}
+                >
+                  PostHog
+                </p>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Product analytics. Receives the events described under
+                  &ldquo;Product analytics&rdquo; above, a random browser ID,
+                  and, like any web request, your IP address. Session recording
+                  is turned off. Subject to PostHog&apos;s Privacy Policy.
+                </p>
+              </div>
+              <div
+                className="rounded-lg p-4 border"
+                style={{
+                  background: "var(--cc-surface)",
+                  borderColor: "var(--cc-border)",
+                }}
+              >
+                <p
+                  className="font-semibold text-sm mb-1"
+                  style={{ color: "var(--cc-text)" }}
+                >
+                  Sentry
+                </p>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cc-text-secondary)" }}
+                >
+                  Error tracking. Receives technical error reports and, like any
+                  web request, your IP address. We turn off its collection of
+                  personal data and do not use its session replay. Subject to
+                  Sentry&apos;s Privacy Policy.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -411,6 +480,14 @@ export default function PrivacyPage() {
                 Kept until we send the email you asked for, or until you ask us
                 to delete it by writing to info@clearcost.live, whichever comes
                 first.
+              </li>
+              <li>
+                <strong style={{ color: "var(--cc-text)" }}>
+                  Analytics events and error reports.
+                </strong>{" "}
+                Kept by PostHog and Sentry for the data retention period of our
+                plans with them, then deleted. They are never linked to your
+                account.
               </li>
               <li>
                 <strong style={{ color: "var(--cc-text)" }}>
@@ -464,6 +541,8 @@ export default function PrivacyPage() {
                 </strong>{" "}
                 You may use ClearCost without creating an account.
                 Unauthenticated use stores no information that identifies you.
+                Browser settings or extensions that block analytics or error
+                tracking do not affect how ClearCost works.
               </li>
             </ul>
             <p>
