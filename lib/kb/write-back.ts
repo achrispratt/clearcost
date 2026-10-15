@@ -94,7 +94,7 @@ export async function writeNode(params: {
     }
   );
   if (replaceFlaggedError) {
-    console.error("KB flagged-node replace failed:", replaceFlaggedError);
+    reportError(replaceFlaggedError, "KB flagged-node replace failed:");
   }
 
   // Another exception: a depth-0 question replaces a depth-0 resolution (written
