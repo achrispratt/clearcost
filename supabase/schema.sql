@@ -82,6 +82,7 @@ create table if not exists charges (
   -- Metadata
   source text default 'trilliant_oria', -- Data source: 'trilliant_oria', 'cms_mrf', etc.
   imported_at timestamptz default now(), -- When this row was imported (NULL for pre-tracking rows)
+  source_charge_id bigint,             -- Oria standard_charges.charge_id; import upserts on it (NULL for pre-#59 rows)
   last_updated timestamptz default now(),
   created_at timestamptz default now()
 );
@@ -98,6 +99,7 @@ create index if not exists idx_charges_provider_ms_drg on charges (provider_id, 
 create index if not exists idx_charges_description on charges using gin (to_tsvector('english', coalesce(description, '')));
 create index if not exists idx_charges_laterality on charges (laterality) where laterality is not null;
 create index if not exists idx_charges_body_site on charges (body_site) where body_site is not null;
+create unique index if not exists idx_charges_source_charge_id on charges (source_charge_id) where source_charge_id is not null;
 
 -- ============================================================================
 -- Laterality parser (SQL mirror of lib/cpt/parse-laterality.ts)
