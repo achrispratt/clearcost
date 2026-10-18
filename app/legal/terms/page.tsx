@@ -128,9 +128,10 @@ export default function TermsPage() {
             <p>
               Pricing data is sourced from Machine Readable Files (MRFs)
               published by hospitals pursuant to the CMS Hospital Price
-              Transparency Rule (45 C.F.R. § 180). The Service currently covers
-              pricing information from more than 5,400 hospitals across the
-              United States for over 1,000 procedure codes.
+              Transparency Rule (45 C.F.R. § 180), as compiled in Trilliant
+              Health&apos;s Oria dataset. The Service currently covers pricing
+              information from more than 5,400 hospitals across the United
+              States for over 1,000 procedure codes.
             </p>
             <p>
               The Service includes a guided search feature that uses artificial

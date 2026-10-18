@@ -117,9 +117,9 @@ export function Footer() {
               className="text-sm leading-relaxed"
               style={{ color: "var(--cc-text-secondary)" }}
             >
-              Pricing data comes directly from hospital-published Machine
-              Readable Files (MRFs), required by CMS under the Hospital Price
-              Transparency Rule.
+              Prices come from the price files hospitals must publish under the
+              federal Hospital Price Transparency Rule (45 CFR 180), compiled by
+              Trilliant Health&rsquo;s Oria dataset.
             </p>
           </div>
 

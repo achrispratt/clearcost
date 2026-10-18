@@ -314,6 +314,22 @@ function mergeAdders(
   );
 }
 
+/** Drops adders that would price a base code a second time. */
+function withoutBaseCodes(
+  adders: PlannedAdder[],
+  baseCodeGroups: PricingCodeGroup[]
+): PlannedAdder[] {
+  const base = new Set(
+    baseCodeGroups.flatMap((g) => g.codes.map((c) => `${g.codeType}:${c}`))
+  );
+  return adders.filter(
+    (adder) =>
+      !adder.codeGroups.some((g) =>
+        g.codes.some((c) => base.has(`${g.codeType}:${c}`))
+      )
+  );
+}
+
 export function normalizePricingPlanInput(
   value: unknown
 ): PricingPlan | undefined {
@@ -438,9 +454,16 @@ export function buildPricingPlan({
     ...stayGroups,
   ]);
 
-  const inferredAdders = buildAddersFromIds(inferAdderIds(text));
+  // Text-inferred adders are tests a visit may lead to. When the user named
+  // the procedure ("knee mri"), the matching text is the procedure itself, and
+  // adding it again would double the price.
+  const inferredAdders =
+    mode === "encounter_first" ? buildAddersFromIds(inferAdderIds(text)) : [];
   const modelAdders = normalizedModelPlan?.adders || [];
-  const adders = mergeAdders(modelAdders, inferredAdders);
+  const adders = withoutBaseCodes(
+    mergeAdders(modelAdders, inferredAdders),
+    baseCodeGroups
+  );
 
   // Resolve laterality/bodySite: explicit params take priority, then model plan
   const resolvedLaterality = laterality ?? normalizedModelPlan?.laterality;

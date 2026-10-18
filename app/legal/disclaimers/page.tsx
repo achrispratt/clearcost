@@ -174,8 +174,9 @@ export default function DisclaimersPage() {
           <p className="mb-3" style={{ color: "var(--cc-text)" }}>
             Prices displayed on ClearCost are sourced from hospital Machine
             Readable Files (MRFs) published pursuant to the CMS Hospital Price
-            Transparency Rule (45 C.F.R. § 180). These files represent
-            hospitals&apos; published standard charges.
+            Transparency Rule (45 C.F.R. § 180), as compiled in Trilliant
+            Health&apos;s Oria dataset. These files represent hospitals&apos;
+            published standard charges.
           </p>
           <p className="mb-3" style={{ color: "var(--cc-text)" }}>
             Prices shown may not reflect:
