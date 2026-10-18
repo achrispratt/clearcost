@@ -174,7 +174,9 @@ function majorityScope(entries: PriceEntry[]): FeeScope {
 // The stay rows in production still carry insured averages that mix per-day
 // contracts into whole-stay prices (kidney transplant ~$6k instead of ~$26k).
 // Until they're re-imported with the per-diem fix from #185, only cash prices
-// set a stay price; flip this once the re-import is verified (#173).
+// set a stay price; flip this once the re-import is verified (#173). Rows read
+// straight from hospital files (source "cms_mrf", #25) leave per-diem rates
+// out of their insured stats, so those are trusted already.
 const STAY_INSURED_RATES_RELIABLE = false;
 
 export function summarizeAnswer(
@@ -204,7 +206,9 @@ export function summarizeAnswer(
       drgKey(e.primary.msDrg) === drgKey(drg) &&
       e.primary.setting?.trim().toLowerCase() === "inpatient" &&
       stay.describes.test(e.primary.description ?? "") &&
-      (STAY_INSURED_RATES_RELIABLE || e.price.type === "cash");
+      (STAY_INSURED_RATES_RELIABLE ||
+        e.price.type === "cash" ||
+        e.primary.source === "cms_mrf");
     const stayDrg = stay.typicalDrgs.find((d) =>
       priced.some((e) => isStayRow(e, d))
     );

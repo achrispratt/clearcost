@@ -172,11 +172,12 @@ export function Footer() {
           }}
         >
           <p>
-            Prices shown are self-pay / cash rates and may not reflect your
-            final cost. ClearCost is a price transparency tool, not a medical
-            device. It does not provide medical advice, diagnosis, or treatment
-            recommendations. Always consult a qualified healthcare provider for
-            medical decisions.{" "}
+            Prices shown are hospitals&rsquo; published cash prices or, where a
+            hospital publishes none, what insurers pay it on average. They may
+            not reflect your final cost. ClearCost is a price transparency tool,
+            not a medical device. It does not provide medical advice, diagnosis,
+            or treatment recommendations. Always consult a qualified healthcare
+            provider for medical decisions.{" "}
             <Link
               href="/legal/disclaimers"
               className="underline hover:no-underline"

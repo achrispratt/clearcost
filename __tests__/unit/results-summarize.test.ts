@@ -249,6 +249,20 @@ describe("summarizeAnswer", () => {
     expect(summary.entries).toHaveLength(1);
   });
 
+  it("prices a stay from insured averages read straight from a hospital file (#25)", () => {
+    const crawled = charge({
+      cpt: undefined,
+      msDrg: "236",
+      setting: "inpatient",
+      description: "CORONARY BYPASS WITHOUT CARDIAC CATHETERIZATION",
+      avgNegotiatedRate: 41000,
+      source: "cms_mrf",
+    });
+    const summary = summarizeAnswer([crawled], bypass);
+    expect(summary.state).toBe("priced");
+    expect(summary.low).toBe(41000);
+  });
+
   it("prices an inpatient procedure normally when DRG rows exist", () => {
     const summary = summarizeAnswer([stayRow("236", 45000)], bypass);
     expect(summary.state).toBe("priced");
