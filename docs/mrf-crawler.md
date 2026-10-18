@@ -1,9 +1,9 @@
 # MRF Crawler (first slice)
 
-> **Owner:** Engineering · **Issue:** #25 (Independent MRF crawler, Phase 6) · **Status:** first slice, local output only
+> **Owner:** Engineering · **Issue:** #25 (Independent MRF crawler, Phase 6) · **Status:** crawls and loads one state at a time
 > **Update when:** `lib/crawler/` or `scripts/crawl-mrf.ts` changes
 
-Reads hospital price files straight from each hospital's website, so prices no longer depend on the Trilliant Oria bulk download (which needs the owner's login). This slice discovers, downloads, parses and normalizes files end to end and checks them against production, but **writes nothing to the database**: rows go to a local NDJSON file.
+Reads hospital price files straight from each hospital's website, so prices no longer depend on the Trilliant Oria bulk download (which needs the owner's login). It discovers, downloads, parses and normalizes files end to end, checks them against production and writes rows to a local NDJSON file. Only `--state XX --load` writes to the database (see Loading).
 
 ## Usage
 
@@ -137,14 +137,30 @@ Reading the comparison: where the crawled file and the Oria snapshot are the sam
 
 The five missing everywhere except Houston are 453-455 and 459-460, the older spinal fusion DRGs; the current ones (402, 426-430, 447-448, 450-451) are present and priced. No crawled file had a cash price for any stay.
 
-## Loading (not built)
+## Loading (`--state XX --load`)
 
-No migration is needed: `charges` already has every column, and `source` distinguishes `cms_mrf` from `trilliant_oria`. A loader would:
+```
+# Dry run: crawl every hospital in a state with a stored price-file list, compare with prod, write nothing
+npx tsx --env-file=.env.local scripts/crawl-mrf.ts --state OR
 
-1. Resolve `provider_id` per file (the `--compare` matcher, a `--provider-id` override, or a stored domain → provider mapping); create a provider row for hospitals Oria never had.
-2. Per provider, `DELETE FROM charges WHERE provider_id = $1 AND source = 'cms_mrf'`, then insert the NDJSON rows minus the extra fields through the same pooler INSERT path as `flushOneBatch` in `import-trilliant.ts`.
-3. Decide precedence when a provider has both `trilliant_oria` and `cms_mrf` rows (newest `mrf_last_updated_on` wins is the obvious rule; search currently reads every source).
-4. Run `refresh_provider_cash_ratios(array[...])` for the loaded providers.
+# Load: each hospital whose file passes the checks gets its prices swapped to the crawled rows
+npx tsx --env-file=.env.local scripts/crawl-mrf.ts --state OR --load
+```
+
+Targets are the providers with `mrf_index_url` + `mrf_location_name` in the state. Hospitals whose entries point at the same file are parsed once and loaded for each. Downloads are deleted after parsing in a state run.
+
+**Load checks** (`loadDecision` in `lib/crawler/load.ts`). A file replaces a hospital's live prices only when:
+
+1. it kept at least one row for our codes;
+2. its license state (file header) is the hospital's state;
+3. it has a last-updated date, and that date is not older than the Oria file behind the live rows (`providers.last_updated`);
+4. it doesn't disagree with live prices on most shared codes: with 20+ shared code/setting pairs, at least 25% of cash or negotiated medians must be within 25% (a wrong file is worse than an old one).
+
+The script ends with a tally of outcomes per reason and, after any load, refreshes `code_price_reference` (the per-code typical price behind the 10x filter).
+
+**The swap** (migration `20261018120000_mrf_load_swap.sql`). Rows go to `charges_mrf_staging` under a load id, then `apply_mrf_load(provider, load)` runs in one transaction: the hospital's other-source rows for the same codes move to `charges_archive`, its previous `cms_mrf` rows are deleted, the staged rows are copied into `charges` (`last_updated` = the file's date), and its cash ratios are refreshed. Codes compare by value across `cpt`/`hcpcs` (hospitals file HCPCS under either label) and DRGs without leading zeros. Codes the file lacks keep their Oria rows. No reader of `charges` changes. `restore_mrf_load(provider)` undoes it: crawled rows out, archived rows back.
+
+Stays: crawled DRG rows already leave per-diem rates out (#185), so `lib/results/summarize.ts` trusts their insured averages for stay prices while Oria stay rows stay cash-only until the re-import (#173).
 
 ## Limits
 
@@ -157,9 +173,7 @@ No migration is needed: `charges` already has every column, and `source` disting
 
 ## Next steps
 
-1. Websites for the remaining 2,259 providers (1,452 of them have no CMS number, so only the unkeyed sources can match them): another source, or the hospital's own file header once the loader exists.
-2. Loader (above) behind a dry-run flag, one state at a time.
-3. Incremental refresh keyed on `mrf_last_updated_on` / HTTP `Last-Modified`.
-4. Decide whether to store v3.0 allowed amounts (new column), since formula-priced stays (OHSU) have no dollar rate.
-5. #173: add the current spinal fusion DRGs (402, 426-430, 447-448, 450-451) to `inpatient-stay-drgs.json`; 453-455 and 459-460 are mostly gone from current files.
-6. Bot-protected hosts: decide whether a different HTTP client is acceptable for sites that block Node.
+1. Websites for the remaining 2,259 providers (1,452 of them have no CMS number, so only the unkeyed sources can match them): another source, or the hospital's own file header.
+2. Incremental refresh keyed on `mrf_last_updated_on` / HTTP `Last-Modified`.
+3. Decide whether to store v3.0 allowed amounts (new column), since formula-priced stays (OHSU) have no dollar rate.
+4. Bot-protected hosts: decide whether a different HTTP client is acceptable for sites that block Node.

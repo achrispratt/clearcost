@@ -41,15 +41,20 @@ export interface Download {
  * Download `url` into `cacheDir` (reused on later runs unless `refresh`).
  * Aborts once more than `maxBytes` arrive, so one huge file can't fill a disk.
  */
+/** Where downloadMrf keeps a file. */
+export function cachePath(url: string, cacheDir: string): string {
+  const hash = createHash("sha1").update(url).digest("hex").slice(0, 12);
+  const name = basename(new URL(url).pathname).replace(/[^\w.-]/g, "_");
+  return join(cacheDir, `${hash}-${name}`.slice(0, 200));
+}
+
 export async function downloadMrf(
   url: string,
   cacheDir: string,
   opts: { maxBytes: number; refresh: boolean }
 ): Promise<Download> {
   await mkdir(cacheDir, { recursive: true });
-  const hash = createHash("sha1").update(url).digest("hex").slice(0, 12);
-  const name = basename(new URL(url).pathname).replace(/[^\w.-]/g, "_");
-  const path = join(cacheDir, `${hash}-${name}`.slice(0, 200));
+  const path = cachePath(url, cacheDir);
   if (!opts.refresh && existsSync(path)) {
     return { path, bytes: (await stat(path)).size, fromCache: true };
   }

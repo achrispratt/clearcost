@@ -4,9 +4,9 @@
  * Finds hospital machine-readable files through each hospital's cms-hpt.txt,
  * stream-parses them (CMS template JSON, CSV tall, CSV wide; plain, gzip or
  * zip), keeps the curated codes, and writes rows in the `charges` shape to a
- * local NDJSON file. It never writes to the database. --compare reads
- * production (read-only) to check crawled prices against the Trilliant
- * baseline for the same hospital.
+ * local NDJSON file. --compare reads production (read-only) to check crawled
+ * prices against the Trilliant baseline for the same hospital. Only --load
+ * writes to the database.
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/crawl-mrf.ts --domain www.ohsu.edu --compare
@@ -29,11 +29,16 @@
  *   --provider-id <uuid>   Use this provider for --compare instead of matching
  *   --providers <n>        Crawl and compare an evenly spread sample of n providers
  *                          whose stored cms-hpt.txt names them (implies --compare)
+ *   --state <XX>           Crawl and compare every such provider in one state
+ *                          (implies --compare); downloads are deleted after parsing
+ *   --load                 With --state: replace each hospital's live prices with
+ *                          its crawled rows when the file passes the load checks
+ *                          (lib/crawler/load.ts). Without it, --state is a dry run.
  *
  * See docs/mrf-crawler.md.
  */
 
-import { createWriteStream, readFileSync, writeFileSync } from "fs";
+import { createWriteStream, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
@@ -53,8 +58,18 @@ import {
   type Comparison,
   type PriceRow,
 } from "../lib/crawler/compare";
-import { discoverMrfs, downloadMrf, openMrf } from "../lib/crawler/fetch";
+import {
+  cachePath,
+  discoverMrfs,
+  downloadMrf,
+  openMrf,
+} from "../lib/crawler/fetch";
 import type { HptTxtEntry } from "../lib/crawler/hpt-txt";
+import {
+  loadDecision,
+  loadProviderRows,
+  type LoadResult,
+} from "../lib/crawler/load";
 import { toCrawledCharge } from "../lib/crawler/normalize";
 import { parseCsvMrf } from "../lib/crawler/parse-csv";
 import { parseJsonMrf } from "../lib/crawler/parse-json";
@@ -86,6 +101,8 @@ interface Config {
   compare: boolean;
   providerId: string | null;
   providers: number;
+  state: string | null;
+  load: boolean;
 }
 
 function parseArgs(argv: string[]): Config {
@@ -102,6 +119,8 @@ function parseArgs(argv: string[]): Config {
     compare: false,
     providerId: null,
     providers: 0,
+    state: null,
+    load: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const next = () => {
@@ -152,6 +171,13 @@ function parseArgs(argv: string[]): Config {
         config.providers = parseInt(next(), 10);
         config.compare = true;
         break;
+      case "--state":
+        config.state = next().toUpperCase();
+        config.compare = true;
+        break;
+      case "--load":
+        config.load = true;
+        break;
       default:
         throw new Error(`Unknown option ${argv[i]}`);
     }
@@ -159,11 +185,15 @@ function parseArgs(argv: string[]): Config {
   if (
     config.domains.length === 0 &&
     config.mrfUrls.length === 0 &&
-    config.providers === 0
+    config.providers === 0 &&
+    !config.state
   ) {
     throw new Error(
-      "Give at least one --domain, --domains-file, --mrf-url or --providers"
+      "Give at least one --domain, --domains-file, --mrf-url, --providers or --state"
     );
+  }
+  if (config.load && !config.state) {
+    throw new Error("--load works one state at a time: add --state <XX>");
   }
   return config;
 }
@@ -284,6 +314,16 @@ interface Target {
   mrfUrl: string;
   /** Provider this file belongs to, when known up front (--providers). */
   providerId?: string;
+  /** Other providers whose cms-hpt.txt entry points at the same file. */
+  alsoProviderIds?: string[];
+}
+
+interface LoadOutcome {
+  providerId: string;
+  loaded: boolean;
+  reason?: string;
+  result?: LoadResult;
+  error?: string;
 }
 
 interface FileResult extends Target {
@@ -311,6 +351,7 @@ interface FileResult extends Target {
     matchScore: number | null;
   };
   compareSkipped?: string;
+  loads?: LoadOutcome[];
 }
 
 function drgReport(rows: CrawledCharge[]): Record<string, DrgStat> {
@@ -389,6 +430,8 @@ async function crawlFile(
         : parseCsvMrf(stream, codeSet, meta, stats);
 
     const drgRows: CrawledCharge[] = [];
+    // Kept in memory only when they may be loaded (a few thousand per file).
+    const keptRows: CrawledCharge[] | null = config.state ? [] : null;
     const crawledPrices = new Map<string, CodePrices>();
     const distinctCodes = new Set<string>();
     const byColumn: Record<string, number> = { cpt: 0, hcpcs: 0, ms_drg: 0 };
@@ -412,6 +455,7 @@ async function crawlFile(
         row.ms_drg ? `drg ${row.ms_drg}` : (row.cpt ?? row.hcpcs)!
       );
       addRow(crawledPrices, row);
+      keptRows?.push(row);
       if (!out.write(JSON.stringify(row) + "\n")) {
         await new Promise((r) => out.once("drain", r));
       }
@@ -435,8 +479,25 @@ async function crawlFile(
 
     if (supabase)
       await compareWithProd(result, crawledPrices, config, supabase);
+    if (supabase && keptRows && result.providerId)
+      result.loads = await checkAndLoad(
+        result,
+        keptRows,
+        crawledPrices,
+        config,
+        supabase
+      );
   } catch (err) {
     result.error = err instanceof Error ? err.message : String(err);
+  } finally {
+    // A state run would otherwise fill the disk with price files.
+    if (config.state) {
+      try {
+        rmSync(cachePath(target.mrfUrl, config.cacheDir), { force: true });
+      } catch {
+        // best effort
+      }
+    }
   }
   result.seconds = Math.round((Date.now() - started) / 100) / 10;
   return result;
@@ -496,6 +557,64 @@ async function compareWithProd(
   };
 }
 
+/**
+ * Run the load checks for every hospital this file belongs to and, with
+ * --load, swap each passing hospital's prices to the crawled rows.
+ */
+async function checkAndLoad(
+  result: FileResult,
+  rows: CrawledCharge[],
+  crawled: Map<string, CodePrices>,
+  config: Config,
+  supabase: SupabaseClient
+): Promise<LoadOutcome[]> {
+  const outcomes: LoadOutcome[] = [];
+  const ids = [result.providerId!, ...(result.alsoProviderIds ?? [])];
+  for (const providerId of ids) {
+    try {
+      const { data: provider, error } = await supabase
+        .from("providers")
+        .select("state, last_updated")
+        .eq("id", providerId)
+        .single();
+      if (error) throw error;
+      const comparison =
+        providerId === result.comparison?.providerId
+          ? result.comparison
+          : compareCodePrices(
+              crawled,
+              await loadProdPrices(supabase, providerId)
+            );
+      const decision = loadDecision({
+        rows: rows.length,
+        meta: result.meta!,
+        providerState: provider.state,
+        providerLastUpdated: provider.last_updated,
+        comparison,
+      });
+      if (!decision.load) {
+        outcomes.push({ providerId, loaded: false, reason: decision.reason });
+      } else if (!config.load) {
+        outcomes.push({
+          providerId,
+          loaded: false,
+          reason: "dry run: would load",
+        });
+      } else {
+        const loaded = await loadProviderRows(supabase, providerId, rows);
+        outcomes.push({ providerId, loaded: true, result: loaded });
+      }
+    } catch (err) {
+      outcomes.push({
+        providerId,
+        loaded: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return outcomes;
+}
+
 // ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
@@ -532,6 +651,16 @@ function printResult(r: FileResult): void {
         .join("; ")
   );
   if (r.compareSkipped) console.log(`  compare skipped: ${r.compareSkipped}`);
+  for (const l of r.loads ?? []) {
+    console.log(
+      `  load ${l.providerId}: ` +
+        (l.loaded
+          ? `loaded ${l.result!.inserted} rows, archived ${l.result!.archived}, replaced ${l.result!.replaced}`
+          : l.error
+            ? `ERROR ${l.error}`
+            : l.reason)
+    );
+  }
   const c = r.comparison;
   if (c) {
     console.log(
@@ -556,12 +685,14 @@ function printResult(r: FileResult): void {
 // ---------------------------------------------------------------------------
 
 /**
- * An evenly spread sample of providers whose cms-hpt.txt names them
- * (scripts/build-hospital-websites.ts), each with its own price file.
+ * Providers whose cms-hpt.txt names them (scripts/build-hospital-websites.ts):
+ * an evenly spread sample of `count`, or every one in `state`. Hospitals that
+ * share a price file become one target, so the file is parsed once.
  */
 async function providerTargets(
   supabase: SupabaseClient,
-  count: number
+  count: number,
+  state: string | null = null
 ): Promise<Target[]> {
   const rows: {
     id: string;
@@ -569,22 +700,27 @@ async function providerTargets(
     mrf_location_name: string;
   }[] = [];
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("providers")
       .select("id, mrf_index_url, mrf_location_name")
-      .not("mrf_index_url", "is", null)
-      .order("id")
-      .range(from, from + 999);
+      .not("mrf_index_url", "is", null);
+    if (state) query = query.eq("state", state);
+    const { data, error } = await query.order("id").range(from, from + 999);
     if (error) throw error;
     rows.push(...data);
     if (data.length < 1000) break;
   }
-  const step = Math.max(1, rows.length / count);
-  const sample = Array.from(
-    { length: Math.min(count, rows.length) },
-    (_, i) => rows[Math.floor(i * step)]
-  );
-  console.log(`Sampling ${sample.length} of ${rows.length} providers`);
+  let sample = rows;
+  if (state) {
+    console.log(`${rows.length} providers in ${state} with a price-file list`);
+  } else {
+    const step = Math.max(1, rows.length / count);
+    sample = Array.from(
+      { length: Math.min(count, rows.length) },
+      (_, i) => rows[Math.floor(i * step)]
+    );
+    console.log(`Sampling ${sample.length} of ${rows.length} providers`);
+  }
 
   const entriesByIndex = new Map<string, HptTxtEntry[] | null>();
   const targets: Target[] = [];
@@ -603,6 +739,11 @@ async function providerTargets(
       ?.find((e) => e.locationName === row.mrf_location_name);
     if (!entry) {
       console.log(`${row.mrf_location_name}: no longer listed, skipped`);
+      continue;
+    }
+    const shared = targets.find((t) => t.mrfUrl === entry.mrfUrl);
+    if (shared) {
+      shared.alsoProviderIds = [...(shared.alsoProviderIds ?? []), row.id];
       continue;
     }
     targets.push({
@@ -633,7 +774,7 @@ async function main() {
         "--compare needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
       );
     }
-    // Read-only use: this script only ever selects.
+    // Selects only, unless --load.
     supabase = createClient(url, key, { auth: { persistSession: false } });
   }
 
@@ -679,8 +820,10 @@ async function main() {
     }
   }
 
-  if (config.providers > 0) {
-    targets.push(...(await providerTargets(supabase!, config.providers)));
+  if (config.providers > 0 || config.state) {
+    targets.push(
+      ...(await providerTargets(supabase!, config.providers, config.state))
+    );
   }
 
   const outPath =
@@ -709,6 +852,24 @@ async function main() {
       `${ok.reduce((s, r) => s + (r.rows ?? 0), 0).toLocaleString()} rows → ${outPath}\n` +
       `summary → ${summaryPath}`
   );
+  if (config.state) {
+    const loads = results.flatMap((r) => r.loads ?? []);
+    const tally = new Map<string, number>();
+    for (const l of loads) {
+      const key = l.loaded ? "loaded" : l.error ? "error" : l.reason!;
+      tally.set(key, (tally.get(key) ?? 0) + 1);
+    }
+    console.log(`\n${config.state} hospitals by outcome:`);
+    for (const [k, n] of [...tally].sort((a, b) => b[1] - a[1]))
+      console.log(`  ${n}  ${k}`);
+    if (loads.some((l) => l.loaded)) {
+      // Typical prices per code feed the 10x impossible-price filter (#196).
+      const { error } = await supabase!.rpc("refresh_code_price_reference");
+      if (error)
+        console.log(`refresh_code_price_reference failed: ${error.message}`);
+      else console.log("code_price_reference refreshed");
+    }
+  }
 }
 
 if (process.argv[1]?.endsWith("crawl-mrf.ts")) {
