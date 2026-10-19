@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { loadDecision, namesOverlap, toStagingRow } from "@/lib/crawler/load";
+import {
+  loadDecision,
+  namesOverlap,
+  storableRows,
+  toStagingRow,
+} from "@/lib/crawler/load";
 import type { Comparison } from "@/lib/crawler/compare";
 import type { CrawledCharge, MrfMeta } from "@/lib/crawler/types";
 
@@ -136,5 +141,24 @@ describe("toStagingRow", () => {
       last_updated: "2026-03-01T00:00:00.000Z",
     });
     expect(row).not.toHaveProperty("mrf_url");
+  });
+});
+
+describe("storableRows", () => {
+  it("keeps one row per distinct price and drops rows with no price", () => {
+    const a = {
+      cpt: "73721",
+      setting: "outpatient",
+      cash_price: 900,
+      revenue_code: "0610",
+    };
+    const relabeled = { ...a, description: "MRI KNEE", revenue_code: "0611" };
+    const inpatient = { ...a, setting: "inpatient" };
+    const otherPrice = { ...a, cash_price: 950 };
+    const otherSide = { ...a, laterality: "left" };
+    const empty = { cpt: "73721", cash_price: null, gross_charge: null };
+    expect(
+      storableRows([a, relabeled, inpatient, otherPrice, otherSide, empty])
+    ).toEqual([a, inpatient, otherPrice, otherSide]);
   });
 });

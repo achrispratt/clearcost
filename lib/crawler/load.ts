@@ -183,6 +183,49 @@ export function toStagingRow(
   };
 }
 
+const PRICE_FIELDS = [
+  "gross_charge",
+  "cash_price",
+  "min_price",
+  "max_price",
+  "avg_negotiated_rate",
+  "min_negotiated_rate",
+  "max_negotiated_rate",
+] as const;
+
+/** What makes two rows show different prices; everything else is labeling. */
+const PRICE_KEY_FIELDS = [
+  "cpt",
+  "hcpcs",
+  "ms_drg",
+  "setting",
+  "billing_class",
+  "modifiers",
+  "laterality",
+  "body_site",
+  ...PRICE_FIELDS,
+] as const;
+
+/**
+ * Staging rows worth storing. Price files list the same code at the same
+ * prices many times over (once per revenue code, drug package or
+ * chargemaster wording); one row per distinct price is all search reads,
+ * and keeps a crawled hospital about the size of its Trilliant rows. Rows
+ * with no price at all show nothing and are dropped.
+ */
+export function storableRows(
+  rows: Record<string, unknown>[]
+): Record<string, unknown>[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    if (PRICE_FIELDS.every((f) => row[f] == null)) return false;
+    const key = JSON.stringify(PRICE_KEY_FIELDS.map((f) => row[f] ?? null));
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export interface LoadResult {
   inserted: number;
   archived: number;
@@ -196,12 +239,13 @@ export async function loadProviderRows(
   rows: CrawledCharge[]
 ): Promise<LoadResult> {
   const loadId = randomUUID();
-  for (let i = 0; i < rows.length; i += 500) {
+  const staged = storableRows(
+    rows.map((r) => toStagingRow(r, providerId, loadId))
+  );
+  for (let i = 0; i < staged.length; i += 500) {
     const { error } = await supabase
       .from("charges_mrf_staging")
-      .insert(
-        rows.slice(i, i + 500).map((r) => toStagingRow(r, providerId, loadId))
-      );
+      .insert(staged.slice(i, i + 500));
     if (error) {
       await supabase.from("charges_mrf_staging").delete().eq("load_id", loadId);
       throw new Error(`staging failed: ${error.message}`);
