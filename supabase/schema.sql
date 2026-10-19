@@ -97,8 +97,6 @@ create index if not exists idx_charges_ms_drg on charges (ms_drg);
 create index if not exists idx_charges_provider on charges (provider_id);
 create index if not exists idx_charges_cpt_provider on charges (cpt, provider_id);
 create index if not exists idx_charges_hcpcs_provider on charges (hcpcs, provider_id);
-create index if not exists idx_charges_provider_cpt on charges (provider_id, cpt);
-create index if not exists idx_charges_provider_hcpcs on charges (provider_id, hcpcs);
 create index if not exists idx_charges_provider_ms_drg on charges (provider_id, ms_drg);
 create index if not exists idx_charges_description on charges using gin (to_tsvector('english', coalesce(description, '')));
 create index if not exists idx_charges_laterality on charges (laterality) where laterality is not null;
