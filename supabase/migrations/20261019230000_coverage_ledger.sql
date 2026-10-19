@@ -65,6 +65,9 @@ language plpgsql
 security definer
 set search_path = public, extensions
 set statement_timeout = '20min'
+-- ~5M hospital-code pairs: more memory for the grouping means less of it
+-- spills to temporary files on disk (one job, at 04:45 UTC).
+set work_mem = '64MB'
 as $$
 declare
   written integer;
@@ -257,6 +260,6 @@ select cron.schedule(
   $$select public.snapshot_coverage()$$
 );
 
--- First snapshot now, so the first nightly run has something to compare to.
-set statement_timeout = '30min';
-select public.snapshot_coverage();
+-- No first snapshot here: the full scan outlasts the deploy's statement
+-- timeout. The first nightly run records the baseline; the second has
+-- something to compare to.

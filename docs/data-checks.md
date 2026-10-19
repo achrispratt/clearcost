@@ -46,7 +46,7 @@ Two snapshots taken a few minutes apart with no change in between compare clean 
 
 ## Nightly coverage ledger
 
-`snapshot_coverage()` records, per hospital, how many codes it has rows for and how many it prices (any of cash, insured or list), and, per code, how many hospitals price it. It keeps 35 nights plus the first of each month.
+`snapshot_coverage()` records, per hospital, how many codes it has rows for and how many it prices (any of cash, insured or list), and, per code, how many hospitals price it. It keeps 35 nights plus the first of each month. The first nightly run records the baseline, so `ledger` has something to compare from the second night on.
 
 ```bash
 npx tsx --env-file=.env.local scripts/data-check.ts ledger                 # latest two nights
