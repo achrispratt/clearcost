@@ -350,6 +350,29 @@ describe("parseCsvMrf", () => {
     ]);
   });
 
+  it("keeps one item together when contract groups have their own min/max", async () => {
+    const csv =
+      csvHeader +
+      "description,code|1,code|1|type,setting,payer_name,plan_name,standard_charge|negotiated_dollar," +
+      "standard_charge|min,standard_charge|max,standard_charge|methodology\n" +
+      "MRI knee,73721,CPT,outpatient,UHC,Medicare Advantage,251.97,239.37,440.95,other\n" +
+      "MRI knee,73721,CPT,outpatient,BCBS,PPO,1922.28,339.36,1991.76,other\n" +
+      "MRI knee,73721,CPT,inpatient,BCBS,PPO,1991.76,339.36,1991.76,other\n";
+    const charges = await collect(
+      parseCsvMrf(Readable.from([csv]), codeSet, emptyMeta(), {
+        scanned: 0,
+        matched: 0,
+      })
+    );
+    expect(charges).toHaveLength(2);
+    expect(charges[0]).toMatchObject({
+      setting: "outpatient",
+      min: 239.37,
+      max: 1991.76,
+    });
+    expect(charges[0].payers.map((p) => p.dollar)).toEqual([251.97, 1922.28]);
+  });
+
   it("reads payer columns from a wide header", async () => {
     const csv =
       csvHeader +
