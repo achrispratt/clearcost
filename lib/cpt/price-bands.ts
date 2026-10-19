@@ -11,6 +11,14 @@ import { reportError } from "@/lib/observability";
  */
 export const BAND_FACTOR = 10;
 
+/**
+ * Stays (MS-DRG) are priced for the whole stay, so real prices sit much closer
+ * together: a $1,920 hip replacement stay is a daily or partial rate, not the
+ * stay. A stay price more than this many times under the typical one for its
+ * DRG is treated as missing.
+ */
+export const STAY_LOW_FACTOR = 4;
+
 /** HCPCS Level II codes are often per unit of a drug or supply; left alone. */
 const HCPCS_LEVEL_II = /^[A-V]\d{4}$/;
 
@@ -21,9 +29,18 @@ function referenceKey(code: string, professional: boolean): string {
   return `${code}|${professional}`;
 }
 
+/** Reference key for a stay; matches refresh_code_price_reference(). */
+function stayCode(drg: string): string | undefined {
+  const key = drg.trim().replace(/^0+(?=\d)/, "");
+  return key ? `drg:${key}` : undefined;
+}
+
+function isStay(result: ChargeResult): boolean {
+  return !!result.msDrg && !result.cpt && !result.hcpcs;
+}
+
 function bandCode(result: ChargeResult): string | undefined {
-  // Stays (MS-DRG) are priced by their own rules (#173), not banded here.
-  if (result.msDrg && !result.cpt && !result.hcpcs) return undefined;
+  if (isStay(result)) return stayCode(result.msDrg as string);
   const code = (result.cpt ?? result.hcpcs)?.trim().toUpperCase();
   if (!code || HCPCS_LEVEL_II.test(code)) return undefined;
   return code;
@@ -65,10 +82,11 @@ export async function loadPriceReference(
 function inBand(
   value: number | undefined,
   typical: number,
-  checkHigh = true
+  checkHigh = true,
+  lowFactor = BAND_FACTOR
 ): boolean {
   if (value == null) return true;
-  if (value < typical / BAND_FACTOR) return false;
+  if (value < typical / lowFactor) return false;
   return !checkHigh || value <= typical * BAND_FACTOR;
 }
 
@@ -84,11 +102,12 @@ export function applyPriceBands(
     const typical = reference.get(referenceKey(code, isProfessional(r)));
     if (typical == null || typical <= 0) return r;
 
-    const cashOk = inBand(r.cashPrice, typical);
-    const insuredOk = inBand(r.avgNegotiatedRate, typical);
+    const low = isStay(r) ? STAY_LOW_FACTOR : BAND_FACTOR;
+    const cashOk = inBand(r.cashPrice, typical, true, low);
+    const insuredOk = inBand(r.avgNegotiatedRate, typical, true, low);
     // List prices are often many times the typical price and still real, so
     // only an impossibly low one is cleared.
-    const grossOk = inBand(r.grossCharge, typical, false);
+    const grossOk = inBand(r.grossCharge, typical, false, low);
     if (cashOk && insuredOk && grossOk) return r;
     return {
       ...r,

@@ -189,6 +189,11 @@ function widePayers(row: string[], cols: Columns): RawPayerRate[] {
   return rates;
 }
 
+const lowest = (a: number | null, b: number | null) =>
+  a === null ? b : b === null ? a : Math.min(a, b);
+const highest = (a: number | null, b: number | null) =>
+  a === null ? b : b === null ? a : Math.max(a, b);
+
 /**
  * Yield the standard charges that carry a wanted code. `meta` is filled from
  * the header rows before the first charge is yielded.
@@ -245,10 +250,22 @@ export async function* parseCsvMrf(
       yield charge;
       continue;
     }
-    const key = JSON.stringify({ ...charge, payers: undefined });
+    // Some files give each contract family its own min/max (Ascension splits
+    // a knee MRI into a Medicare Advantage group and a commercial one). It is
+    // still one item, so group without them and widen min/max to cover all.
+    const key = JSON.stringify({
+      ...charge,
+      payers: undefined,
+      min: undefined,
+      max: undefined,
+    });
     const existing = grouped.get(key);
     const target = existing ?? charge;
     if (!existing) grouped.set(key, charge);
+    else {
+      existing.min = lowest(existing.min, charge.min);
+      existing.max = highest(existing.max, charge.max);
+    }
     const payer = tallPayer(row, cols!);
     if (payer) target.payers.push(payer);
   }
