@@ -72,13 +72,38 @@ describe("applyPriceBands", () => {
     expect(r.cashPrice).toBe(95);
   });
 
-  it("leaves codes without a reference, stays and HCPCS Level II alone", () => {
+  it("leaves codes and stays without a reference, and HCPCS Level II, alone", () => {
     const rows = [
       charge({ cpt: "99999", cashPrice: 1 }),
       charge({ cpt: undefined, msDrg: "470", cashPrice: 2 }),
       charge({ cpt: undefined, hcpcs: "J1885", cashPrice: 2 }),
     ];
     expect(applyPriceBands(rows, reference)).toEqual(rows);
+  });
+
+  it("clears a stay price more than 4x under its DRG's typical price", () => {
+    const stayRef: PriceReference = new Map([["drg:470|false", 25000]]);
+    const partial = charge({
+      cpt: undefined,
+      msDrg: "0470",
+      avgNegotiatedRate: 2462,
+      minNegotiatedRate: 1502,
+      maxNegotiatedRate: 3380,
+      cashPrice: 45000,
+    });
+    const [r] = applyPriceBands([partial], stayRef);
+    expect(r.avgNegotiatedRate).toBeUndefined();
+    expect(r.minNegotiatedRate).toBeUndefined();
+    expect(r.maxNegotiatedRate).toBeUndefined();
+    expect(r.cashPrice).toBe(45000);
+
+    // A low but real contract rate stays.
+    const real = charge({
+      cpt: undefined,
+      msDrg: "470",
+      avgNegotiatedRate: 6250,
+    });
+    expect(applyPriceBands([real], stayRef)).toEqual([real]);
   });
 });
 
@@ -102,6 +127,14 @@ describe("loadPriceReference", () => {
     expect(ref.get("73721|false")).toBe(1600);
   });
 
+  it("asks for stays under their drg key", async () => {
+    const { supabase, inFn } = client({ data: [], error: null });
+    await loadPriceReference(supabase, [
+      charge({ cpt: undefined, msDrg: "001" }),
+    ]);
+    expect(inFn).toHaveBeenCalledWith("code", ["drg:1"]);
+  });
+
   it("returns an empty reference when the query fails", async () => {
     const { supabase } = client({ data: null, error: { message: "boom" } });
     const ref = await loadPriceReference(supabase, [charge({})]);
@@ -111,7 +144,7 @@ describe("loadPriceReference", () => {
   it("skips the query when nothing can be banded", async () => {
     const { supabase, from } = client({ data: [], error: null });
     await loadPriceReference(supabase, [
-      charge({ cpt: undefined, msDrg: "1" }),
+      charge({ cpt: undefined, hcpcs: "J1885" }),
     ]);
     expect(from).not.toHaveBeenCalled();
   });

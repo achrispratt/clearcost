@@ -1260,8 +1260,9 @@ revoke execute on function refresh_provider_cash_ratios(uuid[])
 grant execute on function refresh_provider_cash_ratios(uuid[]) to service_role;
 
 -- National typical price per billing code and fee type (#194). Prices more
--- than 10x off it are treated as missing (lib/cpt/price-bands.ts). Refreshed
--- by refresh_provider_cash_ratios() above.
+-- than 10x off it are treated as missing (lib/cpt/price-bands.ts). Stays have
+-- 'drg:<code>' keys, and a stay price more than 4x under is missing. Refreshed
+-- nightly by pg_cron (code-price-reference-refresh-daily).
 create table if not exists public.code_price_reference (
   code text not null,
   professional boolean not null,
@@ -1283,9 +1284,12 @@ returns integer
 language plpgsql
 security definer
 set search_path = public, extensions
+-- Kept from 20261019040000: create or replace resets function settings.
+set statement_timeout = '10min'
 as $$
 declare
   affected integer;
+  stays integer;
 begin
   delete from code_price_reference where true;
 
@@ -1305,7 +1309,27 @@ begin
   having count(*) >= 20;
 
   get diagnostics affected = row_count;
-  return affected;
+
+  insert into code_price_reference (code, professional, typical_price, sample_size)
+  select
+    'drg:' || regexp_replace(trim(c.ms_drg), '^0+(?=[0-9])', ''),
+    false,
+    percentile_cont(0.5) within group (
+      order by coalesce(c.cash_price, c.avg_negotiated_rate)
+    ),
+    count(*)::integer
+  from charges c
+  where c.source = 'cms_mrf'
+    and c.ms_drg is not null
+    and c.cpt is null
+    and c.hcpcs is null
+    and coalesce(lower(c.billing_class), '') <> 'professional'
+    and coalesce(c.cash_price, c.avg_negotiated_rate) >= 1
+  group by 1
+  having count(*) >= 20;
+
+  get diagnostics stays = row_count;
+  return affected + stays;
 end;
 $$;
 
