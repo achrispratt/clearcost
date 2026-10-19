@@ -120,6 +120,15 @@ describe("negotiatedStats", () => {
     });
   });
 
+  it("leaves out placeholder rates far under the median (#184)", () => {
+    expect(
+      negotiatedStats(
+        [rate(0.01), rate(1.15), rate(1800), rate(2000), rate(2200), rate(600)],
+        false
+      )
+    ).toEqual({ avg: 1650, min: 600, max: 2200, count: 4, perDiemExcluded: 0 });
+  });
+
   it("returns no stats when a stay only has per-diem rates", () => {
     expect(negotiatedStats([rate(4000, "per diem")], true)).toEqual({
       avg: null,
