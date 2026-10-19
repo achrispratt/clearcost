@@ -19,6 +19,8 @@ export interface LoadCheckInput {
   rows: number;
   meta: MrfMeta;
   providerState: string | null;
+  /** The hospital's name and its location name in the price-file list. */
+  providerNames: string[];
   /** Date of the Oria file behind the hospital's current rows. */
   providerLastUpdated: string | null;
   comparison: Comparison | null;
@@ -31,7 +33,14 @@ export type LoadDecision = { load: true } | { load: false; reason: string };
  * price is worse than an old one, so anything doubtful keeps what is live.
  */
 export function loadDecision(input: LoadCheckInput): LoadDecision {
-  const { rows, meta, providerState, providerLastUpdated, comparison } = input;
+  const {
+    rows,
+    meta,
+    providerState,
+    providerNames,
+    providerLastUpdated,
+    comparison,
+  } = input;
   if (rows === 0) return { load: false, reason: "no rows for our codes" };
   if (
     meta.licenseState &&
@@ -53,19 +62,85 @@ export function loadDecision(input: LoadCheckInput): LoadDecision {
       reason: `file (${meta.lastUpdatedOn}) is older than live data (${providerLastUpdated})`,
     };
   }
-  if (comparison) {
-    const judged = [comparison.cash, comparison.negotiated].filter(
-      (a) => a.pairs >= MIN_PAIRS_TO_JUDGE
-    );
-    if (judged.length > 0 && judged.every((a) => a.within25 < MIN_WITHIN_25)) {
-      return {
-        load: false,
-        reason:
-          "prices disagree with live data on most shared codes (wrong file?)",
-      };
-    }
+  const judged = comparison
+    ? [comparison.cash, comparison.negotiated].filter(
+        (a) => a.pairs >= MIN_PAIRS_TO_JUDGE
+      )
+    : [];
+  if (judged.length > 0 && judged.every((a) => a.within25 < MIN_WITHIN_25)) {
+    return {
+      load: false,
+      reason:
+        "prices disagree with live data on most shared codes (wrong file?)",
+    };
+  }
+  // With no live prices to compare against, the file's own name is the only
+  // check that it belongs to this hospital.
+  const fileNames = [meta.hospitalName, ...meta.locationNames].filter(
+    (n): n is string => !!n
+  );
+  if (
+    judged.length === 0 &&
+    fileNames.length > 0 &&
+    !namesOverlap(fileNames, providerNames)
+  ) {
+    return {
+      load: false,
+      reason: `file is for "${fileNames[0]}" and there are no live prices to check it against`,
+    };
   }
   return { load: true };
+}
+
+const GENERIC_NAME_WORDS = new Set([
+  "and",
+  "the",
+  "of",
+  "at",
+  "inc",
+  "llc",
+  "hospital",
+  "hospitals",
+  "medical",
+  "center",
+  "centre",
+  "health",
+  "healthcare",
+  "care",
+  "community",
+  "regional",
+  "memorial",
+  "general",
+  "services",
+  "service",
+  "system",
+  "systems",
+  "clinic",
+  "clinics",
+  "district",
+  "county",
+  "public",
+  "saint",
+  "campus",
+  "family",
+  "medicine",
+  "rural",
+]);
+
+function nameWords(name: string): Set<string> {
+  return new Set(
+    name
+      .toLowerCase()
+      .replace(/\bst\.?\s/g, "saint ")
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 3 && !GENERIC_NAME_WORDS.has(w))
+  );
+}
+
+/** Whether any distinctive word (not "hospital", "medical"...) is shared. */
+export function namesOverlap(a: string[], b: string[]): boolean {
+  const words = new Set(a.flatMap((n) => [...nameWords(n)]));
+  return b.some((n) => [...nameWords(n)].some((w) => words.has(w)));
 }
 
 function parseDate(value: string | null): Date | null {

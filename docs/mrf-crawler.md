@@ -155,6 +155,7 @@ Targets are the providers with `mrf_index_url` + `mrf_location_name` in the stat
 2. its license state (file header) is the hospital's state;
 3. it has a last-updated date, and that date is not older than the Oria file behind the live rows (`providers.last_updated`);
 4. it doesn't disagree with live prices on most shared codes: with 20+ shared code/setting pairs, at least 25% of cash or negotiated medians must be within 25% (a wrong file is worse than an old one).
+5. when there are too few shared prices to judge, the file's hospital or location name shares a distinctive word with the hospital's name or its location name ("Providence", "Sunnyside"; not "Hospital" or "Medical"). This caught a Columbia Basin listing whose file is headed Dayton General Hospital.
 
 The script ends with a tally of outcomes per reason. `code_price_reference` (the per-code typical price behind the 10x filter) takes too long for an API call, so a pg_cron job refreshes it nightly at 04:00 UTC (migration `20261019040000_code_price_reference_nightly.sql`).
 

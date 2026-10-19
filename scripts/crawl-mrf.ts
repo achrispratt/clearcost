@@ -574,7 +574,7 @@ async function checkAndLoad(
     try {
       const { data: provider, error } = await supabase
         .from("providers")
-        .select("state, last_updated")
+        .select("name, state, last_updated, mrf_location_name")
         .eq("id", providerId)
         .single();
       if (error) throw error;
@@ -589,6 +589,9 @@ async function checkAndLoad(
         rows: rows.length,
         meta: result.meta!,
         providerState: provider.state,
+        providerNames: [provider.name, provider.mrf_location_name].filter(
+          Boolean
+        ),
         providerLastUpdated: provider.last_updated,
         comparison,
       });
