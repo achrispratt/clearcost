@@ -8,6 +8,13 @@ function billingClassTier(bc: string | undefined): number {
   return 0; // unknown treated as potentially complete
 }
 
+// A procedure's price is its outpatient one. Hospital files also list the
+// same code inside inpatient stays, at rates that belong to the stay.
+function settingTier(result: ChargeResult): number {
+  if (result.msDrg) return 0;
+  return result.setting?.toLowerCase() === "inpatient" ? 1 : 0;
+}
+
 function priceTypeTier(result: ChargeResult): number {
   if (result.cashPrice != null) return 0;
   if (result.avgNegotiatedRate != null) return 1;
@@ -29,6 +36,9 @@ function selectPrimary(charges: ChargeResult[]): ChargeResult {
     const tierDiff =
       billingClassTier(best.billingClass) - billingClassTier(cur.billingClass);
     if (tierDiff !== 0) return tierDiff < 0 ? best : cur;
+
+    const settingDiff = settingTier(best) - settingTier(cur);
+    if (settingDiff !== 0) return settingDiff < 0 ? best : cur;
 
     const priceTierDiff = priceTypeTier(best) - priceTypeTier(cur);
     if (priceTierDiff !== 0) return priceTierDiff < 0 ? best : cur;
