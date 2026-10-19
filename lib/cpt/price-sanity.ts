@@ -5,6 +5,9 @@
  *
  * HCPCS Level II codes (J, Q, A, ...) are often priced per unit of a drug or
  * supply, where a few cents can be real, so they are left alone.
+ *
+ * snapshot_data_quality() counts the rows these rules hide each night; keep
+ * its thresholds in step.
  */
 
 const HCPCS_LEVEL_II = /^[A-V]\d{4}$/;
