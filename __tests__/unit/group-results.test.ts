@@ -13,6 +13,17 @@ const charge = (over: Partial<ChargeResult>): ChargeResult =>
   }) as ChargeResult;
 
 describe("groupResultsByProvider", () => {
+  it("picks the same row on a cash tie whatever order rows arrive in", () => {
+    const rows = [
+      charge({ id: "a", cashPrice: 660.4, avgNegotiatedRate: 3986.92 }),
+      charge({ id: "b", cashPrice: 660.4, avgNegotiatedRate: 484.47 }),
+      charge({ id: "c", cashPrice: 660.4, avgNegotiatedRate: 484.47 }),
+    ];
+    for (const order of [rows, [...rows].reverse()]) {
+      expect(groupResultsByProvider(order)[0].id).toBe("b");
+    }
+  });
+
   it("prices a procedure from its outpatient row, not the inpatient one", () => {
     const [group] = groupResultsByProvider([
       charge({ id: "ip", setting: "inpatient", avgNegotiatedRate: 13632 }),
