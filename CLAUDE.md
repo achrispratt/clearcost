@@ -173,6 +173,8 @@ supabase/schema.sql   — Full database schema (tables, RPC functions, indexes, 
 
 KB jobs (pg_cron, daily UTC, migration `20261015050000_kb_growth_machinery.sql`): `kb_rollup_path_stats()` 03:00 (previous + current month, distinct sessions, idempotent upsert) → `kb_flag_resolution_nodes()` 03:15 → `kb_purge_old_events()` 03:30 (rolls up first, then deletes only whole months older than both 30 days and the previous month). View `kb_resolution_confidence` = per resolution node per month rates + #126 confidence score. All service-role only.
 
+Price data-quality counts (pg_cron, daily 04:30 UTC, after the 04:00 `refresh_code_price_reference()`): `snapshot_data_quality()` writes per-source counts of rows the price filters hide or flag to `data_quality_counts` (migration `20261019190000_data_quality_counts.sql`). Service-role only.
+
 2 RPC functions:
 
 - `search_charges_nearby(code_type, codes[], lat, lng, radius_km)` — primary code-based search

@@ -7,7 +7,8 @@ import { reportError } from "@/lib/observability";
  * knee MRI, a $6,089 blood count (#194). A price more than this many times
  * below or above the national typical price for its code (and fee type) is
  * treated as missing, like the placeholder rule in price-sanity.ts. Wrong
- * data is worse than none.
+ * data is worse than none. snapshot_data_quality() counts the rows this hides
+ * each night; keep its factors in step.
  */
 export const BAND_FACTOR = 10;
 
