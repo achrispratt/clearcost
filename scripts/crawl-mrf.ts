@@ -863,11 +863,10 @@ async function main() {
     for (const [k, n] of [...tally].sort((a, b) => b[1] - a[1]))
       console.log(`  ${n}  ${k}`);
     if (loads.some((l) => l.loaded)) {
-      // Typical prices per code feed the 10x impossible-price filter (#196).
-      const { error } = await supabase!.rpc("refresh_code_price_reference");
-      if (error)
-        console.log(`refresh_code_price_reference failed: ${error.message}`);
-      else console.log("code_price_reference refreshed");
+      // Too slow for an API call; a nightly pg_cron job refreshes it.
+      console.log(
+        "typical prices per code (10x filter) refresh nightly at 04:00 UTC"
+      );
     }
   }
 }

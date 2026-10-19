@@ -156,7 +156,7 @@ Targets are the providers with `mrf_index_url` + `mrf_location_name` in the stat
 3. it has a last-updated date, and that date is not older than the Oria file behind the live rows (`providers.last_updated`);
 4. it doesn't disagree with live prices on most shared codes: with 20+ shared code/setting pairs, at least 25% of cash or negotiated medians must be within 25% (a wrong file is worse than an old one).
 
-The script ends with a tally of outcomes per reason and, after any load, refreshes `code_price_reference` (the per-code typical price behind the 10x filter).
+The script ends with a tally of outcomes per reason. `code_price_reference` (the per-code typical price behind the 10x filter) takes too long for an API call, so a pg_cron job refreshes it nightly at 04:00 UTC (migration `20261019040000_code_price_reference_nightly.sql`).
 
 **The swap** (migration `20261018120000_mrf_load_swap.sql`). Rows go to `charges_mrf_staging` under a load id, then `apply_mrf_load(provider, load)` runs in one transaction: the hospital's other-source rows for the same codes move to `charges_archive`, its previous `cms_mrf` rows are deleted, the staged rows are copied into `charges` (`last_updated` = the file's date), and its cash ratios are refreshed. Codes compare by value across `cpt`/`hcpcs` (hospitals file HCPCS under either label) and DRGs without leading zeros. Codes the file lacks keep their Oria rows. No reader of `charges` changes. `restore_mrf_load(provider)` undoes it: crawled rows out, archived rows back.
 
