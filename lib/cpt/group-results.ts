@@ -31,6 +31,13 @@ function bestPrice(result: ChargeResult): number {
   );
 }
 
+/** Negative when a is lower; missing values sort last. */
+function compareLow(a: number | undefined, b: number | undefined): number {
+  const x = a ?? Infinity;
+  const y = b ?? Infinity;
+  return x === y ? 0 : x < y ? -1 : 1;
+}
+
 function selectPrimary(charges: ChargeResult[]): ChargeResult {
   return charges.reduce((best, cur) => {
     const tierDiff =
@@ -43,7 +50,14 @@ function selectPrimary(charges: ChargeResult[]): ChargeResult {
     const priceTierDiff = priceTypeTier(best) - priceTypeTier(cur);
     if (priceTierDiff !== 0) return priceTierDiff < 0 ? best : cur;
 
-    return bestPrice(best) <= bestPrice(cur) ? best : cur;
+    // Lowest headline price wins. On a tie, the other prices and then the
+    // id decide, so the card doesn't change with the order rows come back in.
+    const priceDiff =
+      compareLow(bestPrice(best), bestPrice(cur)) ||
+      compareLow(best.avgNegotiatedRate, cur.avgNegotiatedRate) ||
+      compareLow(best.grossCharge, cur.grossCharge);
+    if (priceDiff !== 0) return priceDiff < 0 ? best : cur;
+    return best.id <= cur.id ? best : cur;
   });
 }
 
