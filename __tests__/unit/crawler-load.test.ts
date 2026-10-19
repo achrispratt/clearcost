@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { loadDecision, toStagingRow } from "@/lib/crawler/load";
+import { loadDecision, namesOverlap, toStagingRow } from "@/lib/crawler/load";
 import type { Comparison } from "@/lib/crawler/compare";
 import type { CrawledCharge, MrfMeta } from "@/lib/crawler/types";
 
@@ -34,6 +34,7 @@ const base = {
   rows: 500,
   meta,
   providerState: "OR",
+  providerNames: ["Example Hospital"],
   providerLastUpdated: "2025-03-19",
   comparison: comparison(0.8, 0.87),
 };
@@ -65,11 +66,53 @@ describe("loadDecision", () => {
     expect(loadDecision({ ...base, comparison: c })).toEqual({ load: true });
   });
 
+  it("refuses a file named for another hospital when there is nothing to compare", () => {
+    const d = loadDecision({
+      ...base,
+      meta: { ...meta, hospitalName: "Dayton General Hospital" },
+      providerNames: ["Columbia Basin Family Medicine"],
+      comparison: null,
+    });
+    expect(d.load).toBe(false);
+  });
+
+  it("trusts the price comparison over the file's name", () => {
+    const d = loadDecision({
+      ...base,
+      meta: {
+        ...meta,
+        hospitalName: "Adams County Public Hospital District 3",
+      },
+      providerNames: ["Othello Community Hospital"],
+    });
+    expect(d).toEqual({ load: true });
+  });
+
   it("refuses a file with no date or no rows", () => {
     expect(
       loadDecision({ ...base, meta: { ...meta, lastUpdatedOn: null } }).load
     ).toBe(false);
     expect(loadDecision({ ...base, rows: 0 }).load).toBe(false);
+  });
+});
+
+describe("namesOverlap", () => {
+  it("matches on a distinctive word, ignoring generic ones", () => {
+    expect(
+      namesOverlap(
+        ["Providence Health And Services - Washington"],
+        ["Providence St Mary Medical Center"]
+      )
+    ).toBe(true);
+    expect(
+      namesOverlap(["St. Joseph Hospital"], ["Saint Joseph Medical Center"])
+    ).toBe(true);
+    expect(
+      namesOverlap(
+        ["Dayton General Hospital"],
+        ["Columbia Basin Family Medicine"]
+      )
+    ).toBe(false);
   });
 });
 
