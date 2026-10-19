@@ -75,3 +75,6 @@ docs/nsf-sbir-pitch.md
 # Playwright
 /test-results/
 /playwright-report/
+
+# data-check snapshots and reports (scripts/data-check.ts) name hospitals
+/data-checks/
