@@ -103,6 +103,7 @@ interface Config {
   providers: number;
   state: string | null;
   load: boolean;
+  skipLoaded: boolean;
 }
 
 function parseArgs(argv: string[]): Config {
@@ -121,6 +122,7 @@ function parseArgs(argv: string[]): Config {
     providers: 0,
     state: null,
     load: false,
+    skipLoaded: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const next = () => {
@@ -177,6 +179,9 @@ function parseArgs(argv: string[]): Config {
         break;
       case "--load":
         config.load = true;
+        break;
+      case "--skip-loaded":
+        config.skipLoaded = true;
         break;
       default:
         throw new Error(`Unknown option ${argv[i]}`);
@@ -695,7 +700,8 @@ function printResult(r: FileResult): void {
 async function providerTargets(
   supabase: SupabaseClient,
   count: number,
-  state: string | null = null
+  state: string | null = null,
+  skipLoaded = false
 ): Promise<Target[]> {
   const rows: {
     id: string;
@@ -714,6 +720,23 @@ async function providerTargets(
     if (data.length < 1000) break;
   }
   let sample = rows;
+  if (skipLoaded) {
+    // Resume a state run that stopped partway: skip hospitals already on
+    // crawled prices.
+    const loaded = new Set<string>();
+    for (const row of rows) {
+      const { data, error } = await supabase
+        .from("charges")
+        .select("id")
+        .eq("provider_id", row.id)
+        .eq("source", "cms_mrf")
+        .limit(1);
+      if (error) throw error;
+      if (data.length > 0) loaded.add(row.id);
+    }
+    sample = rows.filter((r) => !loaded.has(r.id));
+    console.log(`${loaded.size} providers already loaded, skipped`);
+  }
   if (state) {
     console.log(`${rows.length} providers in ${state} with a price-file list`);
   } else {
@@ -825,7 +848,12 @@ async function main() {
 
   if (config.providers > 0 || config.state) {
     targets.push(
-      ...(await providerTargets(supabase!, config.providers, config.state))
+      ...(await providerTargets(
+        supabase!,
+        config.providers,
+        config.state,
+        config.skipLoaded
+      ))
     );
   }
 

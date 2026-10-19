@@ -147,7 +147,7 @@ npx tsx --env-file=.env.local scripts/crawl-mrf.ts --state OR
 npx tsx --env-file=.env.local scripts/crawl-mrf.ts --state OR --load
 ```
 
-Targets are the providers with `mrf_index_url` + `mrf_location_name` in the state. Hospitals whose entries point at the same file are parsed once and loaded for each. Downloads are deleted after parsing in a state run.
+Targets are the providers with `mrf_index_url` + `mrf_location_name` in the state. `--skip-loaded` resumes a run that stopped partway by skipping providers that already have `cms_mrf` rows. Hospitals whose entries point at the same file are parsed once and loaded for each. Downloads are deleted after parsing in a state run.
 
 **Load checks** (`loadDecision` in `lib/crawler/load.ts`). A file replaces a hospital's live prices only when:
 
