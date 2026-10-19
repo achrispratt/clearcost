@@ -36,6 +36,9 @@ export function parseAmount(value: unknown): number | null {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** A payer rate this many times under the row's median is a placeholder. */
+const PLACEHOLDER_FACTOR = 20;
+
 export interface NegotiatedStats {
   avg: number | null;
   min: number | null;
@@ -46,7 +49,9 @@ export interface NegotiatedStats {
 
 /**
  * Negotiated min/avg/max and payer_count from payer dollar rates. Rates must
- * be positive. For a DRG (a hospital stay) per-diem rates are left out; if
+ * be positive, and placeholder rates ($0.01, $1 lines next to $2,000 ones) more
+ * than 20x under the median rate are left out, as #184 does for cash prices.
+ * For a DRG (a hospital stay) per-diem rates are left out; if
  * none remain the stats are null so the app says it can't price the stay.
  */
 export function negotiatedStats(
@@ -64,14 +69,16 @@ export function negotiatedStats(
     }
     rates.push(p.dollar);
   }
-  if (rates.length === 0) {
+  const mid = median(rates) ?? 0;
+  const kept = rates.filter((r) => r * PLACEHOLDER_FACTOR >= mid);
+  if (kept.length === 0) {
     return { avg: null, min: null, max: null, count: null, perDiemExcluded };
   }
   return {
-    avg: round2(rates.reduce((s, r) => s + r, 0) / rates.length),
-    min: round2(Math.min(...rates)),
-    max: round2(Math.max(...rates)),
-    count: rates.length,
+    avg: round2(kept.reduce((s, r) => s + r, 0) / kept.length),
+    min: round2(Math.min(...kept)),
+    max: round2(Math.max(...kept)),
+    count: kept.length,
     perDiemExcluded,
   };
 }
