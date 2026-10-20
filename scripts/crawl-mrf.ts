@@ -82,7 +82,12 @@ import type {
 import { conflictingNames, nameSimilarity } from "./import-cms-star-ratings";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const MAX_RSS_BYTES = 1.5 * 1024 ** 3;
+// Live memory (JS heap plus buffers) a runaway parse would grow without
+// bound. RSS alone isn't the signal: after one big file V8 keeps its heap
+// pages, so RSS stays near that file's peak while live memory is ~20 MB,
+// and a 1.5 GB RSS limit failed every later file in a state run.
+const MAX_LIVE_BYTES = 1.5 * 1024 ** 3;
+const MAX_RSS_BYTES = 4 * 1024 ** 3;
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -390,10 +395,16 @@ function drgReport(rows: CrawledCharge[]): Record<string, DrgStat> {
 }
 
 function checkMemory(label: string): void {
-  const { rss } = process.memoryUsage();
+  const { rss, heapUsed, external } = process.memoryUsage();
+  const mb = (n: number) => (n / 1024 ** 2).toFixed(0);
+  if (heapUsed + external > MAX_LIVE_BYTES) {
+    throw new Error(
+      `${label}: ${mb(heapUsed + external)} MB in use is over the 1.5 GB safety limit`
+    );
+  }
   if (rss > MAX_RSS_BYTES) {
     throw new Error(
-      `${label}: RSS ${(rss / 1024 ** 2).toFixed(0)} MB is over the 1.5 GB safety limit`
+      `${label}: RSS ${mb(rss)} MB is over the 4 GB safety limit`
     );
   }
 }

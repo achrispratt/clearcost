@@ -54,7 +54,7 @@ normalize (lib/crawler/normalize.ts) → charges-shaped row
 NDJSON + summary; --compare (lib/crawler/compare.ts, provider match in the script)
 ```
 
-Memory stays flat: ~120-130 MB RSS on 437-500 MB files. The script aborts if RSS passes 1.5 GB.
+Memory stays flat on most files: ~120-130 MB RSS on 437-500 MB files, though a few large JSON files peak above 1 GB. The script aborts a file if live memory (JS heap plus buffers) passes 1.5 GB or RSS passes 4 GB. RSS alone is not the guard because V8 keeps heap pages after a big file, so RSS stays near that peak for the rest of a run.
 
 ### Discovery and hospital domains
 
