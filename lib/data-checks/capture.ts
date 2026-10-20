@@ -202,7 +202,7 @@ const num = (v: unknown): number | null => (v == null ? null : Number(v));
 export async function captureProviders(
   supabase: SupabaseClient,
   states: string[],
-  batchSize = 20
+  concurrency = 4
 ): Promise<Record<string, ProviderFingerprint>> {
   const out: Record<string, ProviderFingerprint> = {};
   if (states.length === 0) return out;
@@ -231,31 +231,46 @@ export async function captureProviders(
       codes: {},
     };
   }
-  for (let i = 0; i < providers.length; i += batchSize) {
-    const ids = providers.slice(i, i + batchSize).map((p) => p.id);
-    const rows = await withRetry(async () => {
-      const { data, error } = await supabase.rpc("coverage_fingerprint", {
-        p_provider_ids: ids,
-      });
-      if (error) throw new Error(`coverage_fingerprint: ${error.message}`);
-      return (data ?? []) as FingerprintRow[];
-    });
-    for (const r of rows) {
-      const p = out[r.provider_id];
-      const coverage: CodeCoverage = [
-        Number(r.rows),
-        Number(r.priced_rows),
-        num(r.cash_min),
-        num(r.cash_max),
-        num(r.insured_min),
-        num(r.insured_max),
-      ];
-      p.codes[r.code] = coverage;
-      if (r.last_loaded && (!p.lastLoaded || r.last_loaded > p.lastLoaded)) {
-        p.lastLoaded = r.last_loaded;
+  // One hospital per call: the API returns at most 1,000 rows per call and a
+  // crawled hospital alone can have more codes, so each call is also paged.
+  // Paging a multi-hospital call re-runs its whole aggregate per page.
+  const queue = providers.map((p) => p.id);
+  async function worker() {
+    for (;;) {
+      const id = queue.shift();
+      if (!id) return;
+      for (let from = 0; ; from += 1000) {
+        const page = await withRetry(async () => {
+          const { data, error } = await supabase
+            .rpc("coverage_fingerprint", { p_provider_ids: [id] })
+            .order("code")
+            .range(from, from + 999);
+          if (error) throw new Error(`coverage_fingerprint: ${error.message}`);
+          return (data ?? []) as FingerprintRow[];
+        });
+        for (const r of page) {
+          const p = out[r.provider_id];
+          const coverage: CodeCoverage = [
+            Number(r.rows),
+            Number(r.priced_rows),
+            num(r.cash_min),
+            num(r.cash_max),
+            num(r.insured_min),
+            num(r.insured_max),
+          ];
+          p.codes[r.code] = coverage;
+          if (
+            r.last_loaded &&
+            (!p.lastLoaded || r.last_loaded > p.lastLoaded)
+          ) {
+            p.lastLoaded = r.last_loaded;
+          }
+        }
+        if (page.length < 1000) break;
       }
     }
   }
+  await Promise.all(Array.from({ length: concurrency }, worker));
   return out;
 }
 
