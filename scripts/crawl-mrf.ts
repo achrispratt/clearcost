@@ -34,11 +34,20 @@
  *   --load                 With --state: replace each hospital's live prices with
  *                          its crawled rows when the file passes the load checks
  *                          (lib/crawler/load.ts). Without it, --state is a dry run.
+ *   --resume               Continue a run killed partway (machine restart): skip
+ *                          files already in <out>.progress.jsonl, keep their results
  *
  * See docs/mrf-crawler.md.
  */
 
-import { createWriteStream, readFileSync, rmSync, writeFileSync } from "fs";
+import {
+  appendFileSync,
+  createWriteStream,
+  existsSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import { tmpdir } from "os";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
@@ -109,6 +118,7 @@ interface Config {
   state: string | null;
   load: boolean;
   skipLoaded: boolean;
+  resume: boolean;
 }
 
 function parseArgs(argv: string[]): Config {
@@ -128,6 +138,7 @@ function parseArgs(argv: string[]): Config {
     state: null,
     load: false,
     skipLoaded: false,
+    resume: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const next = () => {
@@ -187,6 +198,9 @@ function parseArgs(argv: string[]): Config {
         break;
       case "--skip-loaded":
         config.skipLoaded = true;
+        break;
+      case "--resume":
+        config.resume = true;
         break;
       default:
         throw new Error(`Unknown option ${argv[i]}`);
@@ -874,15 +888,29 @@ async function main() {
       config.cacheDir,
       `crawl-${new Date().toISOString().replace(/[:.]/g, "-")}.ndjson`
     );
-  const out = createWriteStream(outPath);
-  const results: FileResult[] = [];
+  // Each file's result is appended as it finishes, so --resume can pick up
+  // a run the machine killed partway without crawling those files again.
+  const progressPath = outPath.replace(/\.ndjson$/, "") + ".progress.jsonl";
+  const results: FileResult[] =
+    config.resume && existsSync(progressPath)
+      ? readFileSync(progressPath, "utf8")
+          .split("\n")
+          .filter(Boolean)
+          .map((line) => JSON.parse(line) as FileResult)
+      : [];
+  if (!config.resume) writeFileSync(progressPath, "");
+  const done = new Set(results.map((r) => r.mrfUrl));
+  if (done.size > 0) console.log(`resuming: ${done.size} files already done`);
+  const out = createWriteStream(outPath, { flags: config.resume ? "a" : "w" });
   for (const target of targets) {
+    if (done.has(target.mrfUrl)) continue;
     console.log(
       `\n${target.locationName ?? target.mrfUrl}\n  ${target.mrfUrl}`
     );
     const result = await crawlFile(target, config, codeSet, out, supabase);
     printResult(result);
     results.push(result);
+    appendFileSync(progressPath, JSON.stringify(result) + "\n");
   }
   await new Promise<void>((r) => out.end(r));
 
