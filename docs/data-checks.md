@@ -48,6 +48,8 @@ Two snapshots taken a few minutes apart with no change in between compare clean 
 
 `snapshot_coverage()` records, per hospital, how many codes it has rows for and how many it prices (any of cash, insured or list), and, per code, how many hospitals price it. It keeps 35 nights plus the first of each month. The first nightly run records the baseline, so `ledger` has something to compare from the second night on.
 
+Scheduled jobs run as `postgres`, which Supabase caps at a 2-minute statement timeout, and a function's own `set statement_timeout` doesn't lift the cap for the call that starts it. So every nightly full-scan job's cron command sets the session timeout first (`set statement_timeout = '20min'; select public.snapshot_coverage()`). Check a job with `select * from cron.job_run_details order by start_time desc`.
+
 ```bash
 npx tsx --env-file=.env.local scripts/data-check.ts ledger                 # latest two nights
 npx tsx --env-file=.env.local scripts/data-check.ts ledger --before 2026-10-19 --after 2026-10-26
