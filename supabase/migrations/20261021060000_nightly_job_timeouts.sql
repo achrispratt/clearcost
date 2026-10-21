@@ -5,7 +5,7 @@
 -- A function's own `set statement_timeout` doesn't extend the statement that
 -- called it, so each job now raises the timeout for its own session first
 -- (https://supabase.com/docs/guides/database/postgres/timeouts).
--- cron.schedule upserts by job name.
+-- cron.schedule upserts by job name, so re-running this is harmless.
 
 select cron.schedule(
   'code-price-reference-refresh-daily',
