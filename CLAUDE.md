@@ -176,7 +176,7 @@ KB jobs (pg_cron, daily UTC, migration `20261015050000_kb_growth_machinery.sql`)
 
 Price data-quality counts (pg_cron, daily 04:30 UTC, after the 04:00 `refresh_code_price_reference()`): `snapshot_data_quality()` counts the rows the price filters hide or flag in one fourteenth of `charges`' pages each night (`data_quality_slice_counts`) and writes the per-source totals across all 14 slices to `data_quality_counts` (migration `20261021070000_data_quality_counts_by_slice.sql`). Never full-scan `charges` from a cron job: it can't finish in the 2-minute cap and exhausts Micro's disk IO burst. Service-role only.
 
-Coverage ledger (pg_cron, daily 04:45 UTC): `snapshot_coverage()` records per-hospital priced-code counts (`provider_coverage`) and per-code priced-hospital counts (`code_coverage`); `coverage_drops()` lists what fell between two nights, and `coverage_fingerprint(provider_ids)` gives per-code coverage for a load check (migration `20261019230000_coverage_ledger.sql`). Service-role only. See `docs/data-checks.md`.
+Load check: `coverage_fingerprint(provider_ids)` gives per-code row counts and price ranges for a set of hospitals, read by `scripts/data-check.ts snapshot` (migration `20261019230000_coverage_ledger.sql`, service-role only). The nightly ledger from that migration (`snapshot_coverage()`, `provider_coverage`, `code_coverage`, `coverage_drops()`) is unscheduled and its tables are empty: no nightly job may scan all of `charges`, because on Micro compute that drains the disk IO burst and stalls the database. See `docs/data-checks.md`.
 
 2 RPC functions:
 

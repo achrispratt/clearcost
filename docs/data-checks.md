@@ -1,12 +1,11 @@
 # Data checks: proving a load or change lost nothing
 
-Every price a patient sees comes from `charges`, and loads, dedupes and migrations rewrite it all the time. A wrong price is worse than none, and a price that silently disappears looks like "no results". Three layers catch problems, from cheapest to deepest.
+Every price a patient sees comes from `charges`, and loads, dedupes and migrations rewrite it all the time. A wrong price is worse than none, and a price that silently disappears looks like "no results". Two layers catch problems.
 
-| Layer                                                              | When it runs                                                  | What it catches                                                                                                                   | Where results go                                                               |
-| ------------------------------------------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Live price eval (`e2e/price-eval.spec.ts`)                         | After every production deploy and daily, with the smoke suite | Common searches in big cities answering differently from their published city pages: too few hospitals, median moved more than 2x | GitHub Actions (a failed run emails the repo owner)                            |
-| Nightly coverage ledger (`snapshot_coverage()`, pg_cron 04:45 UTC) | Every night, after the data-quality counts                    | A hospital pricing fewer codes than the night before, or a code priced by fewer hospitals                                         | `provider_coverage`, `code_coverage`; read with `scripts/data-check.ts ledger` |
-| Before/after check (`scripts/data-check.ts`)                       | Around every load, cleanup or data migration                  | Exactly which hospitals and prices a change moved, lost or broke                                                                  | Project folder (`data-quality/checks/`), never the repo                        |
+| Layer                                        | When it runs                                                  | What it catches                                                                                                                   | Where results go                                        |
+| -------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Live price eval (`e2e/price-eval.spec.ts`)   | After every production deploy and daily, with the smoke suite | Common searches in big cities answering differently from their published city pages: too few hospitals, median moved more than 2x | GitHub Actions (a failed run emails the repo owner)     |
+| Before/after check (`scripts/data-check.ts`) | Around every load, cleanup or data migration                  | Exactly which hospitals and prices a change moved, lost or broke                                                                  | Project folder (`data-quality/checks/`), never the repo |
 
 The nightly counts of rows each price filter hides (`data_quality_counts`, #209) sit alongside these and answer a different question: how much the filters catch, not what was lost.
 
@@ -44,20 +43,11 @@ A failure doesn't undo anything by itself. It means stop and look before the nex
 
 Two snapshots taken a few minutes apart with no change in between compare clean (checked 2026-10-19: 2,888 searches, 42,810 priced hospital results, zero differences), so any difference is real. The nightly 04:00 UTC typical-price refresh is the one routine thing that moves prices between snapshots; the report says when it happened.
 
-## Nightly coverage ledger
+## Why there is no nightly full check
 
-`snapshot_coverage()` records, per hospital, how many codes it has rows for and how many it prices (any of cash, insured or list), and, per code, how many hospitals price it. It keeps 35 nights plus the first of each month. The first nightly run records the baseline, so `ledger` has something to compare from the second night on.
+A nightly job that counts every hospital's priced codes was tried and removed (2026-10-21). Any full pass over `charges` (12M rows, 3.4 GB) is too heavy for Micro compute: it can't finish inside the 2-minute cap Supabase puts on scheduled jobs, and run longer by hand it used up the disk IO burst and left the database unresponsive for about an hour. Reading a slice per night doesn't work either, because loads move rows around the table. So the before/after check around every change is the guard, and nothing should run a full aggregate over `charges` by hand.
 
-**Paused (2026-10-21).** The full aggregate over `charges` is too heavy for Micro compute: it can't finish inside the 2-minute cap Supabase puts on scheduled jobs, and run longer by hand it used up the disk IO burst and left the database unresponsive for about an hour. It is being rebuilt to read a small slice of `charges` each night. Until then, use the before/after check around every change.
-
-Scheduled jobs run as `postgres`, which Supabase caps at a 2-minute statement timeout, and a function's own `set statement_timeout` doesn't lift the cap for the call that starts it. A job that needs longer sets the session timeout in its cron command (`set statement_timeout = '10min'; select ...`), but only once it is known to be light on disk IO. Check a job with `select * from cron.job_run_details order by start_time desc`.
-
-```bash
-npx tsx --env-file=.env.local scripts/data-check.ts ledger                 # latest two nights
-npx tsx --env-file=.env.local scripts/data-check.ts ledger --before 2026-10-19 --after 2026-10-26
-```
-
-It lists hospitals that lost at least 5 and at least 10% of their priced codes (or disappeared), and codes that lost at least 3 and at least 10% of their hospitals, and exits 1 when there are any. The same query is `select * from coverage_drops();` in SQL.
+Scheduled jobs run as `postgres`, which Supabase caps at a 2-minute statement timeout, and a function's own `set statement_timeout` doesn't lift the cap for the call that starts it. A job that needs longer sets the session timeout in its cron command (`set statement_timeout = '10min'; select ...`), and only when it is known to be light on disk IO. Check a job with `select * from cron.job_run_details order by start_time desc`.
 
 ## Live price eval
 
