@@ -8,10 +8,7 @@
  *   npx tsx --env-file=.env.local scripts/data-check.ts snapshot --label after-tx --state TX
  *   npx tsx --env-file=.env.local scripts/data-check.ts compare before-tx after-tx
  *
- *   # nightly ledger: hospitals or codes whose coverage fell overnight
- *   npx tsx --env-file=.env.local scripts/data-check.ts ledger [--before 2026-10-19 --after 2026-10-20]
- *
- * compare and ledger exit 1 when something failed. Snapshots and reports name
+ * compare exits 1 when something failed. Snapshots and reports name
  * hospitals, so they go to the project folder (or --dir), never the repo.
  * Read-only against the database.
  */
@@ -120,65 +117,13 @@ function compare(positional: string[], flags: Map<string, string[]>) {
   if (result.counts.fail > 0) process.exit(1);
 }
 
-interface DropRow {
-  kind: "total" | "provider" | "code";
-  key: string;
-  before_value: number;
-  after_value: number;
-}
-
-async function ledger(flags: Map<string, string[]>) {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.rpc("coverage_drops", {
-    p_before: flags.get("before")?.[0] ?? null,
-    p_after: flags.get("after")?.[0] ?? null,
-  });
-  if (error) throw new Error(`coverage_drops: ${error.message}`);
-  const rows = (data ?? []) as DropRow[];
-  if (rows.length === 0) {
-    console.log("Fewer than two nightly coverage snapshots yet.");
-    return;
-  }
-
-  console.log("Coverage, before → after:");
-  for (const r of rows.filter((r) => r.kind === "total")) {
-    console.log(`  ${r.key}: ${r.before_value} → ${r.after_value}`);
-  }
-
-  const providerRows = rows.filter((r) => r.kind === "provider");
-  const names = new Map<string, string>();
-  if (providerRows.length > 0) {
-    const { data: providers } = await supabase
-      .from("providers")
-      .select("id, name, state")
-      .in(
-        "id",
-        providerRows.slice(0, 500).map((r) => r.key)
-      );
-    for (const p of providers ?? []) names.set(p.id, `${p.name} (${p.state})`);
-  }
-  console.log(`\nHospitals that lost priced codes: ${providerRows.length}`);
-  for (const r of providerRows.slice(0, 100)) {
-    console.log(
-      `  ${names.get(r.key) ?? r.key}: ${r.before_value} → ${r.after_value}`
-    );
-  }
-  const codeRows = rows.filter((r) => r.kind === "code");
-  console.log(`\nCodes priced by fewer hospitals: ${codeRows.length}`);
-  for (const r of codeRows.slice(0, 100)) {
-    console.log(`  ${r.key}: ${r.before_value} → ${r.after_value} hospitals`);
-  }
-  if (providerRows.length > 0 || codeRows.length > 0) process.exit(1);
-}
-
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
   const { positional, flags } = parseArgs(rest);
   if (command === "snapshot") return snapshot(flags);
   if (command === "compare") return compare(positional, flags);
-  if (command === "ledger") return ledger(flags);
   throw new Error(
-    "usage: data-check.ts snapshot | compare | ledger (see the file header)"
+    "usage: data-check.ts snapshot | compare (see the file header)"
   );
 }
 
