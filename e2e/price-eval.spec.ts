@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
 import { findMetro } from "@/lib/seo/metros";
 import { findPage, SEO_PAGE_INDEX } from "@/lib/seo/page-index";
 import { findProcedure } from "@/lib/seo/procedures";
@@ -13,7 +13,9 @@ import type { ChargeResult } from "@/types";
  * impossible price through. The before/after check for loads lives in
  * scripts/data-check.ts; see docs/data-checks.md.
  *
- * Kept small for the search API's rate limit (100 a minute per visitor).
+ * Kept small for the search API's rate limit (100 a minute per visitor). The
+ * whole suite still passes that from one runner, so a 429 waits out the
+ * window (Retry-After) and asks again.
  */
 const PROCEDURES = [
   "knee-mri",
@@ -39,6 +41,14 @@ const MIN_HOSPITAL_SHARE = 0.5;
 /** Live median may move this many times from the index before failing. */
 const MAX_MEDIAN_FACTOR = 2;
 
+async function search(request: APIRequestContext, data: object) {
+  const response = await request.post("/api/search", { data });
+  if (response.status() !== 429) return response;
+  const retryAfter = Number(response.headers()["retry-after"] ?? 60);
+  await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
+  return request.post("/api/search", { data });
+}
+
 test.describe("price eval", () => {
   for (const slug of PROCEDURES) {
     test(`${slug} answers like its city pages`, async ({ request }) => {
@@ -54,17 +64,15 @@ test.describe("price eval", () => {
         if (!page) continue; // not enough prices there to publish
         const metro = findMetro(metroSlug)!;
 
-        const response = await request.post("/api/search", {
-          data: {
-            query: procedure.name,
-            codes: [procedure.code],
-            codeType: procedure.codeType,
-            bodySite: procedure.bodySite,
-            location: {
-              lat: metro.lat,
-              lng: metro.lng,
-              radiusMiles: SEO_PAGE_INDEX.radiusMiles,
-            },
+        const response = await search(request, {
+          query: procedure.name,
+          codes: [procedure.code],
+          codeType: procedure.codeType,
+          bodySite: procedure.bodySite,
+          location: {
+            lat: metro.lat,
+            lng: metro.lng,
+            radiusMiles: SEO_PAGE_INDEX.radiusMiles,
           },
         });
         if (!response.ok()) {
