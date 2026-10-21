@@ -48,7 +48,9 @@ Two snapshots taken a few minutes apart with no change in between compare clean 
 
 `snapshot_coverage()` records, per hospital, how many codes it has rows for and how many it prices (any of cash, insured or list), and, per code, how many hospitals price it. It keeps 35 nights plus the first of each month. The first nightly run records the baseline, so `ledger` has something to compare from the second night on.
 
-Scheduled jobs run as `postgres`, which Supabase caps at a 2-minute statement timeout, and a function's own `set statement_timeout` doesn't lift the cap for the call that starts it. So every nightly full-scan job's cron command sets the session timeout first (`set statement_timeout = '20min'; select public.snapshot_coverage()`). Check a job with `select * from cron.job_run_details order by start_time desc`.
+**Paused (2026-10-21).** The full aggregate over `charges` is too heavy for Micro compute: it can't finish inside the 2-minute cap Supabase puts on scheduled jobs, and run longer by hand it used up the disk IO burst and left the database unresponsive for about an hour. It is being rebuilt to read a small slice of `charges` each night. Until then, use the before/after check around every change.
+
+Scheduled jobs run as `postgres`, which Supabase caps at a 2-minute statement timeout, and a function's own `set statement_timeout` doesn't lift the cap for the call that starts it. A job that needs longer sets the session timeout in its cron command (`set statement_timeout = '10min'; select ...`), but only once it is known to be light on disk IO. Check a job with `select * from cron.job_run_details order by start_time desc`.
 
 ```bash
 npx tsx --env-file=.env.local scripts/data-check.ts ledger                 # latest two nights
