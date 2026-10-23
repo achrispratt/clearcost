@@ -86,6 +86,14 @@ describe("buildPricingPlan inpatient stays (#173)", () => {
     ).toBe(true);
     expect(fusion.describes.test("OXIMETRY TEST")).toBe(false);
     expect(fusion.describes.test("HC CO DIFFUSION")).toBe(false);
+    expect(fusion.describes.test("SPINAL FUS EXC CERV W/O CC/MCC")).toBe(true);
+    expect(
+      fusion.describes.test("Combined Anterior and Posterior Spinal\nFusion")
+    ).toBe(true);
+    expect(fusion.describes.test("US-SPINAL CANAL")).toBe(false);
+    expect(
+      fusion.describes.test("HCHG 62270-0450 SPINAL PUNCTURE, LUMBAR")
+    ).toBe(false);
     const knee = inpatientStayFor([{ code: "27447", codeType: "cpt" }])!;
     expect(
       knee.describes.test(

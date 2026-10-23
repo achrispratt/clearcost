@@ -47,7 +47,9 @@ const SPINAL_FUSION: InpatientStay = {
     "460",
   ],
   typicalDrgs: ["451", "460", "402", "455"],
-  describes: /spinal|spine/i,
+  // Not just "spinal": US-SPINAL CANAL (revenue code 0402) and SPINAL PUNCTURE
+  // (0450) land in the DRG column too.
+  describes: /spinal\s+fus|spine surgery/i,
 };
 
 const HIP_REPLACEMENT: InpatientStay = {
