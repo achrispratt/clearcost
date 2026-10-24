@@ -28,11 +28,15 @@ beforeAll(async () => {
   // 1: kidney transplant stay with per-diem, case-rate and fee-schedule payers
   // 2: stay where every payer is per diem
   // 3: surgeon CPT line (not a DRG) keeps Oria's stats
+  // 4: an exact copy of 3 (same code, wording and prices)
+  // 5: a line with no price at all
   await db.run(`
     INSERT INTO standard_charges VALUES
       (1, 1, 'Kidney transplant', 90000, NULL, NULL, NULL, 'inpatient', 'facility', NULL, NULL, NULL, '652', NULL, NULL, NULL, 12000, 4000, 40000, 4, 'TX'),
       (1, 2, 'Kidney transplant', 90000, NULL, NULL, NULL, 'inpatient', 'facility', NULL, NULL, NULL, '652', NULL, NULL, NULL, 4100, 4000, 4200, 2, 'TX'),
       (1, 3, 'CABG arterial', 9000, NULL, NULL, NULL, 'outpatient', 'professional', NULL, '33533', NULL, NULL, NULL, NULL, NULL, 5370, 5000, 6000, 3, 'TX'),
+      (1, 4, 'CABG arterial', 9000, NULL, NULL, NULL, 'outpatient', 'professional', NULL, '33533', NULL, NULL, NULL, NULL, NULL, 5370, 5000, 6000, 3, 'TX'),
+      (1, 5, 'CABG arterial', NULL, NULL, NULL, NULL, 'outpatient', 'professional', NULL, '33533', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'TX'),
       (2, 1, 'Kidney transplant', 80000, NULL, NULL, NULL, 'inpatient', 'facility', NULL, NULL, NULL, '652', NULL, NULL, NULL, 3000, 3000, 3000, 1, 'WY')`);
   await db.run(`
     INSERT INTO standard_charge_details VALUES
@@ -78,6 +82,13 @@ describe("buildChargeSelect", () => {
     const line = (await run()).get(3)!;
     expect(Number(line.avg_negotiated_rate)).toBe(5370);
     expect(Number(line.payer_count)).toBe(3);
+  });
+
+  it("keeps one row per distinct price and drops unpriced lines", async () => {
+    const rows = await run();
+    expect(rows.has(3)).toBe(true);
+    expect(rows.has(4)).toBe(false);
+    expect(rows.has(5)).toBe(false);
   });
 
   it("returns one row per charge, scoped to the state", async () => {

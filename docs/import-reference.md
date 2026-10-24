@@ -45,6 +45,8 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
 
 For MS-DRG rows the import recomputes the negotiated min/avg/max from payer-level rates in `standard_charge_details`, leaving out per-diem contracts (a daily rate, not the stay). Oria's pre-computed averages mix them in and make stays look 5–10× too cheap. See `lib/data/charge-select.ts`.
 
+Hospital files repeat a code at the same prices many times (77% of the stay-DRG rows loaded on 2026-10-22 were exact copies), and the copies crowd other hospitals out of the search's row limit. Like the crawler (#211), the import keeps one row per distinct price at each hospital, keyed on code, setting, billing class, modifiers, description and every price column, and it skips rows with no price at all. Reconciliation counts against the same deduplicated query.
+
 Imports store `billing_class` and `setting` lowercased with typos fixed (`lib/data/normalize-charge.ts`), so SQL can compare them directly.
 
 ### Row lineage and upserts (`source_charge_id`, #59)

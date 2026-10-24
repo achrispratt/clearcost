@@ -821,10 +821,10 @@ async function importCharges(
 
     const stateStart = Date.now();
 
-    // Pre-import: expected row count from DuckDB for reconciliation
+    // Pre-import: expected row count from DuckDB for reconciliation, from
+    // the same query the import streams (one row per distinct price)
     const expectedRes = (await db.all(
-      `SELECT COUNT(*) as cnt FROM standard_charges
-       WHERE UPPER(hospital_state) = '${state}' AND ${codeFilter}`
+      `SELECT COUNT(*) as cnt FROM (${buildChargeSelect({ state, codeFilter })})`
     )) as unknown as { cnt: number | bigint }[];
     const expectedCount = Number(expectedRes[0].cnt);
 
