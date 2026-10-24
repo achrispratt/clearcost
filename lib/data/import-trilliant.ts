@@ -30,8 +30,9 @@
  *                          Use for code list expansion or targeted price refreshes.
  *
  * Every charge carries source_charge_id = Oria standard_charges.charge_id and is
- * written with INSERT ... ON CONFLICT (source_charge_id) DO UPDATE, so retries
- * and re-runs never duplicate a source row; they refresh it in place (#59).
+ * written with INSERT ... ON CONFLICT (provider_id, source_charge_id) DO UPDATE
+ * (charge_id is only unique within a hospital), so retries and re-runs never
+ * duplicate a source row; they refresh it in place (#59).
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -44,7 +45,10 @@ import { parseLaterality } from "../cpt/parse-laterality";
 import { parseBodySite } from "../cpt/parse-body-site";
 import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
 import { buildChargeSelect } from "./charge-select";
-import { assertChargeIdsUnique } from "./charge-id-guard";
+import {
+  assertChargeIdsUnique,
+  CHARGE_LINEAGE_CONFLICT,
+} from "./charge-id-guard";
 
 // @ts-expect-error — zipcodes package has no type declarations
 import zipcodes from "zipcodes";
@@ -99,15 +103,17 @@ const CHARGE_COLUMNS = [
   "source_charge_id",
 ] as const;
 
-// Columns refreshed when a row with the same source_charge_id already exists
-// (everything except the conflict key; created_at keeps its first value).
+// Columns refreshed when a row with the same (provider_id, source_charge_id)
+// already exists (everything except the conflict key; created_at keeps its
+// first value).
 const CHARGE_UPDATE_COLUMNS = CHARGE_COLUMNS.filter(
-  (c) => c !== "source_charge_id"
+  (c) => c !== "provider_id" && c !== "source_charge_id"
 );
 
 // Index definitions — must match supabase/schema.sql exactly.
-// idx_charges_source_charge_id is deliberately NOT listed: --fresh must never
-// drop it, because every batch upserts with ON CONFLICT (source_charge_id).
+// idx_charges_provider_source_charge_id is deliberately NOT listed: --fresh
+// must never drop it, because every batch upserts with
+// ON CONFLICT (provider_id, source_charge_id).
 const CHARGE_INDEXES = [
   {
     name: "idx_charges_cpt",
@@ -760,12 +766,12 @@ async function importCharges(
     }
   }
 
-  // charge_id must be unique across the WHOLE import scope (every state, not
-  // just the ones this run imports, since rows already loaded for other
-  // states share the unique index). A repeat would let one hospital's row
-  // overwrite another's via ON CONFLICT (source_charge_id) DO UPDATE — wrong
-  // data is worse than none, so stop before any TRUNCATE or DELETE.
-  // One DuckDB scan over the code-filtered scope.
+  // charge_id must be unique within each hospital across the import scope.
+  // Oria numbers rows per hospital file, so the same charge_id at two
+  // hospitals is normal; a repeat inside one hospital would let one of its
+  // rows overwrite another via ON CONFLICT (provider_id, source_charge_id)
+  // DO UPDATE — wrong data is worse than none, so stop before any TRUNCATE
+  // or DELETE. One DuckDB scan over the code-filtered scope.
   await assertChargeIdsUnique(db, codeFilter);
 
   // Handle existing data based on mode
@@ -972,7 +978,7 @@ async function importCharges(
       // Expected only for a retried batch, or rows the DELETE above didn't
       // reach (e.g. a provider whose state was corrected after import).
       console.log(
-        `  ${state}: ${stateUpdated.toLocaleString()} rows already present (same source_charge_id) — updated in place`
+        `  ${state}: ${stateUpdated.toLocaleString()} rows already present (same provider + source_charge_id) — updated in place`
       );
     }
     console.log(
@@ -1024,7 +1030,7 @@ async function importCharges(
 }
 
 // Single batch upsert with retry. Returns rows newly inserted vs. updated in
-// place (both 0 on total failure). Upserting on source_charge_id makes a retry
+// place (both 0 on total failure). Upserting on (provider_id, source_charge_id) makes a retry
 // idempotent: if an attempt committed but its ack was lost, the retry updates
 // the same rows instead of duplicating them.
 // Each attempt gets a FRESH connection from the pool — no reusing broken ones.
@@ -1050,16 +1056,15 @@ async function flushOneBatch(
     }
     rowPlaceholders.push(`(${placeholders.join(",")})`);
   }
-  // The WHERE clause matches the partial unique index idx_charges_source_charge_id.
+  // The conflict target matches the partial unique index
+  // idx_charges_provider_source_charge_id, so a charge_id can only ever
+  // update its own hospital's row.
   // xmax = 0 on a returned row means it was inserted rather than updated.
   const sql =
     `INSERT INTO charges (${CHARGE_COLUMNS.join(",")}) VALUES ${rowPlaceholders.join(",")} ` +
-    `ON CONFLICT (source_charge_id) WHERE source_charge_id IS NOT NULL DO UPDATE SET ` +
+    `ON CONFLICT ${CHARGE_LINEAGE_CONFLICT} DO UPDATE SET ` +
     CHARGE_UPDATE_COLUMNS.map((c) => `${c} = EXCLUDED.${c}`).join(", ") +
     `, last_updated = now()` +
-    // Second line of defense behind assertChargeIdsUnique (which only sees the
-    // current code scope): never let a charge_id rewrite another hospital's row.
-    ` WHERE charges.provider_id = EXCLUDED.provider_id` +
     ` RETURNING (xmax = 0) AS inserted`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -1069,13 +1074,6 @@ async function flushOneBatch(
       const res = await client.query<{ inserted: boolean }>(sql, values);
       client.release();
       const inserted = res.rows.filter((r) => r.inserted).length;
-      const rejected = rows.length - res.rows.length;
-      if (rejected > 0) {
-        // Shows up as a reconciliation mismatch for the state, too.
-        console.error(
-          `  ${label}: ${rejected} rows NOT written — their charge_id already belongs to a different hospital's charge`
-        );
-      }
       return { inserted, updated: res.rows.length - inserted };
     } catch (err: unknown) {
       if (client) client.release(true); // destroy broken connection
