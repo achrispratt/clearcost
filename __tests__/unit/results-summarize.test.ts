@@ -229,38 +229,18 @@ describe("summarizeAnswer", () => {
     expect(summary.high).toBe(6186);
   });
 
-  it("doesn't price a stay from insured averages until the re-import (#173)", () => {
+  it("prices a stay from insured averages (per diem left out, #185)", () => {
     const insuredOnly = charge({
       cpt: undefined,
       msDrg: "236",
       setting: "inpatient",
       description: "CORONARY BYPASS WITHOUT CARDIAC CATHETERIZATION",
-      avgNegotiatedRate: 9000,
+      avgNegotiatedRate: 48000,
     });
-    expect(summarizeAnswer([insuredOnly], bypass).state).toBe(
-      "inpatient_unpriced"
-    );
-    const summary = summarizeAnswer(
-      [insuredOnly, stayRow("236", 52000)],
-      bypass
-    );
+    const summary = summarizeAnswer([insuredOnly], bypass);
     expect(summary.state).toBe("priced");
-    expect(summary.low).toBe(52000);
-    expect(summary.entries).toHaveLength(1);
-  });
-
-  it("prices a stay from insured averages read straight from a hospital file (#25)", () => {
-    const crawled = charge({
-      cpt: undefined,
-      msDrg: "236",
-      setting: "inpatient",
-      description: "CORONARY BYPASS WITHOUT CARDIAC CATHETERIZATION",
-      avgNegotiatedRate: 41000,
-      source: "cms_mrf",
-    });
-    const summary = summarizeAnswer([crawled], bypass);
-    expect(summary.state).toBe("priced");
-    expect(summary.low).toBe(41000);
+    expect(summary.low).toBe(48000);
+    expect(summary.basis).toBe("insured");
   });
 
   it("prices an inpatient procedure normally when DRG rows exist", () => {
