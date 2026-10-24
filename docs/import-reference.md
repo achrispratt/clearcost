@@ -28,16 +28,15 @@ npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
   --skip-providers --state WY --limit 1000
 ```
 
-**After any import**, refresh the per-hospital cash ratios the episode estimator uses to turn insured or gross prices into cash equivalents (SQL editor, service role):
+**Cash ratios refresh automatically.** At the end of a run the import refreshes the per-hospital cash ratios (which the episode estimator uses to turn insured or gross prices into cash equivalents) for every hospital it loaded, 400 per `refresh_provider_cash_ratios(array[...])` call. Don't run the no-argument `select refresh_provider_cash_ratios();`: it aggregates all of `charges` and then runs `refresh_code_price_reference()`, which outruns the statement timeout on the full table. The nightly 04:00 UTC job refreshes `code_price_reference`.
 
-```sql
-select refresh_provider_cash_ratios();          -- all hospitals
-select refresh_provider_cash_ratios(array[...]); -- only re-imported hospitals
-```
+### Hospitals with a crawled price file
+
+When the crawler loads a hospital (`scripts/crawl-mrf.ts --load`), `apply_mrf_load()` moves that hospital's Oria rows for the same codes into `charges_archive`, so search never shows two prices for one code. The import leaves those rows out too: before writing each batch, one indexed query finds rows whose hospital already has a `cms_mrf` row for the same code (CPT/HCPCS under either label, MS-DRGs without leading zeros), and they are skipped (`lib/data/crawler-overlap.ts`). The per-state log reports `N rows left out — the hospital's crawled price file covers the code`, and reconciliation counts them. Without this, a re-import puts the archived rows back. On 2026-10-22 that added 443,626 duplicate rows at 392 hospitals, and the extra rows pushed other hospitals out of `search_charges_nearby`'s 600-row limit.
 
 ### Hospital-stay prices (MS-DRG)
 
-Surgery billed as a hospital stay (bypass, valve, transplants, esophagus and pancreas surgery) is priced from its MS-DRGs, not the CPT line (#173). Those DRGs aren't in the main code list, so load them with a targeted import, then refresh the cash ratios as above:
+Surgery billed as a hospital stay (bypass, valve, transplants, esophagus and pancreas surgery) is priced from its MS-DRGs, not the CPT line (#173). Those DRGs aren't in the main code list, so load them with a targeted import:
 
 ```
 npx tsx --env-file=.env.local lib/data/import-trilliant.ts \
@@ -53,7 +52,7 @@ Imports store `billing_class` and `setting` lowercased with typos fixed (`lib/da
 Every imported charge stores `source_charge_id` = Oria `standard_charges.charge_id`. Oria's `charge_id` is a row number inside one hospital's file, so it is only unique per hospital (the same id appears at many hospitals). The key is therefore `(provider_id, source_charge_id)`: partial unique index `idx_charges_provider_source_charge_id` (migration `20261022090000_charges_source_charge_id_per_provider.sql`, which replaced the global index from `20261015060000`). Each Oria `hospital_id` maps to one provider (`providers.trilliant_hospital_id` is unique). Batches are written with `INSERT ... ON CONFLICT (provider_id, source_charge_id) WHERE source_charge_id IS NOT NULL DO UPDATE` (`CHARGE_LINEAGE_CONFLICT` in `lib/data/charge-id-guard.ts`), refreshing every imported column plus `last_updated`:
 
 - **Retries are idempotent.** If a batch committed but the ack was lost, the retry updates the same rows instead of duplicating them.
-- **Re-runs refresh prices in place.** The state-level DELETE + reimport still runs as before, so normally every row is a fresh insert. Rows the DELETE misses (e.g. a provider whose `state` was corrected after import) are updated rather than duplicated. The per-state log reports `N rows already present … updated in place` and reconciliation counts them.
+- **Re-runs refresh prices in place.** The state-level DELETE + reimport still runs as before (with `--codes`, one DELETE per code column, so each uses its `(code, provider)` index; a single DELETE OR-ing the three columns walks every charge in the state and times out), so normally every row is a fresh insert. Rows the DELETE misses (e.g. a provider whose `state` was corrected after import) are updated rather than duplicated. The per-state log reports `N rows already present … updated in place` and reconciliation counts them.
 - **Uniqueness guard.** Before any TRUNCATE or DELETE, one DuckDB query groups the whole code-filtered scope by `(hospital_id, charge_id)` and the import stops if any pair repeats: one row of a hospital would otherwise overwrite another of the same hospital (`lib/data/charge-id-guard.ts`). Because the conflict target includes `provider_id`, a `charge_id` can never rewrite another hospital's row.
 - **Inpatient backfill.** `lib/data/backfill-inpatient.ts` reads the same `standard_charges` source, so it also stores `source_charge_id`, runs the same guard over its scope, and inserts with `ON CONFLICT ... DO NOTHING` (rows the main import already loaded are left alone; re-runs are safe).
 - **Backfill.** Rows imported before #59 have `source_charge_id IS NULL` (post-import verification prints the count). They are only filled by re-importing from the local Oria data (`--fresh`, or state-by-state with `--state`). Those NULL rows are not covered by the upsert, so a partial re-import must still rely on the state DELETE to avoid duplicates.

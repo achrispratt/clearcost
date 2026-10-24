@@ -45,6 +45,7 @@ import { parseLaterality } from "../cpt/parse-laterality";
 import { parseBodySite } from "../cpt/parse-body-site";
 import { normalizeBillingClass, normalizeSetting } from "./normalize-charge";
 import { buildChargeSelect } from "./charge-select";
+import { withoutCrawledRows } from "./crawler-overlap";
 import {
   assertChargeIdsUnique,
   CHARGE_LINEAGE_CONFLICT,
@@ -787,6 +788,7 @@ async function importCharges(
   }
 
   const CIRCUIT_BREAKER_THRESHOLD = 10;
+  const touchedProviders = new Set<string>();
   let totalInserted = 0;
   let totalSkipped = 0;
   const importStart = Date.now();
@@ -832,16 +834,24 @@ async function importCharges(
     // When --codes is active, scoped DELETE targets only those codes (safe for
     // additive imports, crash recovery, and price refreshes). Otherwise, delete
     // all charges for the state.
-    const deleteRes = await pgPool.query(
-      `DELETE FROM charges c
+    // One DELETE per code column: OR-ing them makes Postgres walk every charge
+    // of every hospital in the state, which times out on the full table.
+    // Separately, each uses its (code, provider) index.
+    const deleteSql = `DELETE FROM charges c
        USING providers p
        WHERE c.provider_id = p.id
          AND UPPER(TRIM(p.state)) = $1
-         AND c.source = 'trilliant_oria'
-         AND ($2::text[] IS NULL OR c.cpt = ANY($2) OR c.hcpcs = ANY($2) OR c.ms_drg = ANY($2))`,
-      [state, config.codesFile ? codes : null]
-    );
-    const deletedCount = parseInt(deleteRes.rowCount?.toString() || "0", 10);
+         AND c.source = 'trilliant_oria'`;
+    let deletedCount = 0;
+    for (const codeColumn of config.codesFile
+      ? ["cpt", "hcpcs", "ms_drg"]
+      : [null]) {
+      const deleteRes = await pgPool.query(
+        codeColumn ? `${deleteSql} AND c.${codeColumn} = ANY($2)` : deleteSql,
+        codeColumn ? [state, codes] : [state]
+      );
+      deletedCount += deleteRes.rowCount ?? 0;
+    }
     if (deletedCount > 0) {
       console.log(
         `  ${state}: deleted ${deletedCount.toLocaleString()} existing charges (${config.codesFile ? "scoped to target codes" : "partial/stale data"})`
@@ -851,6 +861,8 @@ async function importCharges(
     let stateInserted = 0;
     let stateUpdated = 0;
     let stateSkipped = 0;
+    // Rows a crawled price file already covers (lib/data/crawler-overlap.ts)
+    let stateCrawled = 0;
     let consecutiveFailures = 0;
     let circuitBreakerTriggered = false;
     let batchNum = 0;
@@ -868,6 +880,7 @@ async function importCharges(
         stateSkipped++;
         continue;
       }
+      touchedProviders.add(providerId);
 
       batch.push({
         provider_id: providerId,
@@ -914,13 +927,15 @@ async function importCharges(
 
       if (batch.length >= config.batchSize) {
         // DIRECT AWAIT — guarantees backpressure. Nothing buffers while this runs.
+        const { keep, crawled } = await withoutCrawledRows(pgPool, batch);
+        stateCrawled += crawled;
         const { inserted, updated } = await flushOneBatch(
           pgPool,
-          batch,
+          keep,
           `charges [${state}]`,
           numCols
         );
-        if (inserted + updated > 0) {
+        if (inserted + updated > 0 || keep.length === 0) {
           stateInserted += inserted;
           stateUpdated += updated;
           totalInserted += inserted;
@@ -959,9 +974,11 @@ async function importCharges(
 
     // Flush remaining partial batch
     if (batch.length > 0) {
+      const { keep, crawled } = await withoutCrawledRows(pgPool, batch);
+      stateCrawled += crawled;
       const { inserted, updated } = await flushOneBatch(
         pgPool,
-        batch,
+        keep,
         `charges [${state}]`,
         numCols
       );
@@ -973,7 +990,13 @@ async function importCharges(
     totalSkipped += stateSkipped;
     const stateDuration = ((Date.now() - stateStart) / 1000).toFixed(1);
     const heapMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-    const processedCount = stateInserted + stateUpdated + stateSkipped;
+    const processedCount =
+      stateInserted + stateUpdated + stateSkipped + stateCrawled;
+    if (stateCrawled > 0) {
+      console.log(
+        `  ${state}: ${stateCrawled.toLocaleString()} rows left out — the hospital's crawled price file covers the code`
+      );
+    }
     if (stateUpdated > 0) {
       // Expected only for a retried batch, or rows the DELETE above didn't
       // reach (e.g. a provider whose state was corrected after import).
@@ -990,7 +1013,7 @@ async function importCharges(
     if (processedCount !== expectedCount) {
       console.warn(
         `  ${state}: RECONCILIATION MISMATCH — expected ${expectedCount.toLocaleString()} rows from DuckDB, ` +
-          `processed ${processedCount.toLocaleString()} (${stateInserted.toLocaleString()} inserted + ${stateUpdated.toLocaleString()} updated + ${stateSkipped} skipped)`
+          `processed ${processedCount.toLocaleString()} (${stateInserted.toLocaleString()} inserted + ${stateUpdated.toLocaleString()} updated + ${stateSkipped} skipped + ${stateCrawled.toLocaleString()} crawled)`
       );
     } else {
       console.log(
@@ -1027,6 +1050,29 @@ async function importCharges(
     `\n  Charges import complete: ${totalInserted.toLocaleString()} inserted, ` +
       `${totalSkipped.toLocaleString()} skipped (${totalDuration} min)`
   );
+
+  await refreshCashRatios(pgPool, [...touchedProviders]);
+}
+
+// Per-hospital cash ratios for the hospitals this run loaded, a few hundred
+// per call. The no-argument refresh_provider_cash_ratios() aggregates all of
+// charges and then refresh_code_price_reference(), which outruns the
+// statement timeout; the nightly 04:00 job refreshes code_price_reference.
+async function refreshCashRatios(
+  pgPool: PgPool,
+  providerIds: string[]
+): Promise<void> {
+  const BATCH = 400;
+  for (let i = 0; i < providerIds.length; i += BATCH) {
+    await pgPool.query("SELECT refresh_provider_cash_ratios($1::uuid[])", [
+      providerIds.slice(i, i + BATCH),
+    ]);
+  }
+  if (providerIds.length > 0) {
+    console.log(
+      `  Cash ratios refreshed for ${providerIds.length.toLocaleString()} hospitals`
+    );
+  }
 }
 
 // Single batch upsert with retry. Returns rows newly inserted vs. updated in
@@ -1040,6 +1086,7 @@ async function flushOneBatch(
   label: string,
   numCols: number
 ): Promise<{ inserted: number; updated: number }> {
+  if (rows.length === 0) return { inserted: 0, updated: 0 };
   // Build the SQL and values array
   // Strip null bytes (0x00) from text fields — Postgres UTF8 rejects them
   const sanitize = (v: unknown) =>
