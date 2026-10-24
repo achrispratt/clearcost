@@ -24,6 +24,62 @@ export interface InpatientStay {
   describes: RegExp;
 }
 
+// FY2024+ files code thoracic/lumbar fusion as 402, 426-428, 447-448 and
+// 450-451; many still use the older 453-460.
+const SPINAL_FUSION: InpatientStay = {
+  label: "spinal fusion",
+  drgs: [
+    "402",
+    "426",
+    "427",
+    "428",
+    "447",
+    "448",
+    "450",
+    "451",
+    "453",
+    "454",
+    "455",
+    "456",
+    "457",
+    "458",
+    "459",
+    "460",
+  ],
+  typicalDrgs: ["451", "460", "402", "455"],
+  // Not just "spinal": US-SPINAL CANAL (revenue code 0402) and SPINAL PUNCTURE
+  // (0450) land in the DRG column too.
+  describes: /spinal\s+fus|spine surgery/i,
+};
+
+const HIP_REPLACEMENT: InpatientStay = {
+  label: "hip replacement",
+  drgs: ["469", "470", "521", "522"],
+  typicalDrgs: ["470", "522"],
+  describes: /hip|knee|joint/i,
+};
+
+const WEIGHT_LOSS_SURGERY: InpatientStay = {
+  label: "weight-loss surgery",
+  drgs: ["619", "620", "621"],
+  typicalDrgs: ["621", "620"],
+  describes: /obes|bariatric/i,
+};
+
+const VAGINAL_DELIVERY: InpatientStay = {
+  label: "vaginal delivery",
+  drgs: ["805", "806", "807"],
+  typicalDrgs: ["807", "806"],
+  describes: /vaginal/i,
+};
+
+const C_SECTION: InpatientStay = {
+  label: "C-section delivery",
+  drgs: ["783", "784", "785", "786", "787", "788"],
+  typicalDrgs: ["788", "787", "785"],
+  describes: /cesarean|c-section/i,
+};
+
 const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
   [
     33510,
@@ -95,6 +151,30 @@ const INPATIENT_STAYS: Array<[number, number, InpatientStay]> = [
       describes: /transplant/i,
     },
   ],
+  // Thoracic/lumbar only: cervical fusion groups to DRGs 471-473.
+  [22556, 22558, SPINAL_FUSION],
+  [22610, 22634, SPINAL_FUSION],
+  // Partial hip replacement is mostly done for a hip fracture (DRG 521-522).
+  [27125, 27125, { ...HIP_REPLACEMENT, typicalDrgs: ["522", "470"] }],
+  [27130, 27130, HIP_REPLACEMENT],
+  [
+    27446,
+    27447,
+    {
+      ...HIP_REPLACEMENT,
+      label: "knee replacement",
+      drgs: ["469", "470"],
+      typicalDrgs: ["470"],
+    },
+  ],
+  [43644, 43645, WEIGHT_LOSS_SURGERY],
+  [43770, 43775, WEIGHT_LOSS_SURGERY],
+  [43842, 43848, WEIGHT_LOSS_SURGERY],
+  [59400, 59410, VAGINAL_DELIVERY],
+  [59510, 59525, C_SECTION],
+  // Vaginal birth after a previous C-section, and the attempts that end in one.
+  [59610, 59614, VAGINAL_DELIVERY],
+  [59618, 59622, C_SECTION],
 ];
 
 /**
