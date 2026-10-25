@@ -11,6 +11,13 @@
 // leaving out per-diem contracts. If nothing is left, the stats are null and
 // the app says it can't price the stay instead of showing a daily rate.
 // Non-DRG rows keep Oria's stats unchanged.
+//
+// Hospital files repeat a code at the same prices many times: 77% of the
+// stay-DRG rows loaded on 2026-10-22 were exact copies, which crowded other
+// hospitals out of the search's row limit. Like the crawler (storableRows in
+// lib/crawler/load.ts, #211), the query keeps one row per distinct price at
+// each hospital and drops rows with no price at all. The description is part
+// of the key, so differently worded lines stay separate.
 
 export const EXCLUDED_STAY_METHODOLOGIES = ["per diem"];
 
@@ -36,7 +43,8 @@ export function buildChargeSelect(opts: {
         AND standard_charge_dollar > 0
         AND COALESCE(methodology_normalized, '') NOT IN (${excluded})
       GROUP BY hospital_id, charge_id
-    )
+    ),
+    priced AS (
     SELECT sc.charge_id, sc.hospital_id, sc.description, sc.gross_charge,
            sc.discounted_cash, sc.minimum, sc.maximum, sc.setting,
            sc.billing_class, sc.modifiers,
@@ -51,5 +59,16 @@ export function buildChargeSelect(opts: {
       ${limit > 0 ? `LIMIT ${limit}` : ""}
     ) sc
     LEFT JOIN stay_rates r
-      ON r.hospital_id = sc.hospital_id AND r.charge_id = sc.charge_id`;
+      ON r.hospital_id = sc.hospital_id AND r.charge_id = sc.charge_id
+    )
+    SELECT * FROM priced
+    WHERE COALESCE(gross_charge, discounted_cash, minimum, maximum,
+                   avg_negotiated_rate, min_negotiated_rate,
+                   max_negotiated_rate) IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (
+      PARTITION BY hospital_id, cpt, hcpcs, ms_drg, setting, billing_class,
+        modifiers, description, gross_charge, discounted_cash, minimum,
+        maximum, avg_negotiated_rate, min_negotiated_rate, max_negotiated_rate
+      ORDER BY charge_id
+    ) = 1`;
 }
