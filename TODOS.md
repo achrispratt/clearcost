@@ -1,5 +1,7 @@
 # TODOS
 
+> Historical planning document. For the current implementation and remaining limits, see [docs/current-state.md](./docs/current-state.md).
+
 ## KB Cache Invalidation for Tier-1 Scope Change
 
 **What:** KB cache (`kb_nodes`, `kb_synonyms`) stores resolutions from the broad 1,000-code scope. When tier-1 routing goes live, old KB entries that resolved to non-tier-1 codes will bypass the tier check, routing users to the fallback when they should get estimates (or vice versa).

@@ -1,5 +1,7 @@
 # ClearCost — Product Requirements Document
 
+> Historical planning document. For the current implementation and remaining limits, see [docs/current-state.md](./current-state.md).
+
 > **Owner:** PM (Chris) · **Source of truth for:** Product vision, scope, key decisions, roadmap, success metrics
 > **Update when:** Product direction changes · **Not for:** Engineering implementation details (see `CLAUDE.md`)
 

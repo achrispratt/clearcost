@@ -62,7 +62,7 @@ Required variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 
 3. Set up the database schema:
 
-Run `supabase/schema.sql` in the Supabase SQL editor (or via CLI).
+Apply the tracked files in `supabase/migrations/` in timestamp order to an empty development project using your Supabase migration workflow. `supabase/schema.sql` is a partial schema reference, not a complete bootstrap script.
 
 4. Start the dev server:
 
@@ -118,6 +118,10 @@ docs/           — PRD, data snapshots, research, import reference
 Pricing data comes from [Trilliant Health's Oria](https://www.trillianthealth.com/) — a consolidated data lake of hospital Machine-Readable Files (MRFs) required by the federal Hospital Price Transparency Rule. The MVP imports 1,002 curated procedure codes across 5,400+ hospitals nationally.
 
 ## Documentation
+
+- **[Current implementation](./docs/current-state.md)** — What is built, operational limits, and which older plans are historical
+
+- **[Pricing rules and verification](./docs/pricing-correctness.md)** — Current comparison policy, saved-search migration, and validation limits
 
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** — Setup, dev workflow, code conventions, design system
 - **[CLAUDE.md](./CLAUDE.md)** — Architecture, search flow, database schema, and roadmap

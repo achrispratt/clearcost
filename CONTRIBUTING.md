@@ -47,7 +47,7 @@ cp .env.local.example .env.local
 
 3. **Database schema:**
 
-Run `supabase/schema.sql` in the Supabase SQL editor. This creates all tables, indexes, RPC functions, and RLS policies.
+Apply the tracked files in `supabase/migrations/` in timestamp order to an empty development project using your Supabase migration workflow. `supabase/schema.sql` is a partial reference and does not contain all crawler and operational tables. Validate this in development before updating a hosted project.
 
 4. **Start the dev server:**
 

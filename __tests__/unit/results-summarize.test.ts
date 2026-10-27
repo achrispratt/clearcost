@@ -41,7 +41,7 @@ describe("feeScope", () => {
     expect(feeScope("Facility")).toBe("facility");
     expect(feeScope(" professional ")).toBe("professional");
     expect(feeScope("both")).toBe("complete");
-    expect(feeScope(undefined)).toBe("complete");
+    expect(feeScope(undefined)).toBe("unknown");
   });
 });
 
@@ -113,7 +113,7 @@ describe("summarizeAnswer", () => {
   it("gives a cash range, median and lowest entry", () => {
     const summary = summarizeAnswer(
       [
-        charge({ cashPrice: 3988 }),
+        charge({ cashPrice: 3988, billingClass: "facility" }),
         charge({ cashPrice: 280, billingClass: "Facility" }),
         charge({ cashPrice: 283, billingClass: "Facility" }),
       ],
@@ -137,12 +137,13 @@ describe("summarizeAnswer", () => {
     expect(summary.entries).toHaveLength(2);
   });
 
-  it("labels a mix of cash and insured prices", () => {
+  it("keeps insured prices visible without mixing them into the cash range", () => {
     const summary = summarizeAnswer(
       [charge({ cashPrice: 500 }), charge({ avgNegotiatedRate: 700 })],
       kneeMri
     );
-    expect(summary.basis).toBe("mixed");
+    expect(summary.basis).toBe("cash");
+    expect(summary.entries).toHaveLength(2);
   });
 
   it("says when every price is only a doctor's fee", () => {
@@ -161,7 +162,7 @@ describe("summarizeAnswer", () => {
       [
         charge({ cashPrice: 400, billingClass: "professional" }),
         charge({ cashPrice: 2000, billingClass: "facility" }),
-        charge({ cashPrice: 3000 }),
+        charge({ cashPrice: 3000, billingClass: "facility" }),
       ],
       kneeMri
     );
@@ -285,5 +286,41 @@ describe("summarizeAnswer", () => {
       "no_prices"
     );
     expect(summarizeAnswer([], kneeMri).state).toBe("no_prices");
+  });
+});
+
+describe("comparable headline prices", () => {
+  it("does not imply unknown billing coverage is complete", () => {
+    expect(feeScope(undefined)).toBe("unknown");
+    expect(feeScope("unexpected")).toBe("unknown");
+  });
+  it("compares cash prices without folding insured averages into the range", () => {
+    const summary = summarizeAnswer(
+      [
+        charge({ cashPrice: 500, billingClass: "facility" }),
+        charge({ avgNegotiatedRate: 100, billingClass: "facility" }),
+      ],
+      kneeMri
+    );
+    expect(summary.low).toBe(500);
+    expect(summary.high).toBe(500);
+    expect(summary.basis).toBe("cash");
+    expect(summary.rangeCount).toBe(1);
+    expect(summary.entries).toHaveLength(2);
+  });
+  it("does not combine hospital-only, complete and unknown coverage", () => {
+    const summary = summarizeAnswer(
+      [
+        charge({ cashPrice: 500, billingClass: "facility" }),
+        charge({ cashPrice: 900, billingClass: "both" }),
+        charge({ cashPrice: 100 }),
+      ],
+      kneeMri
+    );
+    expect(summary.low).toBe(500);
+    expect(summary.high).toBe(500);
+    expect(summary.scope).toBe("facility");
+    expect(summary.rangeCount).toBe(1);
+    expect(summary.entries).toHaveLength(3);
   });
 });

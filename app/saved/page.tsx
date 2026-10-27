@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { savedSearchHref } from "@/lib/saved-search-context";
 import type { SavedSearch } from "@/types";
 import toast from "react-hot-toast";
 
@@ -57,13 +58,7 @@ export default function SavedPage() {
   };
 
   const handleSearchClick = (search: SavedSearch) => {
-    const params = new URLSearchParams({
-      q: search.query,
-      loc: search.location,
-      lat: (search.lat ?? 40.7128).toString(),
-      lng: (search.lng ?? -74.006).toString(),
-    });
-    router.push(`/results?${params.toString()}`);
+    router.push(savedSearchHref(search));
   };
 
   const handleSignIn = async () => {

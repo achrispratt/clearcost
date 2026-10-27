@@ -49,6 +49,18 @@ export type EncounterType =
   | "urgent_care_proxy"
   | "specialist";
 export type FallbackSource = "facility" | "local_fallback";
+export type FeeScope = "facility" | "professional" | "complete" | "unknown";
+export type PaymentBasis = "cash" | "insured";
+
+/** A constructed visit estimate, never a published hospital cash quote. */
+export interface EncounterEstimate {
+  amount: number;
+  min: number;
+  max: number;
+  basis: PaymentBasis;
+  scope: FeeScope;
+  source: FallbackSource;
+}
 
 export interface PricingCodeGroup {
   codeType: BillingCodeType;
@@ -81,6 +93,8 @@ export interface OptionalAdderEstimate {
   estimatePrice?: number;
   minPrice?: number;
   maxPrice?: number;
+  basis?: PaymentBasis;
+  scope?: FeeScope;
   source: AdderEstimateSource;
   confidence: AdderEstimateConfidence;
 }
@@ -145,6 +159,7 @@ export interface ChargeResult {
   distanceMiles?: number;
   optionalAdders?: OptionalAdderEstimate[];
   pricingMode?: PricingMode;
+  encounterEstimate?: EncounterEstimate;
   baseLabel?: string;
   baseSource?: FallbackSource;
   proxyLabel?: string;
@@ -384,12 +399,22 @@ export interface KBLookupResult {
 }
 
 // -- Saved Search (user bookmark) --
+export interface SavedSearchContext {
+  version: 1;
+  codes: CPTCode[];
+  interpretation: string;
+  pricingPlan?: PricingPlan;
+  laterality?: Laterality;
+  bodySite?: BodySite;
+}
+
 export interface SavedSearch {
   id: string;
   user_id: string;
   query: string;
   location: string;
   cpt_codes: string[];
+  search_context?: SavedSearchContext | null;
   lat?: number;
   lng?: number;
   created_at: string;

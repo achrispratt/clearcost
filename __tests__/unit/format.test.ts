@@ -196,3 +196,15 @@ describe("displayName", () => {
     expect(displayName("THE HEART HOSPITAL")).toBe("The Heart Hospital");
   });
 });
+
+describe("estimated-total sorting", () => {
+  it("does not substitute a single published price for a missing total", async () => {
+    const { getEstimatedTotalAmount } = await import("@/lib/format");
+    expect(getEstimatedTotalAmount(charge({ cashPrice: 50 }))).toBeUndefined();
+    expect(
+      getEstimatedTotalAmount(
+        charge({ cashPrice: 50, estimatedTotalMedian: 800 })
+      )
+    ).toBe(800);
+  });
+});

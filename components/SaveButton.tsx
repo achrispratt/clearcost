@@ -1,5 +1,6 @@
 "use client";
 
+import type { SavedSearchContext } from "@/types";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -11,6 +12,7 @@ interface SaveButtonProps {
   cptCodes: string[];
   lat?: number;
   lng?: number;
+  searchContext?: SavedSearchContext;
   onSave?: () => void;
 }
 
@@ -20,6 +22,7 @@ export function SaveButton({
   cptCodes,
   lat,
   lng,
+  searchContext,
   onSave,
 }: SaveButtonProps) {
   const [saving, setSaving] = useState(false);
@@ -36,12 +39,25 @@ export function SaveButton({
       return;
     }
 
+    if (!searchContext) {
+      toast.error(
+        "This search is not ready to save. Please reload and try again."
+      );
+      return;
+    }
     setSaving(true);
     try {
       const response = await fetch("/api/saved", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, location, cptCodes, lat, lng }),
+        body: JSON.stringify({
+          query,
+          location,
+          cptCodes,
+          lat,
+          lng,
+          searchContext,
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to save");

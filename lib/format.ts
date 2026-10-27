@@ -1,4 +1,4 @@
-import type { ChargeResult } from "@/types";
+import type { ChargeResult, PaymentBasis } from "@/types";
 
 /** Type guard: checks that a string value is present and not the literal "null" */
 export const notNull = (v: string | undefined): v is string =>
@@ -11,15 +11,29 @@ export function formatPrice(price: number | undefined): string {
 
 // -- Display price waterfall: cash → insured estimate → unavailable --
 
-export type DisplayPriceType = "cash" | "insured" | "gross" | "unavailable";
+export type DisplayPriceType =
+  | "cash"
+  | "insured"
+  | "gross"
+  | "estimate"
+  | "unavailable";
 
 export interface DisplayPrice {
   amount: number | undefined;
   label: string;
   type: DisplayPriceType;
+  basis?: PaymentBasis;
 }
 
 export function getDisplayPrice(result: ChargeResult): DisplayPrice {
+  if (result.encounterEstimate) {
+    return {
+      amount: result.encounterEstimate.amount,
+      label: "Estimated visit",
+      type: "estimate",
+      basis: result.encounterEstimate.basis,
+    };
+  }
   if (result.cashPrice != null) {
     const label =
       result.baseLabel ||
@@ -51,10 +65,19 @@ export function getDisplayPriceAmount(
   return getDisplayPrice(result).amount;
 }
 
+/** Missing totals stay missing: a single fee is not an episode total. */
+export function getEstimatedTotalAmount(
+  result: ChargeResult
+): number | undefined {
+  return (
+    result.episodeEstimate?.estimatedAllInMedian ?? result.estimatedTotalMedian
+  );
+}
+
 export function formatDisplayPrice(dp: DisplayPrice): string {
   if (dp.amount == null) return "N/A";
   const formatted = formatPrice(dp.amount);
-  if (dp.type === "insured") return `~${formatted}`;
+  if (dp.type === "insured" || dp.type === "estimate") return `~${formatted}`;
   return formatted;
 }
 

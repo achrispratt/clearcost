@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import type { ChargeResult } from "@/types";
-import { getDisplayPrice, getDisplayPriceAmount } from "@/lib/format";
+import {
+  getDisplayPrice,
+  getDisplayPriceAmount,
+  getEstimatedTotalAmount,
+} from "@/lib/format";
 
 export type SortOption =
   | "price-asc"
@@ -236,12 +240,7 @@ export function FilterBar({
   );
 }
 
-/** The total the card shows: the all-in estimate when there is one. */
+/** Unpriced totals sort last instead of competing as cheap single fees. */
 function estimatedTotal(r: ChargeResult): number {
-  return (
-    r.episodeEstimate?.estimatedAllInMedian ??
-    r.estimatedTotalMedian ??
-    getDisplayPriceAmount(r) ??
-    Infinity
-  );
+  return getEstimatedTotalAmount(r) ?? Infinity;
 }

@@ -24,7 +24,8 @@ interface AnswerCardProps {
 const MAIN_LINE_LABEL: Record<FeeScope, string> = {
   facility: "Hospital's fee",
   professional: "Doctor's fee",
-  complete: "Price hospitals list",
+  complete: "Hospital and doctor fees",
+  unknown: "Fee coverage not specified",
 };
 
 function range(low?: number, high?: number): string {
@@ -224,8 +225,9 @@ export function AnswerCard({
 
   // -- Priced (or doctor's fees only) ---------------------------------------
   const doctorOnly = summary.state === "doctor_fees_only";
-  const basisWord =
-    summary.basis === "cash"
+  const basisWord = summary.estimated
+    ? "Visit estimates"
+    : summary.basis === "cash"
       ? "Cash prices"
       : summary.basis === "insured"
         ? "Average insured prices"
@@ -247,7 +249,9 @@ export function AnswerCard({
         >
           {lowest && (
             <>
-              Lowest published price is at{" "}
+              {summary.estimated
+                ? "Lowest visit estimate is at "
+                : "Lowest comparable published price is at "}
               <strong style={{ color: "var(--cc-text)", fontWeight: 600 }}>
                 {displayName(lowest.primary.provider.name)}
               </strong>
@@ -262,8 +266,11 @@ export function AnswerCard({
               <span className="num">{formatPrice(summary.median)}</span>.
             </>
           )}
-          {summary.basis === "mixed" &&
-            " Some hospitals don't publish a cash price, so we show what insurers pay on average there."}
+          {summary.rangeCount != null &&
+            summary.rangeCount < summary.entries.length &&
+            " The range compares matching price types and fee coverage. Other available prices are listed below."}
+          {summary.estimated &&
+            " These are estimates from visit prices, not published quotes for your care."}
         </p>
       </Headline>
 
@@ -282,6 +289,7 @@ export function AnswerCard({
               </span>
             </div>
           ) : (
+            summary.scope === "facility" &&
             extras.map((e) => (
               <div className="slip-row" key={e.label}>
                 <span>{e.label}</span>

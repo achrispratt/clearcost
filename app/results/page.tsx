@@ -30,6 +30,7 @@ function ResultsContent() {
     filteredResults,
     cptCodes,
     interpretation,
+    searchContext,
     loading,
     error,
     handleNewSearch,
@@ -161,6 +162,7 @@ function ResultsContent() {
                         query={query}
                         location={locationDisplay}
                         cptCodes={cptCodes.map((c) => c.code)}
+                        searchContext={searchContext}
                         lat={lat}
                         lng={lng}
                         onSave={logSaveSearch}

@@ -10,15 +10,10 @@ export { inpatientStayFor };
 // entries below it. Pure functions so the wording rules are testable.
 // ============================================================================
 
-/** What part of the bill a price line covers. */
-export type FeeScope = "facility" | "professional" | "complete";
-
-export function feeScope(billingClass: string | undefined): FeeScope {
-  const bc = billingClass?.trim().toLowerCase();
-  if (bc === "facility") return "facility";
-  if (bc === "professional") return "professional";
-  return "complete";
-}
+export { feeScope } from "@/lib/pricing";
+import { comparablePrices, feeScope } from "@/lib/pricing";
+import type { FeeScope } from "@/types";
+export type { FeeScope } from "@/types";
 
 /** One row in the hospital list: a price, and every location that lists it. */
 export interface PriceEntry {
@@ -59,7 +54,10 @@ export function collapseSharedPriceLists(
   for (const r of results) {
     const price = getDisplayPrice(r);
     // Lines without any price can't be "the same list"; keep them separate.
-    const key = price.amount == null ? `solo::${r.id}` : priceFingerprint(r);
+    const key =
+      price.amount == null || r.encounterEstimate
+        ? `solo::${r.id}`
+        : priceFingerprint(r);
     const existing = byKey.get(key);
     if (existing) {
       existing.locations.push(r);
@@ -144,6 +142,7 @@ export interface AnswerSummary {
   rangeCount?: number;
   lowest?: PriceEntry;
   basis?: PriceBasis;
+  estimated?: boolean;
   /** Main fee scope of the priced lines (what the range covers). */
   scope?: FeeScope;
   /** Set when the procedure is normally billed as a hospital stay. */
@@ -159,18 +158,6 @@ function median(sorted: number[]): number {
     : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
-function majorityScope(entries: PriceEntry[]): FeeScope {
-  const counts: Record<FeeScope, number> = {
-    facility: 0,
-    professional: 0,
-    complete: 0,
-  };
-  for (const e of entries) counts[e.scope]++;
-  return (Object.keys(counts) as FeeScope[]).reduce((a, b) =>
-    counts[b] > counts[a] ? b : a
-  );
-}
-
 export function summarizeAnswer(
   results: ChargeResult[],
   codes: CPTCode[]
@@ -183,7 +170,9 @@ export function summarizeAnswer(
       (e) =>
         e.price.amount != null &&
         e.price.amount > 0 &&
-        (e.price.type === "cash" || e.price.type === "insured")
+        (e.price.type === "cash" ||
+          e.price.type === "insured" ||
+          e.price.type === "estimate")
     )
     .sort((a, b) => (a.price.amount ?? 0) - (b.price.amount ?? 0));
 
@@ -202,9 +191,11 @@ export function summarizeAnswer(
       priced.some((e) => isStayRow(e, d))
     );
     if (stayDrg) {
-      const stayEntries = priced
-        .filter((e) => isStayRow(e, stayDrg))
-        .map((e) => ({ ...e, scope: "facility" as FeeScope }));
+      const stayEntries = comparablePrices(
+        priced
+          .filter((e) => isStayRow(e, stayDrg))
+          .map((e) => ({ ...e, scope: "facility" as FeeScope }))
+      );
       const amounts = stayEntries.map((e) => e.price.amount as number);
       const cashCount = stayEntries.filter(
         (e) => e.price.type === "cash"
@@ -255,21 +246,22 @@ export function summarizeAnswer(
   // A doctor's fee is a fraction of the procedure price, so when any hospital
   // lists a hospital-side or complete price, doctor-only lines don't set the
   // range or the "Lowest" tag (#174). They stay in the list, labeled.
-  const hospitalSide = priced.filter((e) => e.scope !== "professional");
-  const headline = hospitalSide.length > 0 ? hospitalSide : priced;
+  const headline = comparablePrices(priced);
 
   const amounts = headline.map((e) => e.price.amount as number);
-  const cashCount = headline.filter((e) => e.price.type === "cash").length;
+  const cashCount = headline.filter(
+    (e) => e.price.type === "cash" || e.price.basis === "cash"
+  ).length;
   const basis: PriceBasis =
     cashCount === headline.length
       ? "cash"
       : cashCount === 0
         ? "insured"
         : "mixed";
-  const scope = majorityScope(headline);
+  const scope = headline[0].scope;
 
   return {
-    state: hospitalSide.length === 0 ? "doctor_fees_only" : "priced",
+    state: scope === "professional" ? "doctor_fees_only" : "priced",
     entries,
     priced,
     low: amounts[0],
@@ -278,6 +270,7 @@ export function summarizeAnswer(
     rangeCount: headline.length,
     lowest: headline[0],
     basis,
+    estimated: headline[0].price.type === "estimate",
     scope,
   };
 }
@@ -289,6 +282,10 @@ export function priceTypeLabel(price: DisplayPrice): string {
       return "cash";
     case "insured":
       return "insured avg";
+    case "estimate":
+      return price.basis === "cash"
+        ? "estimated from cash prices"
+        : "estimated from insured rates";
     case "gross":
       return "list price";
     default:
@@ -299,5 +296,6 @@ export function priceTypeLabel(price: DisplayPrice): string {
 export function scopeLabel(scope: FeeScope): string | null {
   if (scope === "facility") return "Hospital fee only";
   if (scope === "professional") return "Doctor's fee only";
+  if (scope === "unknown") return "Fee coverage unknown";
   return null;
 }

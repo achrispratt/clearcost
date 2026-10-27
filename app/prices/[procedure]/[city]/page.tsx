@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { comparablePrices } from "@/lib/pricing";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -106,6 +107,8 @@ function scopeNote(summary: AnswerSummary): string | null {
     return "Most of these are the hospital's fee only. Doctors' fees, like the radiologist or surgeon, are usually billed separately.";
   if (summary.scope === "professional")
     return "Most of these are the doctor's fee only. The hospital's fee is billed separately.";
+  if (summary.scope === "unknown")
+    return "The files do not specify which fees these prices include. Confirm hospital and doctor fees before comparing quotes.";
   return null;
 }
 
@@ -121,11 +124,7 @@ export default async function CityPricePage({
   const place = metroLabel(metro);
   // Same rule as the range: doctor-only fees don't lead when hospitals list
   // a hospital-side or complete price (#174).
-  const hospitalSide = summary.priced.filter((e) => e.scope !== "professional");
-  const list = (hospitalSide.length > 0 ? hospitalSide : summary.priced).slice(
-    0,
-    LIST_LIMIT
-  );
+  const list = comparablePrices(summary.priced).slice(0, LIST_LIMIT);
   const note = scopeNote(summary);
 
   const otherCities = pagesForProcedure(procedure.slug)

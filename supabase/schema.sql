@@ -226,6 +226,7 @@ create table if not exists saved_searches (
   query text not null,
   location text not null,
   cpt_codes text[] not null,
+  search_context jsonb, -- Versioned resolved codes/plan/side, not historical prices
   lat double precision,
   lng double precision,
   created_at timestamptz default now()
