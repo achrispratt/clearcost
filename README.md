@@ -123,6 +123,8 @@ Pricing data comes from [Trilliant Health's Oria](https://www.trillianthealth.co
 
 - **[Pricing rules and verification](./docs/pricing-correctness.md)** — Current comparison policy, saved-search migration, and validation limits
 
+- **[Preview testing](./docs/preview-testing.md)** — Seeded review data, explicit API permissions, and the 07086 knee MRI smoke check
+
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** — Setup, dev workflow, code conventions, design system
 - **[CLAUDE.md](./CLAUDE.md)** — Architecture, search flow, database schema, and roadmap
 - **[docs/prd.md](./docs/prd.md)** — Product requirements document
