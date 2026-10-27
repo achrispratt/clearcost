@@ -46,3 +46,11 @@
 - Final local verification: 360 tests passed across 45 files; TypeScript passed; ESLint reported no errors and one existing navigation warning.
 - Independent review identified fallback totals, short DRG aliases, non-string enum payloads, and inherited template metadata. All four received failing regression tests and fixes.
 - Server-rendered UI assertions cover estimate labeling and complete-fee caveats. Browser screenshot capture stalled; no live authenticated flow or database migration was exercised.
+
+## Continuation review — October 27, 2026
+
+- Confirmed the recovered checkout matches draft PR #228's file tree. The original PR's formatting, lint, types, tests and CI production build passed.
+- Added two failing regressions for nearby fallback visit estimates incorrectly influencing headline ranges and lowest-price claims; excluded those estimates from comparison while preserving their list entries.
+- Local verification after the fix: 362 tests across 45 files, TypeScript and formatting passed; lint has no errors and the existing navigation warning.
+- Rendered the actual answer and hospital components with synthetic data at 1280px and 390px. Confirmed the borrowed price stays outside the headline, provenance is visible, the interpretation drawer opens, and the mobile fixture has no horizontal overflow or runtime errors.
+- The protected deployment and authenticated save/reopen journey remain unverified. Local fixtures do not establish live integration health. The Supabase bot reports that preview migrations succeeded; production migration is still a release prerequisite.

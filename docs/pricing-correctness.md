@@ -9,6 +9,7 @@ The headline compares one fee scope and one price basis. It does not mix cash pr
 - Unknown billing class means unknown coverage, never a complete price. Provider grouping prefers explicitly labeled rows over unspecified ones.
 - For inpatient comparisons, first select the existing typical DRG, then compare the same price basis. The hospital-stay price still excludes separately billed doctors.
 - List prices never set the headline. Constructed visit estimates never populate `cashPrice`; the `encounterEstimate` object records basis, coverage and whether the source is the hospital or a nearby fallback.
+- Visit estimates borrowed from nearby hospitals remain visible for context but never set a hospital's headline range or lowest-price label. If only borrowed estimates exist, no headline comparison is shown.
 - The visit builder uses the shared displayed cash/negotiated price, not raw negotiated minima. A discarded placeholder cannot return through `minPrice`.
 - Optional adders produce a total only when fee scope and payment basis match and all prices belong to that hospital. An unknown scope or nearby fallback is not silently summed into a hospital total.
 - SSP episode estimates remain separate, labeled hospital or doctor components with missing-part and conversion notes. A missing total is not replaced by a cheap single fee in estimated-total sorting.

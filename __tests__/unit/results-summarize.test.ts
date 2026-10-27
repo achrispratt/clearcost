@@ -290,6 +290,40 @@ describe("summarizeAnswer", () => {
 });
 
 describe("comparable headline prices", () => {
+  const visit = (
+    amount: number,
+    source: "facility" | "local_fallback"
+  ): ChargeResult =>
+    charge({
+      billingClass: "facility",
+      encounterEstimate: {
+        amount,
+        min: amount,
+        max: amount,
+        basis: "cash",
+        scope: "facility",
+        source,
+      },
+    });
+
+  it("keeps borrowed visit estimates visible without ranking them as hospital prices", () => {
+    const borrowed = visit(100, "local_fallback");
+    const own = visit(500, "facility");
+    const summary = summarizeAnswer([borrowed, own], []);
+    expect(summary.entries).toHaveLength(2);
+    expect(summary.lowest?.primary.id).toBe(own.id);
+    expect(summary.low).toBe(500);
+    expect(summary.high).toBe(500);
+    expect(summary.rangeCount).toBe(1);
+  });
+
+  it("makes no price comparison when only borrowed visit estimates exist", () => {
+    const summary = summarizeAnswer([visit(100, "local_fallback")], []);
+    expect(summary.state).toBe("no_prices");
+    expect(summary.lowest).toBeUndefined();
+    expect(summary.entries).toHaveLength(1);
+  });
+
   it("does not imply unknown billing coverage is complete", () => {
     expect(feeScope(undefined)).toBe("unknown");
     expect(feeScope("unexpected")).toBe("unknown");

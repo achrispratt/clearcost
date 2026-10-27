@@ -163,13 +163,14 @@ export function summarizeAnswer(
   codes: CPTCode[]
 ): AnswerSummary {
   const entries = collapseSharedPriceLists(results);
-  // List prices (chargemaster) are what almost nobody pays; they never set
-  // the headline range.
+  // List prices and borrowed visit estimates never establish this hospital's
+  // comparable price. Keep them visible in entries without ranking them.
   const priced = entries
     .filter(
       (e) =>
         e.price.amount != null &&
         e.price.amount > 0 &&
+        e.primary.encounterEstimate?.source !== "local_fallback" &&
         (e.price.type === "cash" ||
           e.price.type === "insured" ||
           e.price.type === "estimate")
