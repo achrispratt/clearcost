@@ -161,6 +161,8 @@ The script ends with a tally of outcomes per reason. `code_price_reference` (the
 
 **The swap** (migration `20261018120000_mrf_load_swap.sql`). Rows go to `charges_mrf_staging` under a load id, then `apply_mrf_load(provider, load)` runs in one transaction: the hospital's other-source rows for the same codes move to `charges_archive`, its previous `cms_mrf` rows are deleted, the staged rows are copied into `charges` (`last_updated` = the file's date), and its cash ratios are refreshed. Codes compare by value across `cpt`/`hcpcs` (hospitals file HCPCS under either label) and DRGs without leading zeros. Codes the file lacks keep their Oria rows. No reader of `charges` changes. `restore_mrf_load(provider)` undoes it: crawled rows out, archived rows back.
 
+**The archive lives in Storage** (migration `20261029060000_charges_archive_to_storage.sql`). Archived rows only matter for undoing a load, so after each state run `npx tsx --env-file=.env.local scripts/archive-to-storage.ts`: it writes one gzipped NDJSON file per hospital to the private `charges-archive` bucket (Supabase Pro includes 100 GB of Storage) and reads each file back to check every row is in it. The nightly `purge_exported_archive()` job (05:15 UTC) then empties `charges_archive` of hospitals whose file is newer than their last archived row, truncating when all are covered. To undo a load after that, `scripts/archive-to-storage.ts --restore <provider_id>` puts the rows back in the table first; `restore_mrf_load()` refuses while they are only in Storage.
+
 Stays: crawled DRG rows already leave per-diem rates out (#185), so `lib/results/summarize.ts` trusts their insured averages for stay prices while Oria stay rows stay cash-only until the re-import (#173).
 
 ## Limits
