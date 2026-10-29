@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { comparablePrices } from "@/lib/pricing";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createLookupDiagnostics, lookupCharges } from "@/lib/cpt/lookup";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
@@ -99,9 +100,9 @@ async function runSearch(
   const hospitals = new Map<string, HospitalPrice>();
   const rowIds = new Map<string, string>();
   const headline = new Set(
-    summary.priced
-      .filter((e) => summary.state !== "priced" || e.scope !== "professional")
-      .flatMap((e) => e.locations.map((l) => l.id))
+    comparablePrices(summary.priced).flatMap((e) =>
+      e.locations.map((l) => l.id)
+    )
   );
   // A stay is priced only from the lines that set its answer.
   const stayRows = summary.stayDrg ? headline : null;
@@ -110,7 +111,12 @@ async function runSearch(
   for (const r of results) {
     if (stayRows && !stayRows.has(r.id)) continue;
     const price = getDisplayPrice(r);
-    if (price.amount == null || price.type === "unavailable") continue;
+    if (
+      price.amount == null ||
+      price.type === "unavailable" ||
+      price.type === "estimate"
+    )
+      continue;
     const current = hospitals.get(r.provider.id);
     if (current) {
       const now = rank(rowIds.get(r.provider.id)!, current.type);

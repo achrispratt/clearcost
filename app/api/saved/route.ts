@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { parseSearchContext } from "@/lib/saved-search-context";
+import { validateQuery } from "@/lib/api-limits";
 import { requireAuth, handleApiError } from "@/lib/api-helpers";
 
 export async function GET() {
@@ -28,7 +30,35 @@ export async function POST(request: NextRequest) {
     const { supabase, user } = auth;
 
     const body = await request.json();
-    const { query, location, cptCodes, lat, lng } = body;
+    const { query, location, cptCodes, lat, lng, searchContext } = body ?? {};
+    const context =
+      searchContext === undefined
+        ? undefined
+        : parseSearchContext(searchContext);
+    if (
+      validateQuery(query) ||
+      typeof location !== "string" ||
+      location.length > 200 ||
+      !Array.isArray(cptCodes) ||
+      cptCodes.length > 50 ||
+      !cptCodes.every(
+        (c: unknown) => typeof c === "string" && /^[A-Z0-9]{1,7}$/.test(c)
+      ) ||
+      (lat != null &&
+        (typeof lat !== "number" ||
+          !Number.isFinite(lat) ||
+          Math.abs(lat) > 90)) ||
+      (lng != null &&
+        (typeof lng !== "number" ||
+          !Number.isFinite(lng) ||
+          Math.abs(lng) > 180)) ||
+      context === null
+    ) {
+      return NextResponse.json(
+        { error: "Invalid saved search" },
+        { status: 400 }
+      );
+    }
 
     const { data, error } = await supabase
       .from("saved_searches")
@@ -37,8 +67,9 @@ export async function POST(request: NextRequest) {
         query,
         location,
         cpt_codes: cptCodes,
-        lat: lat || null,
-        lng: lng || null,
+        lat: lat ?? null,
+        lng: lng ?? null,
+        ...(context ? { search_context: context } : {}),
       })
       .select()
       .single();

@@ -1,5 +1,7 @@
 # ClearCost — Go-To-Market Strategy
 
+> Historical planning document. For the current implementation and remaining limits, see [docs/current-state.md](./current-state.md).
+
 > **Owner:** PM (Chris) · **Source of truth for:** Positioning, messaging, channels, launch plan
 > **Update when:** Market positioning or numbers change · **Live numbers:** see `docs/data-snapshot.md`
 

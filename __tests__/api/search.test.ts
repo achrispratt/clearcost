@@ -214,3 +214,20 @@ describe("POST /api/search", () => {
     expect(res.status).toBe(400);
   });
 });
+
+it("returns direct code types so restored searches retain inpatient context without AI", async () => {
+  const response = await POST(
+    makeRequest({
+      query: "hip replacement",
+      codeGroups: [
+        { codeType: "cpt", codes: ["27130"] },
+        { codeType: "ms_drg", codes: ["470"] },
+      ],
+      location: { lat: 40.75, lng: -74 },
+    })
+  );
+  expect((await response.json()).cptCodes).toMatchObject([
+    { code: "27130", codeType: "cpt" },
+    { code: "470", codeType: "ms_drg" },
+  ]);
+});

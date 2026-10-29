@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { parseSearchContext } from "@/lib/saved-search-context";
 import { track } from "@/lib/analytics";
 import type {
   ChargeResult,
@@ -216,7 +217,24 @@ export function useResultsSearch() {
         // (guided search passes codes directly, skipping AI translation)
         const apiCodes: CPTCode[] = data.cptCodes || [];
         if (apiCodes.length > 0) {
-          setCptCodes(apiCodes);
+          let descriptions: Record<string, string> = {};
+          try {
+            const parsed = JSON.parse(directCodeDescsParam || "{}");
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+              descriptions = parsed;
+          } catch {
+            /* Descriptions are optional. */
+          }
+          setCptCodes(
+            apiCodes.map((code) => ({
+              ...code,
+              description:
+                code.description ||
+                (typeof descriptions[code.code] === "string"
+                  ? descriptions[code.code]
+                  : code.code),
+            }))
+          );
         } else if (directCodeDescsParam) {
           try {
             const descs = JSON.parse(directCodeDescsParam) as Record<
@@ -359,6 +377,27 @@ export function useResultsSearch() {
     cptCodes,
     interpretation,
     pricingPlan,
+    searchContext:
+      parseSearchContext({
+        version: 1,
+        codes: cptCodes.length
+          ? cptCodes
+          : (directCodeGroups.length
+              ? directCodeGroups
+              : [{ codeType: directCodeType || "cpt", codes: directCodes }]
+            ).flatMap((g) =>
+              g.codes.map((code) => ({
+                code,
+                codeType: g.codeType,
+                description: "",
+                category: "Procedure",
+              }))
+            ),
+        interpretation,
+        pricingPlan,
+        laterality: directSide || pricingPlan?.laterality,
+        bodySite: directSite || pricingPlan?.bodySite,
+      }) ?? undefined,
     loading,
     loadingStage,
     error,

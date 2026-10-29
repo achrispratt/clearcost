@@ -1,11 +1,12 @@
 import type { ChargeResult, ChargeVariant, GroupedChargeResult } from "@/types";
+import { feeScope } from "@/lib/pricing";
 
 function billingClassTier(bc: string | undefined): number {
-  const normalized = bc?.toLowerCase();
-  if (!normalized || normalized === "both") return 0; // global/most complete
-  if (normalized === "facility") return 1;
-  if (normalized === "professional") return 2;
-  return 0; // unknown treated as potentially complete
+  const scope = feeScope(bc);
+  if (scope === "complete") return 0;
+  if (scope === "facility") return 1;
+  if (scope === "professional") return 2;
+  return 3;
 }
 
 // A procedure's price is its outpatient one. Hospital files also list the

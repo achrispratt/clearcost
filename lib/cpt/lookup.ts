@@ -4,10 +4,14 @@ import { milesToKm, kmToMiles } from "@/lib/units";
 import { haversineMiles } from "@/lib/geo";
 import { reportError } from "@/lib/observability";
 import { plausiblePrice } from "./price-sanity";
+import { getDisplayPrice } from "@/lib/format";
+import { comparablePrices, feeScope } from "@/lib/pricing";
 import { applyPriceBands, loadPriceReference } from "./price-bands";
 // @ts-expect-error zipcodes has no bundled TypeScript declarations.
 import zipcodes from "zipcodes";
 import type {
+  FeeScope,
+  PaymentBasis,
   BodySite,
   ChargeResult,
   BillingCodeType,
@@ -50,9 +54,14 @@ interface PriceSummary {
   maxPrice: number;
 }
 
+interface ComparablePriceSummary extends PriceSummary {
+  basis: PaymentBasis;
+  scope: FeeScope;
+}
+
 interface ProviderAdderSummary {
-  providerSummaries: Map<string, PriceSummary>;
-  localSummary?: PriceSummary;
+  providerSummaries: Map<string, ComparablePriceSummary>;
+  localSummary?: ComparablePriceSummary;
 }
 
 interface LookupWithPlanParams {
@@ -150,28 +159,6 @@ function filterRowsBySetting(
     (row) => row.setting === preferredSetting || row.setting === "both"
   );
   return filtered.length > 0 ? filtered : rows;
-}
-
-/** Derive provider-level discount status from per-row isDiscounted flags. */
-function deriveDiscountStatusByProvider(
-  rows: ChargeResult[]
-): Map<string, boolean | undefined> {
-  const result = new Map<string, boolean | undefined>();
-  for (const row of rows) {
-    const pid = row.provider.id;
-    const existing = result.get(pid);
-    // Once a provider has a discount, it stays true (optimistic)
-    if (existing === true) continue;
-    if (row.isDiscounted === true) {
-      result.set(pid, true);
-    } else if (row.isDiscounted === false) {
-      result.set(pid, existing === undefined ? false : existing);
-    } else {
-      // isDiscounted is undefined — mark indeterminate if no signal yet
-      if (!result.has(pid)) result.set(pid, undefined);
-    }
-  }
-  return result;
 }
 
 const MAX_PROVIDER_ZIP_DRIFT_MILES = 75;
@@ -436,47 +423,46 @@ export function buildPriceSummary(values: number[]): PriceSummary | undefined {
   };
 }
 
-function extractReferencePrice(row: ChargeResult): number | undefined {
-  const value =
-    row.cashPrice ?? row.minPrice ?? row.avgNegotiatedRate ?? row.maxPrice;
-
-  if (value == null || Number.isNaN(value) || value <= 0) return undefined;
-  return value;
-}
-
-function summarizeRows(rows: ChargeResult[]): PriceSummary | undefined {
-  const values: number[] = [];
-  for (const row of rows) {
-    const reference = extractReferencePrice(row);
-    if (reference != null) {
-      values.push(reference);
-    }
-  }
-  return buildPriceSummary(values);
+function summarizeRows(
+  rows: ChargeResult[]
+): ComparablePriceSummary | undefined {
+  const entries = rows
+    .map((row) => ({
+      row,
+      price: getDisplayPrice(row),
+      scope: feeScope(row.billingClass),
+    }))
+    .filter(
+      (e) =>
+        (e.price.type === "cash" || e.price.type === "insured") &&
+        e.price.amount != null &&
+        Number.isFinite(e.price.amount) &&
+        e.price.amount > 0
+    );
+  const comparable = comparablePrices(entries);
+  const summary = buildPriceSummary(comparable.map((e) => e.price.amount!));
+  if (!summary || !comparable.length) return undefined;
+  return {
+    ...summary,
+    basis: comparable[0].price.type as PaymentBasis,
+    scope: comparable[0].scope,
+  };
 }
 
 function summarizeRowsByProvider(
   rows: ChargeResult[]
-): Map<string, PriceSummary> {
-  const valuesByProvider = new Map<string, number[]>();
-
+): Map<string, ComparablePriceSummary> {
+  const byProvider = new Map<string, ChargeResult[]>();
   for (const row of rows) {
-    const reference = extractReferencePrice(row);
-    if (reference == null) continue;
-
-    const existing = valuesByProvider.get(row.provider.id) || [];
-    existing.push(reference);
-    valuesByProvider.set(row.provider.id, existing);
+    const existing = byProvider.get(row.provider.id) ?? [];
+    existing.push(row);
+    byProvider.set(row.provider.id, existing);
   }
-
-  const summaries = new Map<string, PriceSummary>();
-  for (const [providerId, values] of valuesByProvider.entries()) {
-    const summary = buildPriceSummary(values);
-    if (summary) {
-      summaries.set(providerId, summary);
-    }
+  const summaries = new Map<string, ComparablePriceSummary>();
+  for (const [id, providerRows] of byProvider) {
+    const summary = summarizeRows(providerRows);
+    if (summary) summaries.set(id, summary);
   }
-
   return summaries;
 }
 
@@ -683,6 +669,8 @@ function buildOptionalAddersForProvider({
       estimatePrice: selectedSummary.estimatePrice,
       minPrice: selectedSummary.minPrice,
       maxPrice: selectedSummary.maxPrice,
+      basis: selectedSummary.basis,
+      scope: selectedSummary.scope,
       source: providerSummary ? "facility" : "local_fallback",
       confidence: providerSummary ? "high" : "low",
     });
@@ -693,10 +681,22 @@ function buildOptionalAddersForProvider({
 
 function withEstimatedTotals(
   result: ChargeResult,
-  base: PriceSummary | undefined,
+  base: ComparablePriceSummary | undefined,
   adders: OptionalAdderEstimate[]
 ): ChargeResult {
-  if (!base || adders.length === 0) return result;
+  if (
+    !base ||
+    adders.length === 0 ||
+    base.scope === "unknown" ||
+    result.baseSource === "local_fallback" ||
+    adders.some(
+      (a) =>
+        a.basis !== base.basis ||
+        a.scope !== base.scope ||
+        a.source !== "facility"
+    )
+  )
+    return result;
 
   const estimatedTotalMedian =
     base.estimatePrice +
@@ -751,9 +751,6 @@ function buildEncounterFirstResults({
     ...Array.from(providerCatalog.keys()),
   ]);
 
-  const discountByProvider =
-    deriveDiscountStatusByProvider(filteredBaseResults);
-
   const baseLabel = pricingPlan.encounterType
     ? ENCOUNTER_LABELS[pricingPlan.encounterType]
     : "Visit estimate";
@@ -775,8 +772,11 @@ function buildEncounterFirstResults({
     });
 
     const baseCard: ChargeResult = {
-      ...template,
       id: `${providerId}::encounter`,
+      provider: template.provider,
+      distanceKm: template.distanceKm,
+      distanceMiles: template.distanceMiles,
+      setting: preferredSetting,
       description: baseLabel,
       cpt: undefined,
       hcpcs: undefined,
@@ -785,8 +785,24 @@ function buildEncounterFirstResults({
       baseLabel,
       baseSource: facilityBase ? "facility" : "local_fallback",
       proxyLabel: pricingPlan.proxyLabel,
-      cashPrice: baseSummary.estimatePrice,
-      isDiscounted: discountByProvider.get(providerId),
+      // These values summarize several rows; do not put them in published-price fields.
+      cashPrice: undefined,
+      grossCharge: undefined,
+      avgNegotiatedRate: undefined,
+      minNegotiatedRate: undefined,
+      maxNegotiatedRate: undefined,
+      payerCount: undefined,
+      billingClass:
+        baseSummary.scope === "complete" ? "both" : baseSummary.scope,
+      encounterEstimate: {
+        amount: baseSummary.estimatePrice,
+        min: baseSummary.minPrice,
+        max: baseSummary.maxPrice,
+        basis: baseSummary.basis,
+        scope: baseSummary.scope,
+        source: facilityBase ? "facility" : "local_fallback",
+      },
+      isDiscounted: undefined,
       minPrice: baseSummary.minPrice,
       maxPrice: baseSummary.maxPrice,
       optionalAdders,
@@ -812,14 +828,7 @@ function buildProcedureFirstResults({
     pricingPlan.baseCodeGroups[0]?.label || "Primary procedure estimate";
 
   return baseResults.map((row) => {
-    const baseEstimate = extractReferencePrice(row);
-    const baseSummary = baseEstimate
-      ? {
-          estimatePrice: baseEstimate,
-          minPrice: row.minPrice ?? baseEstimate,
-          maxPrice: row.maxPrice ?? baseEstimate,
-        }
-      : undefined;
+    const baseSummary = summarizeRows([row]);
 
     const optionalAdders = buildOptionalAddersForProvider({
       providerId: row.provider.id,

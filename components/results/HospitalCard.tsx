@@ -152,7 +152,7 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
           </span>
           {(isLowest || scope || others > 0) && (
             <span className="col-span-2 flex flex-wrap gap-1.5 mt-1">
-              {isLowest && <Tag tone="good">Lowest price</Tag>}
+              {isLowest && <Tag tone="good">Lowest comparable price</Tag>}
               {scope && (
                 <Tag tone={entry.scope === "professional" ? "warn" : "neutral"}>
                   {scope}
@@ -179,6 +179,24 @@ export const HospitalCard = forwardRef<HTMLLIElement, HospitalCardProps>(
             )}
 
             <div className="slip">
+              {r.encounterEstimate && (
+                <div className="slip-row">
+                  <span>
+                    Estimated visit
+                    <span className="slip-note">
+                      Based on{" "}
+                      {r.encounterEstimate.source === "local_fallback"
+                        ? "nearby hospitals’"
+                        : "this hospital’s"}{" "}
+                      {r.encounterEstimate.basis === "cash"
+                        ? "cash prices"
+                        : "average insured rates"}
+                      ; not a cash quote
+                    </span>
+                  </span>
+                  <span>{formatPrice(r.encounterEstimate.amount)}</span>
+                </div>
+              )}
               {r.cashPrice != null && (
                 <div className="slip-row">
                   <span>Cash price</span>

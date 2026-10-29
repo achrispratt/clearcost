@@ -53,3 +53,12 @@ describe("groupResultsByProvider", () => {
     expect(group.id).toBe("stay");
   });
 });
+
+it("does not prefer unspecified coverage over a known hospital fee", () => {
+  expect(
+    groupResultsByProvider([
+      charge({ id: "unknown", billingClass: undefined, cashPrice: 10 }),
+      charge({ id: "known", billingClass: "facility", cashPrice: 500 }),
+    ])[0].id
+  ).toBe("known");
+});
