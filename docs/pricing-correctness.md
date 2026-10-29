@@ -27,6 +27,13 @@ Apply the additive `*_saved_search_context.sql` migration **before** deploying t
 - Saved-search tests cover context serialization and API storage, invalid input and authentication.
 - Existing live price evaluations compare against a committed SEO index. They detect regression, not independent accuracy. Rebuild and review the SEO index after changing comparison policy; fewer like-for-like prices can correctly cause a page to fall below its publishing threshold.
 
+## October 29 release verification
+
+- Production has the saved-search context and explicit Data API grants migrations. Existing archive migrations from PRs #229 and #230 are included from current main.
+- A temporary preview account completed sign in, save, saved-list reopen and context restoration for code `73721`, right knee and the pricing plan. Reopening made no clarification calls. The account and saved row were deleted afterward.
+- The SEO index was rebuilt from all 2,660 procedure/city lookups: 1,431 pages qualify, versus 2,246 in the October 23 index. The 815 removals keep the index aligned with the existing three-comparable-price publishing threshold. Data has also changed since the old snapshot; the total difference is not attributed solely to this PR.
+- Same-data spot checks explain the policy effect: Indianapolis knee MRI has 12 entries under the previous policy and two matching hospital-fee cash prices under this policy; Phoenix colonoscopy has 19 and one respectively. Other prices remain available through search. New York knee MRI retains 23 comparable entries and remains publishable.
+
 ## Work still requiring external evidence
 
 1. Independently review representative referral/code/variant scenarios, including inpatient mapping and symptom-to-visit behavior.
