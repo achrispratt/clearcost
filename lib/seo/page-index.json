@@ -2,41 +2,41 @@
   "generatedAt": "2026-10-29",
   "radiusMiles": 25,
   "nationalMedians": {
-    "knee-mri": 1812,
-    "shoulder-mri": 1788,
-    "lower-back-mri": 1728,
-    "brain-mri": 1665,
-    "head-ct": 1122,
-    "chest-ct": 1122,
+    "knee-mri": 1796,
+    "shoulder-mri": 1764,
+    "lower-back-mri": 1707,
+    "brain-mri": 1658,
+    "head-ct": 1121,
+    "chest-ct": 1121,
     "abdomen-pelvis-ct": 2398,
-    "chest-x-ray": 282,
-    "knee-x-ray": 319,
+    "chest-x-ray": 281,
+    "knee-x-ray": 317,
     "screening-mammogram": 238,
     "diagnostic-mammogram": 352,
-    "abdominal-ultrasound": 674,
-    "pelvic-ultrasound": 615,
+    "abdominal-ultrasound": 665,
+    "pelvic-ultrasound": 607,
     "pregnancy-ultrasound": 540,
-    "thyroid-ultrasound": 539,
-    "bone-density-scan": 362,
+    "thyroid-ultrasound": 537,
+    "bone-density-scan": 355,
     "complete-blood-count": 41,
     "comprehensive-metabolic-panel": 106,
     "basic-metabolic-panel": 80,
-    "cholesterol-test": 67,
+    "cholesterol-test": 66,
     "a1c-test": 51,
     "thyroid-test": 63,
-    "vitamin-d-test": 85,
-    "psa-test": 68,
+    "vitamin-d-test": 83,
+    "psa-test": 67,
     "ekg": 49,
-    "echocardiogram": 1836,
-    "sleep-study": 2686,
-    "colonoscopy": 1563,
+    "echocardiogram": 1833,
+    "sleep-study": 2656,
+    "colonoscopy": 1534,
     "upper-endoscopy": 1390,
-    "cataract-surgery": 3101,
-    "gallbladder-removal": 6471,
-    "carpal-tunnel-surgery": 2409,
-    "inguinal-hernia-repair": 4074,
+    "cataract-surgery": 3105,
+    "gallbladder-removal": 6469,
+    "carpal-tunnel-surgery": 2405,
+    "inguinal-hernia-repair": 4069,
     "vasectomy": 2424,
-    "tonsillectomy": 3643
+    "tonsillectomy": 3652
   },
   "pages": [
     {
@@ -82,7 +82,7 @@
     {
       "procedure": "knee-mri",
       "metro": "philadelphia-pa",
-      "hospitals": 14,
+      "hospitals": 15,
       "low": 269,
       "median": 971,
       "high": 4789
@@ -307,9 +307,9 @@
       "procedure": "knee-mri",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 628,
-      "median": 4823,
-      "high": 7817
+      "low": 1554,
+      "median": 3835,
+      "high": 6214
     },
     {
       "procedure": "knee-mri",
@@ -450,7 +450,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "philadelphia-pa",
-      "hospitals": 14,
+      "hospitals": 15,
       "low": 269,
       "median": 971,
       "high": 4412
@@ -675,9 +675,9 @@
       "procedure": "shoulder-mri",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 628,
-      "median": 4823,
-      "high": 7817
+      "low": 1554,
+      "median": 3835,
+      "high": 6214
     },
     {
       "procedure": "shoulder-mri",
@@ -1043,9 +1043,9 @@
       "procedure": "lower-back-mri",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 628,
-      "median": 4823,
-      "high": 7817
+      "low": 1554,
+      "median": 3835,
+      "high": 6214
     },
     {
       "procedure": "lower-back-mri",
@@ -1411,9 +1411,9 @@
       "procedure": "brain-mri",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 628,
-      "median": 4823,
-      "high": 7817
+      "low": 1554,
+      "median": 3835,
+      "high": 6214
     },
     {
       "procedure": "brain-mri",
@@ -1779,9 +1779,9 @@
       "procedure": "head-ct",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 362,
-      "median": 2343,
-      "high": 3694
+      "low": 896,
+      "median": 1950,
+      "high": 2937
     },
     {
       "procedure": "head-ct",
@@ -2146,10 +2146,10 @@
     {
       "procedure": "chest-ct",
       "metro": "pittsburgh-pa",
-      "hospitals": 9,
-      "low": 362,
-      "median": 2343,
-      "high": 4084
+      "hospitals": 10,
+      "low": 896,
+      "median": 1880,
+      "high": 3442
     },
     {
       "procedure": "chest-ct",
@@ -2515,9 +2515,9 @@
       "procedure": "abdomen-pelvis-ct",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 393,
-      "median": 7086,
-      "high": 11176
+      "low": 973,
+      "median": 5897,
+      "high": 8885
     },
     {
       "procedure": "abdomen-pelvis-ct",
@@ -2883,9 +2883,9 @@
       "procedure": "chest-x-ray",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 38,
-      "median": 534,
-      "high": 863
+      "low": 93,
+      "median": 424,
+      "high": 686
     },
     {
       "procedure": "chest-x-ray",
@@ -3026,7 +3026,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "philadelphia-pa",
-      "hospitals": 14,
+      "hospitals": 15,
       "low": 100,
       "median": 189,
       "high": 522
@@ -3259,9 +3259,9 @@
       "procedure": "knee-x-ray",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 109,
-      "median": 549,
-      "high": 863
+      "low": 269,
+      "median": 457,
+      "high": 686
     },
     {
       "procedure": "knee-x-ray",
@@ -3619,9 +3619,9 @@
       "procedure": "screening-mammogram",
       "metro": "pittsburgh-pa",
       "hospitals": 3,
-      "low": 150,
-      "median": 274,
-      "high": 314
+      "low": 205,
+      "median": 263,
+      "high": 371
     },
     {
       "procedure": "screening-mammogram",
@@ -3955,9 +3955,9 @@
       "procedure": "diagnostic-mammogram",
       "metro": "pittsburgh-pa",
       "hospitals": 4,
-      "low": 165,
-      "median": 643,
-      "high": 679
+      "low": 408,
+      "median": 460,
+      "high": 572
     },
     {
       "procedure": "diagnostic-mammogram",
@@ -4339,9 +4339,9 @@
       "procedure": "abdominal-ultrasound",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 246,
-      "median": 1603,
-      "high": 2746
+      "low": 607,
+      "median": 1466,
+      "high": 2314
     },
     {
       "procedure": "abdominal-ultrasound",
@@ -4723,9 +4723,9 @@
       "procedure": "pelvic-ultrasound",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 111,
+      "low": 276,
       "median": 1189,
-      "high": 1982
+      "high": 1671
     },
     {
       "procedure": "pelvic-ultrasound",
@@ -5091,9 +5091,9 @@
       "procedure": "pregnancy-ultrasound",
       "metro": "pittsburgh-pa",
       "hospitals": 8,
-      "low": 111,
-      "median": 1436,
-      "high": 2289
+      "low": 276,
+      "median": 1211,
+      "high": 1820
     },
     {
       "procedure": "pregnancy-ultrasound",
@@ -5491,9 +5491,9 @@
       "procedure": "thyroid-ultrasound",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 135,
-      "median": 1046,
-      "high": 1589
+      "low": 334,
+      "median": 953,
+      "high": 1263
     },
     {
       "procedure": "thyroid-ultrasound",
@@ -5859,9 +5859,9 @@
       "procedure": "bone-density-scan",
       "metro": "pittsburgh-pa",
       "hospitals": 6,
-      "low": 82,
-      "median": 320,
-      "high": 380
+      "low": 203,
+      "median": 240,
+      "high": 285
     },
     {
       "procedure": "bone-density-scan",
@@ -6210,10 +6210,10 @@
     {
       "procedure": "complete-blood-count",
       "metro": "pittsburgh-pa",
-      "hospitals": 11,
-      "low": 7,
-      "median": 110,
-      "high": 286
+      "hospitals": 9,
+      "low": 18,
+      "median": 93,
+      "high": 241
     },
     {
       "procedure": "complete-blood-count",
@@ -6563,9 +6563,9 @@
       "procedure": "comprehensive-metabolic-panel",
       "metro": "pittsburgh-pa",
       "hospitals": 7,
-      "low": 33,
-      "median": 334,
-      "high": 790
+      "low": 81,
+      "median": 266,
+      "high": 665
     },
     {
       "procedure": "comprehensive-metabolic-panel",
@@ -6938,10 +6938,10 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "pittsburgh-pa",
-      "hospitals": 10,
-      "low": 11,
-      "median": 245,
-      "high": 636
+      "hospitals": 9,
+      "low": 28,
+      "median": 207,
+      "high": 536
     },
     {
       "procedure": "basic-metabolic-panel",
@@ -7042,10 +7042,10 @@
     {
       "procedure": "cholesterol-test",
       "metro": "new-york-ny",
-      "hospitals": 24,
+      "hospitals": 23,
       "low": 13,
       "median": 13,
-      "high": 665
+      "high": 358
     },
     {
       "procedure": "cholesterol-test",
@@ -7314,10 +7314,10 @@
     {
       "procedure": "cholesterol-test",
       "metro": "pittsburgh-pa",
-      "hospitals": 12,
-      "low": 17,
-      "median": 306,
-      "high": 590
+      "hospitals": 9,
+      "low": 43,
+      "median": 252,
+      "high": 497
     },
     {
       "procedure": "cholesterol-test",
@@ -7698,10 +7698,10 @@
     {
       "procedure": "a1c-test",
       "metro": "pittsburgh-pa",
-      "hospitals": 15,
-      "low": 12,
-      "median": 183,
-      "high": 281
+      "hospitals": 11,
+      "low": 31,
+      "median": 182,
+      "high": 416
     },
     {
       "procedure": "a1c-test",
@@ -8090,10 +8090,10 @@
     {
       "procedure": "thyroid-test",
       "metro": "pittsburgh-pa",
-      "hospitals": 11,
-      "low": 22,
-      "median": 231,
-      "high": 423
+      "hospitals": 10,
+      "low": 53,
+      "median": 199,
+      "high": 357
     },
     {
       "procedure": "thyroid-test",
@@ -8338,10 +8338,10 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "nashville-tn",
-      "hospitals": 7,
+      "hospitals": 6,
       "low": 117,
-      "median": 465,
-      "high": 834
+      "median": 454,
+      "high": 552
     },
     {
       "procedure": "vitamin-d-test",
@@ -8474,10 +8474,10 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "pittsburgh-pa",
-      "hospitals": 16,
-      "low": 38,
-      "median": 255,
-      "high": 632
+      "hospitals": 10,
+      "low": 94,
+      "median": 237,
+      "high": 532
     },
     {
       "procedure": "vitamin-d-test",
@@ -8610,9 +8610,9 @@
     {
       "procedure": "psa-test",
       "metro": "philadelphia-pa",
-      "hospitals": 10,
+      "hospitals": 11,
       "low": 21,
-      "median": 57,
+      "median": 66,
       "high": 211
     },
     {
@@ -8842,10 +8842,10 @@
     {
       "procedure": "psa-test",
       "metro": "pittsburgh-pa",
-      "hospitals": 15,
-      "low": 24,
-      "median": 147,
-      "high": 404
+      "hospitals": 10,
+      "low": 59,
+      "median": 127,
+      "high": 431
     },
     {
       "procedure": "psa-test",
@@ -8970,10 +8970,10 @@
     {
       "procedure": "ekg",
       "metro": "philadelphia-pa",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 25,
-      "median": 31,
-      "high": 172
+      "median": 33,
+      "high": 210
     },
     {
       "procedure": "ekg",
@@ -9046,6 +9046,14 @@
       "low": 250,
       "median": 250,
       "high": 250
+    },
+    {
+      "procedure": "ekg",
+      "metro": "pittsburgh-pa",
+      "hospitals": 3,
+      "low": 39,
+      "median": 39,
+      "high": 42
     },
     {
       "procedure": "ekg",
@@ -9354,10 +9362,10 @@
     {
       "procedure": "echocardiogram",
       "metro": "pittsburgh-pa",
-      "hospitals": 13,
-      "low": 358,
-      "median": 2296,
-      "high": 3086
+      "hospitals": 9,
+      "low": 886,
+      "median": 1935,
+      "high": 2600
     },
     {
       "procedure": "echocardiogram",
@@ -9722,10 +9730,10 @@
     {
       "procedure": "sleep-study",
       "metro": "pittsburgh-pa",
-      "hospitals": 8,
-      "low": 4227,
-      "median": 9633,
-      "high": 9937
+      "hospitals": 6,
+      "low": 3562,
+      "median": 6818,
+      "high": 8374
     },
     {
       "procedure": "sleep-study",
@@ -9979,8 +9987,8 @@
       "procedure": "colonoscopy",
       "metro": "pittsburgh-pa",
       "hospitals": 8,
-      "low": 2000,
-      "median": 2000,
+      "low": 1500,
+      "median": 1500,
       "high": 2000
     },
     {
@@ -10163,9 +10171,9 @@
       "procedure": "upper-endoscopy",
       "metro": "pittsburgh-pa",
       "hospitals": 8,
-      "low": 2123,
-      "median": 3258,
-      "high": 4638
+      "low": 1895,
+      "median": 2843,
+      "high": 3909
     },
     {
       "procedure": "upper-endoscopy",
@@ -10250,10 +10258,10 @@
     {
       "procedure": "cataract-surgery",
       "metro": "philadelphia-pa",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 585,
-      "median": 2243,
-      "high": 3742
+      "median": 3055,
+      "high": 4899
     },
     {
       "procedure": "cataract-surgery",
@@ -10388,8 +10396,8 @@
       "metro": "pittsburgh-pa",
       "hospitals": 8,
       "low": 2180,
-      "median": 2485,
-      "high": 3169
+      "median": 2738,
+      "high": 3229
     },
     {
       "procedure": "cataract-surgery",
@@ -10474,9 +10482,9 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "philadelphia-pa",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 994,
-      "median": 1251,
+      "median": 7291,
       "high": 7968
     },
     {
@@ -10611,9 +10619,9 @@
       "procedure": "gallbladder-removal",
       "metro": "pittsburgh-pa",
       "hospitals": 9,
-      "low": 4686,
-      "median": 4865,
-      "high": 7767
+      "low": 4847,
+      "median": 4996,
+      "high": 7684
     },
     {
       "procedure": "gallbladder-removal",
@@ -10826,10 +10834,10 @@
     {
       "procedure": "carpal-tunnel-surgery",
       "metro": "pittsburgh-pa",
-      "hospitals": 8,
-      "low": 1819,
-      "median": 4497,
-      "high": 7274
+      "hospitals": 6,
+      "low": 1533,
+      "median": 4064,
+      "high": 4949
     },
     {
       "procedure": "carpal-tunnel-surgery",
@@ -11252,8 +11260,8 @@
       "metro": "pittsburgh-pa",
       "hospitals": 3,
       "low": 1406,
-      "median": 1441,
-      "high": 2449
+      "median": 1693,
+      "high": 2391
     },
     {
       "procedure": "vasectomy",
@@ -11314,10 +11322,10 @@
     {
       "procedure": "tonsillectomy",
       "metro": "philadelphia-pa",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 563,
-      "median": 997,
-      "high": 4366
+      "median": 1129,
+      "high": 4783
     },
     {
       "procedure": "tonsillectomy",
@@ -11435,9 +11443,9 @@
       "procedure": "tonsillectomy",
       "metro": "pittsburgh-pa",
       "hospitals": 4,
-      "low": 2763,
-      "median": 2876,
-      "high": 4334
+      "low": 2803,
+      "median": 2948,
+      "high": 4271
     },
     {
       "procedure": "tonsillectomy",
