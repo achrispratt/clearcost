@@ -1,11 +1,15 @@
 import { createHash } from "crypto";
-import { comparablePrices } from "@/lib/pricing";
+import { comparableScope } from "@/lib/pricing";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createLookupDiagnostics, lookupCharges } from "@/lib/cpt/lookup";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
 import { inpatientStayFor } from "@/lib/cpt/inpatient-stays";
 import { getDisplayPrice } from "@/lib/format";
-import { feeScope, summarizeAnswer } from "@/lib/results/summarize";
+import {
+  feeScope,
+  pricedCount,
+  summarizeAnswer,
+} from "@/lib/results/summarize";
 import { SEO_METROS, type SeoMetro } from "@/lib/seo/metros";
 import { SEO_PAGE_INDEX } from "@/lib/seo/page-index";
 import { SEO_PROCEDURES } from "@/lib/seo/procedures";
@@ -100,9 +104,7 @@ async function runSearch(
   const hospitals = new Map<string, HospitalPrice>();
   const rowIds = new Map<string, string>();
   const headline = new Set(
-    comparablePrices(summary.priced).flatMap((e) =>
-      e.locations.map((l) => l.id)
-    )
+    comparableScope(summary.priced).flatMap((e) => e.locations.map((l) => l.id))
   );
   // A stay is priced only from the lines that set its answer.
   const stayRows = summary.stayDrg ? headline : null;
@@ -144,7 +146,7 @@ async function runSearch(
     state: metro.state,
     answer: {
       state: summary.state,
-      rangeCount: summary.rangeCount ?? 0,
+      rangeCount: pricedCount(summary),
       low: summary.low,
       median: summary.median,
       high: summary.high,

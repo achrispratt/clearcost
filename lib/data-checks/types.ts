@@ -32,6 +32,7 @@ export interface SearchSnapshot {
   state: string;
   answer: {
     state: AnswerState;
+    /** Priced entries: the main range plus insured prices kept beside it. */
     rangeCount: number;
     low?: number;
     median?: number;

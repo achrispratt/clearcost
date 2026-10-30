@@ -6,6 +6,7 @@ The headline compares one fee scope and one price basis. It does not mix cash pr
 
 - Choose the most represented explicit hospital-side scope (facility or both); ties prefer facility. If neither exists, use explicitly professional fees, then unspecified coverage.
 - Within that scope, prefer published cash, then estimates from cash, then published negotiated averages, then estimates from negotiated averages.
+- When cash sets the headline, negotiated averages in the same scope get their own range beside it (`AnswerSummary.insured`), and city pages list them after the cash prices. One hospital's cash price never hides the other hospitals' insured rates (DQ-33). A city page publishes when cash and insured together cover enough hospitals.
 - Unknown billing class means unknown coverage, never a complete price. Provider grouping prefers explicitly labeled rows over unspecified ones.
 - For inpatient comparisons, first select the existing typical DRG, then compare the same price basis. The hospital-stay price still excludes separately billed doctors.
 - List prices never set the headline. Constructed visit estimates never populate `cashPrice`; the `encounterEstimate` object records basis, coverage and whether the source is the hospital or a nearby fallback.

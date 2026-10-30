@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 import { findMetro } from "@/lib/seo/metros";
 import { findPage, SEO_PAGE_INDEX } from "@/lib/seo/page-index";
 import { findProcedure } from "@/lib/seo/procedures";
+import { pricedCount } from "@/lib/results/summarize";
 import { MIN_PRICED_HOSPITALS, summarizeCity } from "@/lib/seo/prices";
 import type { ChargeResult } from "@/types";
 
@@ -83,7 +84,7 @@ test.describe("price eval", () => {
           results: ChargeResult[];
         };
         const summary = summarizeCity(procedure, results, national);
-        const hospitals = summary.rangeCount ?? 0;
+        const hospitals = pricedCount(summary);
         const minHospitals = Math.max(
           MIN_PRICED_HOSPITALS,
           Math.ceil(page.hospitals * MIN_HOSPITAL_SHARE)

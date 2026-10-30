@@ -2,7 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createLookupDiagnostics, lookupCharges } from "@/lib/cpt/lookup";
 import { groupResultsByProvider } from "@/lib/cpt/group-results";
 import { getDisplayPrice } from "@/lib/format";
-import { summarizeAnswer, type AnswerSummary } from "@/lib/results/summarize";
+import {
+  pricedCount,
+  summarizeAnswer,
+  type AnswerSummary,
+} from "@/lib/results/summarize";
 import type { CPTCode, ChargeResult } from "@/types";
 import type { SeoMetro } from "./metros";
 import type { SeoProcedure } from "./procedures";
@@ -93,7 +97,6 @@ export function summarizeCity(
 /** Whether a summary has enough real prices to publish a page for it. */
 export function isPublishable(summary: AnswerSummary): boolean {
   return (
-    summary.state === "priced" &&
-    (summary.rangeCount ?? 0) >= MIN_PRICED_HOSPITALS
+    summary.state === "priced" && pricedCount(summary) >= MIN_PRICED_HOSPITALS
   );
 }

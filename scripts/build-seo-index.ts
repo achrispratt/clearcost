@@ -14,7 +14,7 @@ import { resolve } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SEO_METROS } from "@/lib/seo/metros";
 import { SEO_PROCEDURES } from "@/lib/seo/procedures";
-import { summarizeAnswer } from "@/lib/results/summarize";
+import { pricedCount, summarizeAnswer } from "@/lib/results/summarize";
 import {
   getCityResults,
   isPublishable,
@@ -105,7 +105,7 @@ async function main() {
     pages.push({
       procedure: procedure.slug,
       metro: metro.slug,
-      hospitals: summary.rangeCount!,
+      hospitals: pricedCount(summary),
       low: Math.round(summary.low!),
       median: Math.round(summary.median!),
       high: Math.round(summary.high!),

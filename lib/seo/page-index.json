@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29",
+  "generatedAt": "2026-10-30",
   "radiusMiles": 25,
   "nationalMedians": {
     "knee-mri": 1796,
@@ -17,17 +17,17 @@
     "pelvic-ultrasound": 607,
     "pregnancy-ultrasound": 540,
     "thyroid-ultrasound": 537,
-    "bone-density-scan": 355,
+    "bone-density-scan": 351,
     "complete-blood-count": 41,
     "comprehensive-metabolic-panel": 106,
     "basic-metabolic-panel": 80,
-    "cholesterol-test": 66,
+    "cholesterol-test": 64,
     "a1c-test": 51,
     "thyroid-test": 63,
     "vitamin-d-test": 83,
-    "psa-test": 67,
+    "psa-test": 66,
     "ekg": 49,
-    "echocardiogram": 1833,
+    "echocardiogram": 1832,
     "sleep-study": 2656,
     "colonoscopy": 1534,
     "upper-endoscopy": 1390,
@@ -42,7 +42,7 @@
     {
       "procedure": "knee-mri",
       "metro": "new-york-ny",
-      "hospitals": 23,
+      "hospitals": 24,
       "low": 256,
       "median": 286,
       "high": 4549
@@ -50,7 +50,7 @@
     {
       "procedure": "knee-mri",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 30,
       "low": 338,
       "median": 5329,
       "high": 7123
@@ -58,7 +58,7 @@
     {
       "procedure": "knee-mri",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 822,
       "median": 1579,
       "high": 3621
@@ -66,7 +66,7 @@
     {
       "procedure": "knee-mri",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 236,
       "median": 1313,
       "high": 4389
@@ -74,7 +74,7 @@
     {
       "procedure": "knee-mri",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 350,
       "median": 473,
       "high": 1073
@@ -90,7 +90,7 @@
     {
       "procedure": "knee-mri",
       "metro": "san-antonio-tx",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 413,
       "median": 2401,
       "high": 4389
@@ -106,7 +106,7 @@
     {
       "procedure": "knee-mri",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 1204,
       "median": 2846,
       "high": 4389
@@ -114,7 +114,7 @@
     {
       "procedure": "knee-mri",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 2257,
       "median": 2257,
       "high": 5667
@@ -162,7 +162,7 @@
     {
       "procedure": "knee-mri",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 481,
       "median": 1596,
       "high": 2507
@@ -170,7 +170,7 @@
     {
       "procedure": "knee-mri",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 1169,
       "median": 2710,
       "high": 4545
@@ -186,7 +186,7 @@
     {
       "procedure": "knee-mri",
       "metro": "nashville-tn",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 1810,
       "median": 7739,
       "high": 11021
@@ -226,7 +226,7 @@
     {
       "procedure": "knee-mri",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 562,
       "median": 786,
       "high": 786
@@ -234,7 +234,7 @@
     {
       "procedure": "knee-mri",
       "metro": "louisville-ky",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 578,
       "median": 763,
       "high": 3137
@@ -250,7 +250,7 @@
     {
       "procedure": "knee-mri",
       "metro": "milwaukee-wi",
-      "hospitals": 4,
+      "hospitals": 6,
       "low": 2020,
       "median": 2345,
       "high": 2804
@@ -265,16 +265,32 @@
     },
     {
       "procedure": "knee-mri",
-      "metro": "kansas-city-mo",
+      "metro": "fresno-ca",
       "hospitals": 3,
+      "low": 2237,
+      "median": 3368,
+      "high": 4500
+    },
+    {
+      "procedure": "knee-mri",
+      "metro": "kansas-city-mo",
+      "hospitals": 4,
       "low": 519,
       "median": 1064,
       "high": 3138
     },
     {
       "procedure": "knee-mri",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 2257,
+      "median": 2430,
+      "high": 2603
+    },
+    {
+      "procedure": "knee-mri",
       "metro": "miami-fl",
-      "hospitals": 9,
+      "hospitals": 12,
       "low": 700,
       "median": 3159,
       "high": 5191
@@ -289,8 +305,16 @@
     },
     {
       "procedure": "knee-mri",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 2115,
+      "median": 3891,
+      "high": 5667
+    },
+    {
+      "procedure": "knee-mri",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 983,
       "median": 1750,
       "high": 2528
@@ -338,7 +362,7 @@
     {
       "procedure": "knee-mri",
       "metro": "hartford-ct",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 695,
       "median": 1696,
       "high": 1983
@@ -394,7 +418,7 @@
     {
       "procedure": "knee-mri",
       "metro": "riverside-ca",
-      "hospitals": 10,
+      "hospitals": 11,
       "low": 1598,
       "median": 3002,
       "high": 7864
@@ -410,7 +434,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "new-york-ny",
-      "hospitals": 23,
+      "hospitals": 24,
       "low": 256,
       "median": 286,
       "high": 4876
@@ -418,7 +442,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 30,
       "low": 338,
       "median": 4175,
       "high": 7440
@@ -426,7 +450,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "chicago-il",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 781,
       "median": 1663,
       "high": 3700
@@ -434,7 +458,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "houston-tx",
-      "hospitals": 9,
+      "hospitals": 12,
       "low": 236,
       "median": 1232,
       "high": 4240
@@ -442,7 +466,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 358,
       "median": 485,
       "high": 1271
@@ -458,7 +482,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "san-antonio-tx",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 571,
       "median": 571,
       "high": 4240
@@ -474,7 +498,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 1094,
       "median": 2761,
       "high": 4240
@@ -482,7 +506,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "austin-tx",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 2312,
       "median": 2312,
       "high": 5303
@@ -530,7 +554,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 501,
       "median": 1826,
       "high": 2741
@@ -538,7 +562,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 827,
       "median": 2681,
       "high": 4452
@@ -554,7 +578,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "nashville-tn",
-      "hospitals": 10,
+      "hospitals": 11,
       "low": 1287,
       "median": 7739,
       "high": 11021
@@ -594,7 +618,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 562,
       "median": 786,
       "high": 786
@@ -602,7 +626,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "louisville-ky",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 567,
       "median": 772,
       "high": 3245
@@ -618,7 +642,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "milwaukee-wi",
-      "hospitals": 4,
+      "hospitals": 6,
       "low": 710,
       "median": 2194,
       "high": 2498
@@ -633,16 +657,32 @@
     },
     {
       "procedure": "shoulder-mri",
-      "metro": "kansas-city-mo",
+      "metro": "fresno-ca",
       "hospitals": 3,
+      "low": 2237,
+      "median": 3307,
+      "high": 4378
+    },
+    {
+      "procedure": "shoulder-mri",
+      "metro": "kansas-city-mo",
+      "hospitals": 4,
       "low": 682,
       "median": 1096,
       "high": 3156
     },
     {
       "procedure": "shoulder-mri",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 2176,
+      "median": 3155,
+      "high": 4133
+    },
+    {
+      "procedure": "shoulder-mri",
       "metro": "miami-fl",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 700,
       "median": 3079,
       "high": 5194
@@ -657,8 +697,16 @@
     },
     {
       "procedure": "shoulder-mri",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 2377,
+      "median": 3884,
+      "high": 5391
+    },
+    {
+      "procedure": "shoulder-mri",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 983,
       "median": 1533,
       "high": 2457
@@ -706,7 +754,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "hartford-ct",
-      "hospitals": 6,
+      "hospitals": 8,
       "low": 1153,
       "median": 1754,
       "high": 1983
@@ -762,7 +810,7 @@
     {
       "procedure": "shoulder-mri",
       "metro": "riverside-ca",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 1544,
       "median": 3277,
       "high": 7261
@@ -778,7 +826,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 256,
       "median": 286,
       "high": 6499
@@ -786,7 +834,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "los-angeles-ca",
-      "hospitals": 25,
+      "hospitals": 28,
       "low": 338,
       "median": 4156,
       "high": 7719
@@ -794,7 +842,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 783,
       "median": 1598,
       "high": 3923
@@ -802,7 +850,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 236,
       "median": 1515,
       "high": 4429
@@ -810,7 +858,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 280,
       "median": 370,
       "high": 1389
@@ -826,7 +874,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 790,
       "median": 790,
       "high": 4429
@@ -842,7 +890,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 1423,
       "median": 2394,
       "high": 5490
@@ -850,7 +898,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 2066,
       "median": 2066,
       "high": 7259
@@ -898,7 +946,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 501,
       "median": 1450,
       "high": 2830
@@ -906,7 +954,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 1333,
       "median": 2520,
       "high": 3227
@@ -922,7 +970,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 1287,
       "median": 6311,
       "high": 10243
@@ -962,7 +1010,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 249,
       "median": 348,
       "high": 348
@@ -970,7 +1018,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 578,
       "median": 1122,
       "high": 3291
@@ -986,7 +1034,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "milwaukee-wi",
-      "hospitals": 5,
+      "hospitals": 7,
       "low": 2020,
       "median": 2378,
       "high": 2654
@@ -1001,16 +1049,32 @@
     },
     {
       "procedure": "lower-back-mri",
-      "metro": "kansas-city-mo",
+      "metro": "fresno-ca",
       "hospitals": 3,
+      "low": 2330,
+      "median": 3138,
+      "high": 3945
+    },
+    {
+      "procedure": "lower-back-mri",
+      "metro": "kansas-city-mo",
+      "hospitals": 4,
       "low": 682,
       "median": 824,
       "high": 3162
     },
     {
       "procedure": "lower-back-mri",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 2578,
+      "median": 3880,
+      "high": 5183
+    },
+    {
+      "procedure": "lower-back-mri",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 700,
       "median": 3011,
       "high": 5559
@@ -1025,8 +1089,16 @@
     },
     {
       "procedure": "lower-back-mri",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 1084,
+      "median": 4172,
+      "high": 7259
+    },
+    {
+      "procedure": "lower-back-mri",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 983,
       "median": 1587,
       "high": 2179
@@ -1074,7 +1146,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "hartford-ct",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 1049,
       "median": 1627,
       "high": 1983
@@ -1130,7 +1202,7 @@
     {
       "procedure": "lower-back-mri",
       "metro": "riverside-ca",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 2234,
       "median": 2712,
       "high": 9312
@@ -1146,7 +1218,7 @@
     {
       "procedure": "brain-mri",
       "metro": "new-york-ny",
-      "hospitals": 23,
+      "hospitals": 24,
       "low": 256,
       "median": 286,
       "high": 6025
@@ -1154,7 +1226,7 @@
     {
       "procedure": "brain-mri",
       "metro": "los-angeles-ca",
-      "hospitals": 25,
+      "hospitals": 28,
       "low": 338,
       "median": 5145,
       "high": 7585
@@ -1162,7 +1234,7 @@
     {
       "procedure": "brain-mri",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 753,
       "median": 1650,
       "high": 3782
@@ -1170,7 +1242,7 @@
     {
       "procedure": "brain-mri",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 236,
       "median": 1312,
       "high": 4310
@@ -1178,7 +1250,7 @@
     {
       "procedure": "brain-mri",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 385,
       "median": 431,
       "high": 1425
@@ -1194,7 +1266,7 @@
     {
       "procedure": "brain-mri",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 1739,
       "median": 1739,
       "high": 4310
@@ -1210,7 +1282,7 @@
     {
       "procedure": "brain-mri",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 1362,
       "median": 2190,
       "high": 4423
@@ -1218,7 +1290,7 @@
     {
       "procedure": "brain-mri",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 2557,
       "median": 2557,
       "high": 8060
@@ -1266,7 +1338,7 @@
     {
       "procedure": "brain-mri",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 408,
       "median": 1774,
       "high": 2836
@@ -1274,7 +1346,7 @@
     {
       "procedure": "brain-mri",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 1274,
       "median": 2580,
       "high": 3604
@@ -1290,7 +1362,7 @@
     {
       "procedure": "brain-mri",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 1287,
       "median": 6027,
       "high": 10041
@@ -1330,7 +1402,7 @@
     {
       "procedure": "brain-mri",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 176,
       "median": 247,
       "high": 331
@@ -1338,7 +1410,7 @@
     {
       "procedure": "brain-mri",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 581,
       "median": 684,
       "high": 3312
@@ -1354,7 +1426,7 @@
     {
       "procedure": "brain-mri",
       "metro": "milwaukee-wi",
-      "hospitals": 4,
+      "hospitals": 6,
       "low": 847,
       "median": 2228,
       "high": 2531
@@ -1369,16 +1441,32 @@
     },
     {
       "procedure": "brain-mri",
-      "metro": "kansas-city-mo",
+      "metro": "fresno-ca",
       "hospitals": 3,
+      "low": 2717,
+      "median": 3391,
+      "high": 4064
+    },
+    {
+      "procedure": "brain-mri",
+      "metro": "kansas-city-mo",
+      "hospitals": 4,
       "low": 682,
       "median": 942,
       "high": 2887
     },
     {
       "procedure": "brain-mri",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 2631,
+      "median": 3177,
+      "high": 3722
+    },
+    {
+      "procedure": "brain-mri",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 700,
       "median": 2289,
       "high": 5578
@@ -1393,8 +1481,16 @@
     },
     {
       "procedure": "brain-mri",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 529,
+      "median": 4294,
+      "high": 8060
+    },
+    {
+      "procedure": "brain-mri",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 983,
       "median": 1511,
       "high": 2157
@@ -1442,7 +1538,7 @@
     {
       "procedure": "brain-mri",
       "metro": "hartford-ct",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 963,
       "median": 1733,
       "high": 1986
@@ -1498,7 +1594,7 @@
     {
       "procedure": "brain-mri",
       "metro": "riverside-ca",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 2307,
       "median": 2986,
       "high": 9826
@@ -1514,7 +1610,7 @@
     {
       "procedure": "head-ct",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 117,
       "median": 127,
       "high": 3027
@@ -1522,7 +1618,7 @@
     {
       "procedure": "head-ct",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
+      "hospitals": 28,
       "low": 149,
       "median": 3886,
       "high": 5215
@@ -1530,7 +1626,7 @@
     {
       "procedure": "head-ct",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 475,
       "median": 1125,
       "high": 2494
@@ -1538,7 +1634,7 @@
     {
       "procedure": "head-ct",
       "metro": "houston-tx",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 938,
       "median": 1120,
       "high": 2986
@@ -1634,7 +1730,7 @@
     {
       "procedure": "head-ct",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 186,
       "median": 720,
       "high": 2395
@@ -1642,7 +1738,7 @@
     {
       "procedure": "head-ct",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 979,
       "median": 1824,
       "high": 2768
@@ -1698,7 +1794,7 @@
     {
       "procedure": "head-ct",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 438,
       "median": 613,
       "high": 613
@@ -1746,23 +1842,39 @@
     {
       "procedure": "head-ct",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 455,
       "median": 875,
       "high": 2199
     },
     {
       "procedure": "head-ct",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 1438,
+      "median": 2212,
+      "high": 2986
+    },
+    {
+      "procedure": "head-ct",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 269,
       "median": 552,
       "high": 5568
     },
     {
       "procedure": "head-ct",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 973,
+      "median": 3334,
+      "high": 5695
+    },
+    {
+      "procedure": "head-ct",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 441,
       "median": 847,
       "high": 1288
@@ -1802,7 +1914,7 @@
     {
       "procedure": "head-ct",
       "metro": "buffalo-ny",
-      "hospitals": 3,
+      "hospitals": 7,
       "low": 784,
       "median": 823,
       "high": 2028
@@ -1857,6 +1969,14 @@
     },
     {
       "procedure": "head-ct",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 206,
+      "median": 656,
+      "high": 1107
+    },
+    {
+      "procedure": "head-ct",
       "metro": "riverside-ca",
       "hospitals": 10,
       "low": 1168,
@@ -1874,7 +1994,7 @@
     {
       "procedure": "chest-ct",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 117,
       "median": 127,
       "high": 3518
@@ -1882,7 +2002,7 @@
     {
       "procedure": "chest-ct",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
+      "hospitals": 28,
       "low": 149,
       "median": 3146,
       "high": 5768
@@ -1890,7 +2010,7 @@
     {
       "procedure": "chest-ct",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 463,
       "median": 898,
       "high": 2441
@@ -1898,7 +2018,7 @@
     {
       "procedure": "chest-ct",
       "metro": "houston-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 1004,
       "median": 1299,
       "high": 3147
@@ -1986,7 +2106,7 @@
     {
       "procedure": "chest-ct",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 238,
       "median": 854,
       "high": 2897
@@ -1994,7 +2114,7 @@
     {
       "procedure": "chest-ct",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 958,
       "median": 1976,
       "high": 2470
@@ -2010,7 +2130,7 @@
     {
       "procedure": "chest-ct",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 1217,
       "median": 6601,
       "high": 9430
@@ -2050,7 +2170,7 @@
     {
       "procedure": "chest-ct",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 460,
       "median": 644,
       "high": 644
@@ -2098,7 +2218,7 @@
     {
       "procedure": "chest-ct",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 433,
       "median": 1068,
       "high": 2304
@@ -2113,8 +2233,16 @@
     },
     {
       "procedure": "chest-ct",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 1574,
+      "median": 2397,
+      "high": 3219
+    },
+    {
+      "procedure": "chest-ct",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 350,
       "median": 2673,
       "high": 5340
@@ -2129,8 +2257,16 @@
     },
     {
       "procedure": "chest-ct",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 976,
+      "median": 3440,
+      "high": 5904
+    },
+    {
+      "procedure": "chest-ct",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 441,
       "median": 1038,
       "high": 1683
@@ -2170,7 +2306,7 @@
     {
       "procedure": "chest-ct",
       "metro": "buffalo-ny",
-      "hospitals": 4,
+      "hospitals": 7,
       "low": 204,
       "median": 869,
       "high": 1935
@@ -2178,7 +2314,7 @@
     {
       "procedure": "chest-ct",
       "metro": "hartford-ct",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 489,
       "median": 903,
       "high": 1163
@@ -2225,6 +2361,14 @@
     },
     {
       "procedure": "chest-ct",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 206,
+      "median": 656,
+      "high": 1107
+    },
+    {
+      "procedure": "chest-ct",
       "metro": "riverside-ca",
       "hospitals": 10,
       "low": 1012,
@@ -2242,7 +2386,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 405,
       "median": 442,
       "high": 6030
@@ -2250,7 +2394,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
+      "hospitals": 28,
       "low": 499,
       "median": 7367,
       "high": 10460
@@ -2258,7 +2402,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 1101,
       "median": 1915,
       "high": 5673
@@ -2266,7 +2410,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 345,
       "median": 3015,
       "high": 6927
@@ -2274,7 +2418,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 415,
       "median": 583,
       "high": 1526
@@ -2289,6 +2433,14 @@
     },
     {
       "procedure": "abdomen-pelvis-ct",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 2009,
+      "median": 4468,
+      "high": 6927
+    },
+    {
+      "procedure": "abdomen-pelvis-ct",
       "metro": "san-diego-ca",
       "hospitals": 3,
       "low": 4039,
@@ -2298,7 +2450,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 1899,
       "median": 3891,
       "high": 6970
@@ -2306,7 +2458,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 3842,
       "median": 3842,
       "high": 12482
@@ -2354,7 +2506,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 564,
       "median": 2106,
       "high": 6471
@@ -2362,7 +2514,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 1907,
       "median": 5043,
       "high": 6303
@@ -2378,7 +2530,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 2638,
       "median": 14533,
       "high": 19359
@@ -2418,7 +2570,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 1346,
       "median": 1885,
       "high": 1885
@@ -2426,7 +2578,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 785,
       "median": 1064,
       "high": 4804
@@ -2442,7 +2594,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "milwaukee-wi",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 1985,
       "median": 2750,
       "high": 3447
@@ -2466,7 +2618,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 1075,
       "median": 1834,
       "high": 4798
@@ -2481,8 +2633,16 @@
     },
     {
       "procedure": "abdomen-pelvis-ct",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 3682,
+      "median": 4876,
+      "high": 6069
+    },
+    {
+      "procedure": "abdomen-pelvis-ct",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 450,
       "median": 6137,
       "high": 11000
@@ -2497,8 +2657,16 @@
     },
     {
       "procedure": "abdomen-pelvis-ct",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 1696,
+      "median": 6299,
+      "high": 10902
+    },
+    {
+      "procedure": "abdomen-pelvis-ct",
       "metro": "cleveland-oh",
-      "hospitals": 19,
+      "hospitals": 20,
       "low": 1160,
       "median": 2353,
       "high": 2482
@@ -2538,7 +2706,7 @@
     {
       "procedure": "abdomen-pelvis-ct",
       "metro": "buffalo-ny",
-      "hospitals": 3,
+      "hospitals": 6,
       "low": 345,
       "median": 1834,
       "high": 3685
@@ -2593,6 +2761,14 @@
     },
     {
       "procedure": "abdomen-pelvis-ct",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 1425,
+      "median": 1496,
+      "high": 1567
+    },
+    {
+      "procedure": "abdomen-pelvis-ct",
       "metro": "riverside-ca",
       "hospitals": 9,
       "low": 1785,
@@ -2610,7 +2786,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "new-york-ny",
-      "hospitals": 23,
+      "hospitals": 24,
       "low": 46,
       "median": 104,
       "high": 870
@@ -2618,7 +2794,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 29,
       "low": 123,
       "median": 642,
       "high": 1809
@@ -2626,7 +2802,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 106,
       "median": 268,
       "high": 490
@@ -2634,7 +2810,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 86,
       "median": 583,
       "high": 998
@@ -2658,7 +2834,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "san-antonio-tx",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 202,
       "median": 392,
       "high": 583
@@ -2674,7 +2850,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 207,
       "median": 425,
       "high": 612
@@ -2682,7 +2858,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 413,
       "median": 413,
       "high": 428
@@ -2730,7 +2906,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 105,
       "median": 208,
       "high": 627
@@ -2738,7 +2914,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 51,
       "median": 369,
       "high": 639
@@ -2754,7 +2930,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 232,
       "median": 1060,
       "high": 1354
@@ -2794,7 +2970,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 69,
       "median": 96,
       "high": 96
@@ -2802,7 +2978,7 @@
     {
       "procedure": "chest-x-ray",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 82,
       "median": 115,
       "high": 353
@@ -2842,15 +3018,23 @@
     {
       "procedure": "chest-x-ray",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 43,
       "median": 124,
       "high": 363
     },
     {
       "procedure": "chest-x-ray",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 377,
+      "median": 500,
+      "high": 623
+    },
+    {
+      "procedure": "chest-x-ray",
       "metro": "miami-fl",
-      "hospitals": 8,
+      "hospitals": 10,
       "low": 75,
       "median": 386,
       "high": 884
@@ -2862,6 +3046,14 @@
       "low": 33,
       "median": 126,
       "high": 181
+    },
+    {
+      "procedure": "chest-x-ray",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 274,
+      "median": 646,
+      "high": 1018
     },
     {
       "procedure": "chest-x-ray",
@@ -2986,7 +3178,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "new-york-ny",
-      "hospitals": 21,
+      "hospitals": 22,
       "low": 95,
       "median": 104,
       "high": 959
@@ -2994,7 +3186,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
+      "hospitals": 29,
       "low": 122,
       "median": 541,
       "high": 874
@@ -3002,7 +3194,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 103,
       "median": 303,
       "high": 522
@@ -3010,7 +3202,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "houston-tx",
-      "hospitals": 10,
+      "hospitals": 13,
       "low": 86,
       "median": 589,
       "high": 814
@@ -3018,7 +3210,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "phoenix-az",
-      "hospitals": 13,
+      "hospitals": 14,
       "low": 93,
       "median": 115,
       "high": 237
@@ -3034,7 +3226,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 233,
       "median": 233,
       "high": 614
@@ -3050,7 +3242,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 227,
       "median": 362,
       "high": 644
@@ -3058,7 +3250,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "austin-tx",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 417,
       "median": 417,
       "high": 524
@@ -3106,7 +3298,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 96,
       "median": 246,
       "high": 662
@@ -3114,7 +3306,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 145,
       "median": 488,
       "high": 713
@@ -3130,7 +3322,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "nashville-tn",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 278,
       "median": 1579,
       "high": 1934
@@ -3170,7 +3362,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "memphis-tn",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 54,
       "median": 75,
       "high": 75
@@ -3178,7 +3370,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "louisville-ky",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 78,
       "median": 128,
       "high": 509
@@ -3217,6 +3409,14 @@
     },
     {
       "procedure": "knee-x-ray",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 135,
+      "median": 273,
+      "high": 412
+    },
+    {
+      "procedure": "knee-x-ray",
       "metro": "atlanta-ga",
       "hospitals": 3,
       "low": 270,
@@ -3225,8 +3425,16 @@
     },
     {
       "procedure": "knee-x-ray",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 377,
+      "median": 502,
+      "high": 627
+    },
+    {
+      "procedure": "knee-x-ray",
       "metro": "miami-fl",
-      "hospitals": 8,
+      "hospitals": 10,
       "low": 164,
       "median": 504,
       "high": 1122
@@ -3241,8 +3449,16 @@
     },
     {
       "procedure": "knee-x-ray",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 365,
+      "median": 406,
+      "high": 447
+    },
+    {
+      "procedure": "knee-x-ray",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 146,
       "median": 365,
       "high": 404
@@ -3290,7 +3506,7 @@
     {
       "procedure": "knee-x-ray",
       "metro": "hartford-ct",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 124,
       "median": 227,
       "high": 406
@@ -3362,7 +3578,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "new-york-ny",
-      "hospitals": 21,
+      "hospitals": 22,
       "low": 118,
       "median": 147,
       "high": 653
@@ -3370,7 +3586,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "los-angeles-ca",
-      "hospitals": 15,
+      "hospitals": 23,
       "low": 85,
       "median": 281,
       "high": 1113
@@ -3378,7 +3594,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "chicago-il",
-      "hospitals": 16,
+      "hospitals": 17,
       "low": 98,
       "median": 238,
       "high": 409
@@ -3386,7 +3602,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "houston-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 44,
       "median": 311,
       "high": 716
@@ -3394,7 +3610,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "phoenix-az",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 104,
       "median": 148,
       "high": 179
@@ -3410,7 +3626,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "dallas-tx",
-      "hospitals": 15,
+      "hospitals": 17,
       "low": 227,
       "median": 229,
       "high": 451
@@ -3418,7 +3634,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 238,
       "median": 238,
       "high": 238
@@ -3426,7 +3642,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "fort-worth-tx",
-      "hospitals": 9,
+      "hospitals": 11,
       "low": 227,
       "median": 313,
       "high": 420
@@ -3434,7 +3650,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "columbus-oh",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 79,
       "median": 79,
       "high": 79
@@ -3450,7 +3666,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "indianapolis-in",
-      "hospitals": 5,
+      "hospitals": 10,
       "low": 165,
       "median": 171,
       "high": 278
@@ -3466,7 +3682,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "seattle-wa",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 171,
       "median": 211,
       "high": 384
@@ -3474,7 +3690,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "denver-co",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 52,
       "median": 139,
       "high": 479
@@ -3490,7 +3706,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "nashville-tn",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 260,
       "median": 668,
       "high": 922
@@ -3546,7 +3762,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 51,
       "median": 87,
       "high": 87
@@ -3562,7 +3778,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "milwaukee-wi",
-      "hospitals": 3,
+      "hospitals": 5,
       "low": 175,
       "median": 183,
       "high": 336
@@ -3577,6 +3793,14 @@
     },
     {
       "procedure": "screening-mammogram",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 65,
+      "median": 73,
+      "high": 82
+    },
+    {
+      "procedure": "screening-mammogram",
       "metro": "atlanta-ga",
       "hospitals": 3,
       "low": 255,
@@ -3586,7 +3810,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "miami-fl",
-      "hospitals": 6,
+      "hospitals": 8,
       "low": 99,
       "median": 323,
       "high": 470
@@ -3602,7 +3826,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "cleveland-oh",
-      "hospitals": 17,
+      "hospitals": 19,
       "low": 172,
       "median": 367,
       "high": 490
@@ -3642,7 +3866,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "birmingham-al",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 173,
       "median": 620,
       "high": 715
@@ -3658,7 +3882,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "hartford-ct",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 182,
       "median": 336,
       "high": 670
@@ -3682,7 +3906,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "spokane-wa",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 270,
       "median": 270,
       "high": 326
@@ -3722,7 +3946,7 @@
     {
       "procedure": "screening-mammogram",
       "metro": "colorado-springs-co",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 139,
       "median": 139,
       "high": 334
@@ -3730,7 +3954,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "new-york-ny",
-      "hospitals": 21,
+      "hospitals": 22,
       "low": 149,
       "median": 209,
       "high": 1017
@@ -3738,7 +3962,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "los-angeles-ca",
-      "hospitals": 14,
+      "hospitals": 22,
       "low": 142,
       "median": 566,
       "high": 1113
@@ -3746,7 +3970,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "chicago-il",
-      "hospitals": 16,
+      "hospitals": 17,
       "low": 125,
       "median": 283,
       "high": 507
@@ -3754,7 +3978,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "houston-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 108,
       "median": 445,
       "high": 1763
@@ -3762,7 +3986,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "phoenix-az",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 199,
       "median": 246,
       "high": 282
@@ -3777,8 +4001,16 @@
     },
     {
       "procedure": "diagnostic-mammogram",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 122,
+      "median": 122,
+      "high": 122
+    },
+    {
+      "procedure": "diagnostic-mammogram",
       "metro": "dallas-tx",
-      "hospitals": 15,
+      "hospitals": 17,
       "low": 340,
       "median": 352,
       "high": 591
@@ -3786,7 +4018,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 340,
       "median": 340,
       "high": 340
@@ -3794,7 +4026,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "fort-worth-tx",
-      "hospitals": 9,
+      "hospitals": 11,
       "low": 340,
       "median": 366,
       "high": 583
@@ -3802,7 +4034,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "columbus-oh",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 222,
       "median": 222,
       "high": 222
@@ -3818,7 +4050,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "indianapolis-in",
-      "hospitals": 5,
+      "hospitals": 10,
       "low": 158,
       "median": 165,
       "high": 533
@@ -3834,7 +4066,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "seattle-wa",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 217,
       "median": 306,
       "high": 400
@@ -3842,7 +4074,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "denver-co",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 65,
       "median": 356,
       "high": 514
@@ -3858,7 +4090,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "nashville-tn",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 352,
       "median": 796,
       "high": 954
@@ -3913,6 +4145,14 @@
     },
     {
       "procedure": "diagnostic-mammogram",
+      "metro": "louisville-ky",
+      "hospitals": 3,
+      "low": 59,
+      "median": 115,
+      "high": 171
+    },
+    {
+      "procedure": "diagnostic-mammogram",
       "metro": "baltimore-md",
       "hospitals": 4,
       "low": 535,
@@ -3922,7 +4162,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "milwaukee-wi",
-      "hospitals": 3,
+      "hospitals": 5,
       "low": 165,
       "median": 270,
       "high": 355
@@ -3937,8 +4177,16 @@
     },
     {
       "procedure": "diagnostic-mammogram",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 106,
+      "median": 158,
+      "high": 211
+    },
+    {
+      "procedure": "diagnostic-mammogram",
       "metro": "miami-fl",
-      "hospitals": 6,
+      "hospitals": 8,
       "low": 235,
       "median": 443,
       "high": 532
@@ -3946,7 +4194,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "cleveland-oh",
-      "hospitals": 17,
+      "hospitals": 19,
       "low": 173,
       "median": 425,
       "high": 630
@@ -3986,7 +4234,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "hartford-ct",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 205,
       "median": 570,
       "high": 723
@@ -4058,7 +4306,7 @@
     {
       "procedure": "diagnostic-mammogram",
       "metro": "colorado-springs-co",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 356,
       "median": 356,
       "high": 652
@@ -4066,7 +4314,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 85,
       "median": 126,
       "high": 1969
@@ -4074,7 +4322,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "los-angeles-ca",
-      "hospitals": 25,
+      "hospitals": 28,
       "low": 149,
       "median": 1483,
       "high": 2946
@@ -4082,7 +4330,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "chicago-il",
-      "hospitals": 16,
+      "hospitals": 18,
       "low": 344,
       "median": 738,
       "high": 1811
@@ -4090,7 +4338,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 103,
       "median": 1178,
       "high": 2662
@@ -4098,7 +4346,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 122,
       "median": 311,
       "high": 431
@@ -4113,6 +4361,14 @@
     },
     {
       "procedure": "abdominal-ultrasound",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 308,
+      "median": 915,
+      "high": 1522
+    },
+    {
+      "procedure": "abdominal-ultrasound",
       "metro": "san-diego-ca",
       "hospitals": 3,
       "low": 386,
@@ -4122,7 +4378,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 428,
       "median": 863,
       "high": 1522
@@ -4130,7 +4386,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 537,
       "median": 537,
       "high": 2085
@@ -4178,7 +4434,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 309,
       "median": 556,
       "high": 1477
@@ -4186,7 +4442,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 254,
       "median": 677,
       "high": 1845
@@ -4202,7 +4458,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 649,
       "median": 2512,
       "high": 3641
@@ -4242,7 +4498,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 228,
       "median": 320,
       "high": 320
@@ -4250,7 +4506,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 295,
       "median": 366,
       "high": 1306
@@ -4290,7 +4546,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 478,
       "median": 619,
       "high": 1332
@@ -4305,8 +4561,16 @@
     },
     {
       "procedure": "abdominal-ultrasound",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 506,
+      "median": 991,
+      "high": 1476
+    },
+    {
+      "procedure": "abdominal-ultrasound",
       "metro": "miami-fl",
-      "hospitals": 5,
+      "hospitals": 9,
       "low": 389,
       "median": 2298,
       "high": 2947
@@ -4321,8 +4585,16 @@
     },
     {
       "procedure": "abdominal-ultrasound",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 613,
+      "median": 1197,
+      "high": 1781
+    },
+    {
+      "procedure": "abdominal-ultrasound",
       "metro": "cleveland-oh",
-      "hospitals": 19,
+      "hospitals": 20,
       "low": 434,
       "median": 986,
       "high": 1077
@@ -4362,7 +4634,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "buffalo-ny",
-      "hospitals": 4,
+      "hospitals": 7,
       "low": 622,
       "median": 653,
       "high": 763
@@ -4370,7 +4642,7 @@
     {
       "procedure": "abdominal-ultrasound",
       "metro": "hartford-ct",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 357,
       "median": 670,
       "high": 1001
@@ -4450,7 +4722,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 117,
       "median": 127,
       "high": 1964
@@ -4458,7 +4730,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
+      "hospitals": 29,
       "low": 149,
       "median": 1337,
       "high": 2508
@@ -4466,7 +4738,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "chicago-il",
-      "hospitals": 16,
+      "hospitals": 18,
       "low": 314,
       "median": 565,
       "high": 1258
@@ -4474,7 +4746,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 103,
       "median": 1107,
       "high": 2034
@@ -4482,7 +4754,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 108,
       "median": 287,
       "high": 338
@@ -4498,7 +4770,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 182,
       "median": 182,
       "high": 1447
@@ -4514,7 +4786,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 431,
       "median": 761,
       "high": 1447
@@ -4522,7 +4794,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 520,
       "median": 520,
       "high": 743
@@ -4570,7 +4842,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 258,
       "median": 438,
       "high": 1106
@@ -4578,7 +4850,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 230,
       "median": 652,
       "high": 1739
@@ -4594,7 +4866,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 559,
       "median": 2349,
       "high": 2942
@@ -4634,7 +4906,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 206,
       "median": 288,
       "high": 288
@@ -4642,7 +4914,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 146,
       "median": 243,
       "high": 1071
@@ -4681,6 +4953,14 @@
     },
     {
       "procedure": "pelvic-ultrasound",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 268,
+      "median": 675,
+      "high": 1083
+    },
+    {
+      "procedure": "pelvic-ultrasound",
       "metro": "atlanta-ga",
       "hospitals": 3,
       "low": 615,
@@ -4689,8 +4969,16 @@
     },
     {
       "procedure": "pelvic-ultrasound",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 506,
+      "median": 848,
+      "high": 1189
+    },
+    {
+      "procedure": "pelvic-ultrasound",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 200,
       "median": 864,
       "high": 2113
@@ -4746,7 +5034,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "buffalo-ny",
-      "hospitals": 3,
+      "hospitals": 6,
       "low": 409,
       "median": 653,
       "high": 705
@@ -4754,7 +5042,7 @@
     {
       "procedure": "pelvic-ultrasound",
       "metro": "hartford-ct",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 405,
       "median": 740,
       "high": 932
@@ -4834,7 +5122,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 117,
       "median": 127,
       "high": 1549
@@ -4842,7 +5130,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "los-angeles-ca",
-      "hospitals": 25,
+      "hospitals": 28,
       "low": 149,
       "median": 1334,
       "high": 2876
@@ -4850,7 +5138,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "chicago-il",
-      "hospitals": 16,
+      "hospitals": 18,
       "low": 224,
       "median": 565,
       "high": 1163
@@ -4858,7 +5146,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 103,
       "median": 1025,
       "high": 2317
@@ -4866,7 +5154,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "phoenix-az",
-      "hospitals": 10,
+      "hospitals": 12,
       "low": 101,
       "median": 250,
       "high": 312
@@ -4882,7 +5170,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 150,
       "median": 150,
       "high": 1399
@@ -4890,7 +5178,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 341,
       "median": 590,
       "high": 1456
@@ -4898,7 +5186,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 607,
       "median": 607,
       "high": 743
@@ -4906,7 +5194,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "fort-worth-tx",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 257,
       "median": 382,
       "high": 1399
@@ -4914,7 +5202,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "columbus-oh",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 475,
       "median": 475,
       "high": 828
@@ -4938,7 +5226,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 258,
       "median": 440,
       "high": 947
@@ -4946,7 +5234,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 180,
       "median": 652,
       "high": 1147
@@ -4962,7 +5250,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 503,
       "median": 2070,
       "high": 3071
@@ -5010,7 +5298,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "louisville-ky",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 139,
       "median": 242,
       "high": 774
@@ -5026,7 +5314,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "milwaukee-wi",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 547,
       "median": 630,
       "high": 743
@@ -5049,6 +5337,14 @@
     },
     {
       "procedure": "pregnancy-ultrasound",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 376,
+      "median": 656,
+      "high": 935
+    },
+    {
+      "procedure": "pregnancy-ultrasound",
       "metro": "atlanta-ga",
       "hospitals": 3,
       "low": 572,
@@ -5057,8 +5353,16 @@
     },
     {
       "procedure": "pregnancy-ultrasound",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 506,
+      "median": 748,
+      "high": 989
+    },
+    {
+      "procedure": "pregnancy-ultrasound",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 200,
       "median": 747,
       "high": 1877
@@ -5073,8 +5377,16 @@
     },
     {
       "procedure": "pregnancy-ultrasound",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 548,
+      "median": 597,
+      "high": 647
+    },
+    {
+      "procedure": "pregnancy-ultrasound",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 20,
       "low": 282,
       "median": 614,
       "high": 834
@@ -5130,7 +5442,7 @@
     {
       "procedure": "pregnancy-ultrasound",
       "metro": "hartford-ct",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 283,
       "median": 719,
       "high": 932
@@ -5218,7 +5530,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 117,
       "median": 127,
       "high": 1847
@@ -5226,7 +5538,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "los-angeles-ca",
-      "hospitals": 25,
+      "hospitals": 28,
       "low": 149,
       "median": 1330,
       "high": 1972
@@ -5234,7 +5546,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 279,
       "median": 550,
       "high": 1139
@@ -5242,7 +5554,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 103,
       "median": 977,
       "high": 1710
@@ -5250,7 +5562,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "phoenix-az",
-      "hospitals": 11,
+      "hospitals": 13,
       "low": 83,
       "median": 206,
       "high": 349
@@ -5266,7 +5578,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "san-antonio-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 188,
       "median": 188,
       "high": 1132
@@ -5282,7 +5594,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 424,
       "median": 616,
       "high": 1132
@@ -5290,7 +5602,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 645,
       "median": 645,
       "high": 743
@@ -5338,7 +5650,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 252,
       "median": 466,
       "high": 1191
@@ -5346,7 +5658,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 113,
       "median": 543,
       "high": 1399
@@ -5362,7 +5674,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 491,
       "median": 1478,
       "high": 2461
@@ -5402,7 +5714,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 117,
       "median": 164,
       "high": 164
@@ -5410,7 +5722,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 123,
       "median": 220,
       "high": 961
@@ -5449,6 +5761,14 @@
     },
     {
       "procedure": "thyroid-ultrasound",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 322,
+      "median": 611,
+      "high": 899
+    },
+    {
+      "procedure": "thyroid-ultrasound",
       "metro": "atlanta-ga",
       "hospitals": 4,
       "low": 556,
@@ -5457,8 +5777,16 @@
     },
     {
       "procedure": "thyroid-ultrasound",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 506,
+      "median": 770,
+      "high": 1033
+    },
+    {
+      "procedure": "thyroid-ultrasound",
       "metro": "miami-fl",
-      "hospitals": 5,
+      "hospitals": 9,
       "low": 226,
       "median": 857,
       "high": 1647
@@ -5473,8 +5801,16 @@
     },
     {
       "procedure": "thyroid-ultrasound",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 438,
+      "median": 542,
+      "high": 647
+    },
+    {
+      "procedure": "thyroid-ultrasound",
       "metro": "cleveland-oh",
-      "hospitals": 19,
+      "hospitals": 20,
       "low": 328,
       "median": 441,
       "high": 852
@@ -5514,7 +5850,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "buffalo-ny",
-      "hospitals": 4,
+      "hospitals": 8,
       "low": 622,
       "median": 653,
       "high": 714
@@ -5522,7 +5858,7 @@
     {
       "procedure": "thyroid-ultrasound",
       "metro": "hartford-ct",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 207,
       "median": 768,
       "high": 932
@@ -5602,7 +5938,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 60,
       "median": 126,
       "high": 1238
@@ -5610,7 +5946,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "los-angeles-ca",
-      "hospitals": 14,
+      "hospitals": 26,
       "low": 149,
       "median": 497,
       "high": 1106
@@ -5618,7 +5954,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "chicago-il",
-      "hospitals": 16,
+      "hospitals": 18,
       "low": 98,
       "median": 395,
       "high": 697
@@ -5626,7 +5962,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 103,
       "median": 370,
       "high": 709
@@ -5634,7 +5970,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "phoenix-az",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 103,
       "median": 126,
       "high": 416
@@ -5650,7 +5986,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 90,
       "median": 90,
       "high": 699
@@ -5666,7 +6002,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "dallas-tx",
-      "hospitals": 16,
+      "hospitals": 19,
       "low": 153,
       "median": 398,
       "high": 699
@@ -5674,7 +6010,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 370,
       "median": 370,
       "high": 1159
@@ -5682,7 +6018,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "fort-worth-tx",
-      "hospitals": 11,
+      "hospitals": 14,
       "low": 259,
       "median": 416,
       "high": 853
@@ -5706,9 +6042,9 @@
     {
       "procedure": "bone-density-scan",
       "metro": "san-francisco-ca",
-      "hospitals": 6,
-      "low": 421,
-      "median": 522,
+      "hospitals": 5,
+      "low": 437,
+      "median": 599,
       "high": 1060
     },
     {
@@ -5722,7 +6058,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 153,
       "median": 368,
       "high": 667
@@ -5738,7 +6074,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "nashville-tn",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 338,
       "median": 592,
       "high": 1447
@@ -5778,7 +6114,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "memphis-tn",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 178,
       "median": 249,
       "high": 249
@@ -5786,7 +6122,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "louisville-ky",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 39,
       "median": 113,
       "high": 563
@@ -5802,7 +6138,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "milwaukee-wi",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 325,
       "median": 387,
       "high": 479
@@ -5818,7 +6154,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "fresno-ca",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 446,
       "median": 482,
       "high": 626
@@ -5826,7 +6162,7 @@
     {
       "procedure": "bone-density-scan",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 37,
       "median": 192,
       "high": 524
@@ -5834,15 +6170,23 @@
     {
       "procedure": "bone-density-scan",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 110,
       "median": 734,
       "high": 975
     },
     {
       "procedure": "bone-density-scan",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 72,
+      "median": 550,
+      "high": 1027
+    },
+    {
+      "procedure": "bone-density-scan",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 20,
       "low": 182,
       "median": 441,
       "high": 569
@@ -5890,10 +6234,18 @@
     {
       "procedure": "bone-density-scan",
       "metro": "hartford-ct",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 198,
       "median": 460,
       "high": 636
+    },
+    {
+      "procedure": "bone-density-scan",
+      "metro": "spokane-wa",
+      "hospitals": 3,
+      "low": 510,
+      "median": 510,
+      "high": 510
     },
     {
       "procedure": "bone-density-scan",
@@ -5946,7 +6298,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "new-york-ny",
-      "hospitals": 24,
+      "hospitals": 25,
       "low": 8,
       "median": 8,
       "high": 235
@@ -5954,7 +6306,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "los-angeles-ca",
-      "hospitals": 25,
+      "hospitals": 28,
       "low": 5,
       "median": 32,
       "high": 297
@@ -5962,7 +6314,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "chicago-il",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 7,
       "median": 43,
       "high": 201
@@ -5970,7 +6322,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "houston-tx",
-      "hospitals": 9,
+      "hospitals": 12,
       "low": 8,
       "median": 128,
       "high": 153
@@ -5978,7 +6330,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "phoenix-az",
-      "hospitals": 13,
+      "hospitals": 14,
       "low": 4,
       "median": 5,
       "high": 111
@@ -5994,7 +6346,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 8,
       "median": 24,
       "high": 31
@@ -6010,7 +6362,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 23,
       "median": 110,
       "high": 165
@@ -6018,7 +6370,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "austin-tx",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 67,
       "median": 67,
       "high": 334
@@ -6074,7 +6426,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 20,
       "median": 82,
       "high": 138
@@ -6086,6 +6438,14 @@
       "low": 9,
       "median": 20,
       "high": 220
+    },
+    {
+      "procedure": "complete-blood-count",
+      "metro": "nashville-tn",
+      "hospitals": 3,
+      "low": 61,
+      "median": 61,
+      "high": 61
     },
     {
       "procedure": "complete-blood-count",
@@ -6113,6 +6473,14 @@
     },
     {
       "procedure": "complete-blood-count",
+      "metro": "las-vegas-nv",
+      "hospitals": 3,
+      "low": 175,
+      "median": 175,
+      "high": 175
+    },
+    {
+      "procedure": "complete-blood-count",
       "metro": "detroit-mi",
       "hospitals": 7,
       "low": 11,
@@ -6122,7 +6490,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 26,
       "median": 36,
       "high": 36
@@ -6130,7 +6498,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "louisville-ky",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 33,
       "median": 48,
       "high": 170
@@ -6161,8 +6529,16 @@
     },
     {
       "procedure": "complete-blood-count",
-      "metro": "kansas-city-mo",
+      "metro": "fresno-ca",
       "hospitals": 3,
+      "low": 69,
+      "median": 97,
+      "high": 124
+    },
+    {
+      "procedure": "complete-blood-count",
+      "metro": "kansas-city-mo",
+      "hospitals": 4,
       "low": 7,
       "median": 22,
       "high": 48
@@ -6177,8 +6553,16 @@
     },
     {
       "procedure": "complete-blood-count",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 55,
+      "median": 56,
+      "high": 56
+    },
+    {
+      "procedure": "complete-blood-count",
       "metro": "miami-fl",
-      "hospitals": 8,
+      "hospitals": 10,
       "low": 30,
       "median": 113,
       "high": 343
@@ -6234,7 +6618,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "buffalo-ny",
-      "hospitals": 4,
+      "hospitals": 7,
       "low": 22,
       "median": 80,
       "high": 87
@@ -6242,7 +6626,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "hartford-ct",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 35,
       "median": 40,
       "high": 73
@@ -6290,7 +6674,7 @@
     {
       "procedure": "complete-blood-count",
       "metro": "wichita-ks",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 29,
       "median": 30,
       "high": 85
@@ -6314,7 +6698,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "new-york-ny",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 32,
       "median": 109,
       "high": 426
@@ -6322,7 +6706,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "los-angeles-ca",
-      "hospitals": 23,
+      "hospitals": 26,
       "low": 11,
       "median": 141,
       "high": 884
@@ -6330,7 +6714,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "chicago-il",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 15,
       "median": 108,
       "high": 319
@@ -6338,7 +6722,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "houston-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 251,
       "median": 499,
       "high": 585
@@ -6458,7 +6842,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "nashville-tn",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 123,
       "median": 156,
       "high": 889
@@ -6490,7 +6874,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 130,
       "median": 182,
       "high": 182
@@ -6498,7 +6882,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 59,
       "median": 73,
       "high": 114
@@ -6529,8 +6913,32 @@
     },
     {
       "procedure": "comprehensive-metabolic-panel",
+      "metro": "fresno-ca",
+      "hospitals": 3,
+      "low": 105,
+      "median": 135,
+      "high": 165
+    },
+    {
+      "procedure": "comprehensive-metabolic-panel",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 21,
+      "median": 75,
+      "high": 129
+    },
+    {
+      "procedure": "comprehensive-metabolic-panel",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 63,
+      "median": 79,
+      "high": 94
+    },
+    {
+      "procedure": "comprehensive-metabolic-panel",
       "metro": "miami-fl",
-      "hospitals": 6,
+      "hospitals": 9,
       "low": 40,
       "median": 292,
       "high": 415
@@ -6562,7 +6970,7 @@
     {
       "procedure": "comprehensive-metabolic-panel",
       "metro": "pittsburgh-pa",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 81,
       "median": 266,
       "high": 665
@@ -6666,7 +7074,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "new-york-ny",
-      "hospitals": 24,
+      "hospitals": 25,
       "low": 8,
       "median": 8,
       "high": 460
@@ -6674,7 +7082,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 30,
       "low": 9,
       "median": 437,
       "high": 797
@@ -6682,7 +7090,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "chicago-il",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 8,
       "median": 50,
       "high": 174
@@ -6690,7 +7098,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "houston-tx",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 8,
       "median": 328,
       "high": 562
@@ -6714,7 +7122,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 12,
       "median": 42,
       "high": 442
@@ -6738,7 +7146,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "austin-tx",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 156,
       "median": 156,
       "high": 431
@@ -6794,7 +7202,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 40,
       "median": 96,
       "high": 260
@@ -6810,7 +7218,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "nashville-tn",
-      "hospitals": 3,
+      "hospitals": 7,
       "low": 90,
       "median": 140,
       "high": 799
@@ -6833,6 +7241,14 @@
     },
     {
       "procedure": "basic-metabolic-panel",
+      "metro": "las-vegas-nv",
+      "hospitals": 3,
+      "low": 98,
+      "median": 98,
+      "high": 98
+    },
+    {
+      "procedure": "basic-metabolic-panel",
       "metro": "detroit-mi",
       "hospitals": 7,
       "low": 12,
@@ -6842,7 +7258,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 98,
       "median": 137,
       "high": 137
@@ -6850,7 +7266,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 42,
       "median": 58,
       "high": 106
@@ -6890,7 +7306,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 22,
       "median": 61,
       "high": 90
@@ -6905,8 +7321,16 @@
     },
     {
       "procedure": "basic-metabolic-panel",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 54,
+      "median": 68,
+      "high": 82
+    },
+    {
+      "procedure": "basic-metabolic-panel",
       "metro": "miami-fl",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 30,
       "median": 235,
       "high": 642
@@ -6962,7 +7386,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "buffalo-ny",
-      "hospitals": 3,
+      "hospitals": 5,
       "low": 75,
       "median": 80,
       "high": 84
@@ -6970,7 +7394,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "hartford-ct",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 43,
       "median": 56,
       "high": 140
@@ -7018,7 +7442,7 @@
     {
       "procedure": "basic-metabolic-panel",
       "metro": "wichita-ks",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 20,
       "median": 35,
       "high": 61
@@ -7042,7 +7466,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "new-york-ny",
-      "hospitals": 23,
+      "hospitals": 24,
       "low": 13,
       "median": 13,
       "high": 358
@@ -7050,15 +7474,15 @@
     {
       "procedure": "cholesterol-test",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
-      "low": 11,
-      "median": 240,
+      "hospitals": 29,
+      "low": 7,
+      "median": 239,
       "high": 519
     },
     {
       "procedure": "cholesterol-test",
       "metro": "chicago-il",
-      "hospitals": 20,
+      "hospitals": 21,
       "low": 49,
       "median": 83,
       "high": 228
@@ -7066,7 +7490,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "houston-tx",
-      "hospitals": 7,
+      "hospitals": 10,
       "low": 12,
       "median": 33,
       "high": 306
@@ -7074,7 +7498,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "phoenix-az",
-      "hospitals": 13,
+      "hospitals": 14,
       "low": 8,
       "median": 8,
       "high": 181
@@ -7089,16 +7513,24 @@
     },
     {
       "procedure": "cholesterol-test",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 36,
+      "median": 186,
+      "high": 335
+    },
+    {
+      "procedure": "cholesterol-test",
       "metro": "san-diego-ca",
       "hospitals": 3,
-      "low": 62,
-      "median": 286,
-      "high": 316
+      "low": 7,
+      "median": 62,
+      "high": 286
     },
     {
       "procedure": "cholesterol-test",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 24,
       "median": 218,
       "high": 385
@@ -7106,7 +7538,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 24,
       "median": 24,
       "high": 513
@@ -7162,7 +7594,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 14,
       "median": 82,
       "high": 231
@@ -7178,7 +7610,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "nashville-tn",
-      "hospitals": 4,
+      "hospitals": 8,
       "low": 89,
       "median": 305,
       "high": 366
@@ -7218,7 +7650,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 50,
       "median": 70,
       "high": 70
@@ -7226,7 +7658,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "louisville-ky",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 55,
       "median": 100,
       "high": 201
@@ -7266,7 +7698,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 11,
       "median": 12,
       "high": 24
@@ -7281,8 +7713,16 @@
     },
     {
       "procedure": "cholesterol-test",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 71,
+      "median": 75,
+      "high": 79
+    },
+    {
+      "procedure": "cholesterol-test",
       "metro": "miami-fl",
-      "hospitals": 8,
+      "hospitals": 10,
       "low": 17,
       "median": 158,
       "high": 613
@@ -7314,7 +7754,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "pittsburgh-pa",
-      "hospitals": 9,
+      "hospitals": 10,
       "low": 43,
       "median": 252,
       "high": 497
@@ -7338,7 +7778,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "buffalo-ny",
-      "hospitals": 3,
+      "hospitals": 6,
       "low": 133,
       "median": 140,
       "high": 288
@@ -7346,7 +7786,7 @@
     {
       "procedure": "cholesterol-test",
       "metro": "hartford-ct",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 29,
       "median": 60,
       "high": 65
@@ -7358,6 +7798,14 @@
       "low": 18,
       "median": 48,
       "high": 53
+    },
+    {
+      "procedure": "cholesterol-test",
+      "metro": "honolulu-hi",
+      "hospitals": 5,
+      "low": 18,
+      "median": 19,
+      "high": 148
     },
     {
       "procedure": "cholesterol-test",
@@ -7393,6 +7841,14 @@
     },
     {
       "procedure": "cholesterol-test",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 60,
+      "median": 83,
+      "high": 106
+    },
+    {
+      "procedure": "cholesterol-test",
       "metro": "riverside-ca",
       "hospitals": 9,
       "low": 10,
@@ -7418,7 +7874,7 @@
     {
       "procedure": "a1c-test",
       "metro": "new-york-ny",
-      "hospitals": 24,
+      "hospitals": 25,
       "low": 10,
       "median": 10,
       "high": 275
@@ -7426,7 +7882,7 @@
     {
       "procedure": "a1c-test",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 29,
       "low": 7,
       "median": 29,
       "high": 381
@@ -7434,7 +7890,7 @@
     {
       "procedure": "a1c-test",
       "metro": "chicago-il",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 9,
       "median": 53,
       "high": 130
@@ -7442,7 +7898,7 @@
     {
       "procedure": "a1c-test",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 7,
       "median": 116,
       "high": 248
@@ -7450,7 +7906,7 @@
     {
       "procedure": "a1c-test",
       "metro": "phoenix-az",
-      "hospitals": 13,
+      "hospitals": 14,
       "low": 15,
       "median": 28,
       "high": 104
@@ -7466,7 +7922,7 @@
     {
       "procedure": "a1c-test",
       "metro": "san-antonio-tx",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 27,
       "median": 56,
       "high": 87
@@ -7482,7 +7938,7 @@
     {
       "procedure": "a1c-test",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 9,
       "median": 92,
       "high": 246
@@ -7490,7 +7946,7 @@
     {
       "procedure": "a1c-test",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 92,
       "median": 92,
       "high": 277
@@ -7546,7 +8002,7 @@
     {
       "procedure": "a1c-test",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 20,
       "median": 65,
       "high": 129
@@ -7562,7 +8018,7 @@
     {
       "procedure": "a1c-test",
       "metro": "nashville-tn",
-      "hospitals": 6,
+      "hospitals": 9,
       "low": 60,
       "median": 251,
       "high": 495
@@ -7593,6 +8049,14 @@
     },
     {
       "procedure": "a1c-test",
+      "metro": "las-vegas-nv",
+      "hospitals": 3,
+      "low": 155,
+      "median": 155,
+      "high": 155
+    },
+    {
+      "procedure": "a1c-test",
       "metro": "detroit-mi",
       "hospitals": 7,
       "low": 13,
@@ -7602,7 +8066,7 @@
     {
       "procedure": "a1c-test",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 41,
       "median": 58,
       "high": 58
@@ -7610,7 +8074,7 @@
     {
       "procedure": "a1c-test",
       "metro": "louisville-ky",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 24,
       "median": 57,
       "high": 122
@@ -7650,7 +8114,7 @@
     {
       "procedure": "a1c-test",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 9,
       "median": 24,
       "high": 41
@@ -7665,8 +8129,16 @@
     },
     {
       "procedure": "a1c-test",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 56,
+      "median": 65,
+      "high": 73
+    },
+    {
+      "procedure": "a1c-test",
       "metro": "miami-fl",
-      "hospitals": 5,
+      "hospitals": 10,
       "low": 14,
       "median": 41,
       "high": 123
@@ -7678,6 +8150,14 @@
       "low": 10,
       "median": 18,
       "high": 52
+    },
+    {
+      "procedure": "a1c-test",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 59,
+      "median": 224,
+      "high": 390
     },
     {
       "procedure": "a1c-test",
@@ -7730,7 +8210,7 @@
     {
       "procedure": "a1c-test",
       "metro": "hartford-ct",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 15,
       "median": 44,
       "high": 98
@@ -7810,7 +8290,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "new-york-ny",
-      "hospitals": 25,
+      "hospitals": 26,
       "low": 17,
       "median": 17,
       "high": 619
@@ -7818,7 +8298,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "los-angeles-ca",
-      "hospitals": 26,
+      "hospitals": 28,
       "low": 10,
       "median": 174,
       "high": 526
@@ -7826,7 +8306,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "chicago-il",
-      "hospitals": 20,
+      "hospitals": 21,
       "low": 11,
       "median": 25,
       "high": 158
@@ -7834,7 +8314,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "houston-tx",
-      "hospitals": 9,
+      "hospitals": 12,
       "low": 11,
       "median": 70,
       "high": 325
@@ -7842,7 +8322,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "phoenix-az",
-      "hospitals": 13,
+      "hospitals": 14,
       "low": 8,
       "median": 50,
       "high": 192
@@ -7858,7 +8338,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 28,
       "median": 49,
       "high": 52
@@ -7874,7 +8354,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 25,
       "median": 64,
       "high": 442
@@ -7882,7 +8362,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 36,
       "median": 36,
       "high": 36
@@ -7938,7 +8418,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 16,
       "median": 66,
       "high": 170
@@ -7954,7 +8434,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "nashville-tn",
-      "hospitals": 4,
+      "hospitals": 8,
       "low": 67,
       "median": 209,
       "high": 488
@@ -7994,7 +8474,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 33,
       "median": 47,
       "high": 47
@@ -8002,7 +8482,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 36,
       "median": 79,
       "high": 199
@@ -8042,7 +8522,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 15,
       "median": 33,
       "high": 62
@@ -8057,8 +8537,16 @@
     },
     {
       "procedure": "thyroid-test",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 28,
+      "median": 61,
+      "high": 94
+    },
+    {
+      "procedure": "thyroid-test",
       "metro": "miami-fl",
-      "hospitals": 9,
+      "hospitals": 11,
       "low": 38,
       "median": 120,
       "high": 284
@@ -8070,6 +8558,14 @@
       "low": 12,
       "median": 20,
       "high": 31
+    },
+    {
+      "procedure": "thyroid-test",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 86,
+      "median": 280,
+      "high": 474
     },
     {
       "procedure": "thyroid-test",
@@ -8122,7 +8618,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "hartford-ct",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 27,
       "median": 32,
       "high": 55
@@ -8170,7 +8666,7 @@
     {
       "procedure": "thyroid-test",
       "metro": "wichita-ks",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 45,
       "median": 60,
       "high": 106
@@ -8194,7 +8690,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "new-york-ny",
-      "hospitals": 25,
+      "hospitals": 26,
       "low": 30,
       "median": 30,
       "high": 640
@@ -8202,7 +8698,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 29,
       "low": 11,
       "median": 32,
       "high": 552
@@ -8210,7 +8706,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "chicago-il",
-      "hospitals": 19,
+      "hospitals": 20,
       "low": 11,
       "median": 176,
       "high": 223
@@ -8218,7 +8714,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "houston-tx",
-      "hospitals": 9,
+      "hospitals": 12,
       "low": 20,
       "median": 52,
       "high": 533
@@ -8226,7 +8722,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "phoenix-az",
-      "hospitals": 12,
+      "hospitals": 14,
       "low": 11,
       "median": 14,
       "high": 173
@@ -8242,7 +8738,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 41,
       "median": 97,
       "high": 105
@@ -8258,7 +8754,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 24,
       "median": 49,
       "high": 458
@@ -8266,7 +8762,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 30,
       "median": 30,
       "high": 448
@@ -8322,7 +8818,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 16,
       "median": 149,
       "high": 186
@@ -8338,7 +8834,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "nashville-tn",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 117,
       "median": 454,
       "high": 552
@@ -8369,6 +8865,14 @@
     },
     {
       "procedure": "vitamin-d-test",
+      "metro": "las-vegas-nv",
+      "hospitals": 3,
+      "low": 350,
+      "median": 364,
+      "high": 379
+    },
+    {
+      "procedure": "vitamin-d-test",
       "metro": "detroit-mi",
       "hospitals": 8,
       "low": 41,
@@ -8378,7 +8882,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 30,
       "median": 42,
       "high": 42
@@ -8386,7 +8890,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 46,
       "median": 69,
       "high": 286
@@ -8426,7 +8930,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 27,
       "median": 64,
       "high": 209
@@ -8441,8 +8945,16 @@
     },
     {
       "procedure": "vitamin-d-test",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 141,
+      "median": 158,
+      "high": 174
+    },
+    {
+      "procedure": "vitamin-d-test",
       "metro": "miami-fl",
-      "hospitals": 5,
+      "hospitals": 9,
       "low": 34,
       "median": 270,
       "high": 437
@@ -8458,7 +8970,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 43,
       "median": 125,
       "high": 272
@@ -8506,7 +9018,7 @@
     {
       "procedure": "vitamin-d-test",
       "metro": "hartford-ct",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 85,
       "median": 138,
       "high": 142
@@ -8553,6 +9065,14 @@
     },
     {
       "procedure": "vitamin-d-test",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 157,
+      "median": 200,
+      "high": 244
+    },
+    {
+      "procedure": "vitamin-d-test",
       "metro": "riverside-ca",
       "hospitals": 10,
       "low": 14,
@@ -8570,7 +9090,7 @@
     {
       "procedure": "psa-test",
       "metro": "new-york-ny",
-      "hospitals": 25,
+      "hospitals": 26,
       "low": 18,
       "median": 18,
       "high": 439
@@ -8578,7 +9098,7 @@
     {
       "procedure": "psa-test",
       "metro": "los-angeles-ca",
-      "hospitals": 28,
+      "hospitals": 30,
       "low": 10,
       "median": 52,
       "high": 576
@@ -8586,7 +9106,7 @@
     {
       "procedure": "psa-test",
       "metro": "chicago-il",
-      "hospitals": 20,
+      "hospitals": 21,
       "low": 16,
       "median": 108,
       "high": 228
@@ -8594,7 +9114,7 @@
     {
       "procedure": "psa-test",
       "metro": "houston-tx",
-      "hospitals": 9,
+      "hospitals": 12,
       "low": 13,
       "median": 57,
       "high": 264
@@ -8602,7 +9122,7 @@
     {
       "procedure": "psa-test",
       "metro": "phoenix-az",
-      "hospitals": 11,
+      "hospitals": 13,
       "low": 8,
       "median": 9,
       "high": 94
@@ -8618,7 +9138,7 @@
     {
       "procedure": "psa-test",
       "metro": "san-antonio-tx",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 64,
       "median": 64,
       "high": 133
@@ -8626,7 +9146,7 @@
     {
       "procedure": "psa-test",
       "metro": "dallas-tx",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 9,
       "median": 38,
       "high": 251
@@ -8634,7 +9154,7 @@
     {
       "procedure": "psa-test",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 38,
       "median": 38,
       "high": 492
@@ -8650,7 +9170,7 @@
     {
       "procedure": "psa-test",
       "metro": "fort-worth-tx",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 25,
       "median": 26,
       "high": 211
@@ -8690,7 +9210,7 @@
     {
       "procedure": "psa-test",
       "metro": "denver-co",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 20,
       "median": 100,
       "high": 127
@@ -8706,7 +9226,7 @@
     {
       "procedure": "psa-test",
       "metro": "nashville-tn",
-      "hospitals": 5,
+      "hospitals": 8,
       "low": 91,
       "median": 520,
       "high": 549
@@ -8737,6 +9257,14 @@
     },
     {
       "procedure": "psa-test",
+      "metro": "las-vegas-nv",
+      "hospitals": 3,
+      "low": 174,
+      "median": 174,
+      "high": 174
+    },
+    {
+      "procedure": "psa-test",
       "metro": "detroit-mi",
       "hospitals": 8,
       "low": 16,
@@ -8746,7 +9274,7 @@
     {
       "procedure": "psa-test",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 82,
       "median": 115,
       "high": 115
@@ -8754,7 +9282,7 @@
     {
       "procedure": "psa-test",
       "metro": "louisville-ky",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 35,
       "median": 64,
       "high": 200
@@ -8794,7 +9322,7 @@
     {
       "procedure": "psa-test",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 17,
       "median": 43,
       "high": 168
@@ -8809,9 +9337,17 @@
     },
     {
       "procedure": "psa-test",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 129,
+      "median": 188,
+      "high": 248
+    },
+    {
+      "procedure": "psa-test",
       "metro": "miami-fl",
-      "hospitals": 6,
-      "low": 15,
+      "hospitals": 10,
+      "low": 8,
       "median": 125,
       "high": 247
     },
@@ -8825,8 +9361,16 @@
     },
     {
       "procedure": "psa-test",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 79,
+      "median": 286,
+      "high": 492
+    },
+    {
+      "procedure": "psa-test",
       "metro": "cleveland-oh",
-      "hospitals": 18,
+      "hospitals": 19,
       "low": 54,
       "median": 93,
       "high": 134
@@ -8882,7 +9426,7 @@
     {
       "procedure": "psa-test",
       "metro": "hartford-ct",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 31,
       "median": 82,
       "high": 83
@@ -8953,6 +9497,14 @@
     },
     {
       "procedure": "ekg",
+      "metro": "new-york-ny",
+      "hospitals": 17,
+      "low": 45,
+      "median": 50,
+      "high": 56
+    },
+    {
+      "procedure": "ekg",
       "metro": "los-angeles-ca",
       "hospitals": 13,
       "low": 16,
@@ -8990,6 +9542,22 @@
       "low": 140,
       "median": 140,
       "high": 140
+    },
+    {
+      "procedure": "ekg",
+      "metro": "fort-worth-tx",
+      "hospitals": 4,
+      "low": 187,
+      "median": 187,
+      "high": 187
+    },
+    {
+      "procedure": "ekg",
+      "metro": "columbus-oh",
+      "hospitals": 6,
+      "low": 234,
+      "median": 234,
+      "high": 234
     },
     {
       "procedure": "ekg",
@@ -9033,16 +9601,32 @@
     },
     {
       "procedure": "ekg",
+      "metro": "milwaukee-wi",
+      "hospitals": 4,
+      "low": 490,
+      "median": 490,
+      "high": 490
+    },
+    {
+      "procedure": "ekg",
       "metro": "sacramento-ca",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 90,
       "median": 150,
       "high": 212
     },
     {
       "procedure": "ekg",
+      "metro": "miami-fl",
+      "hospitals": 4,
+      "low": 113,
+      "median": 213,
+      "high": 313
+    },
+    {
+      "procedure": "ekg",
       "metro": "cleveland-oh",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 250,
       "median": 250,
       "high": 250
@@ -9073,6 +9657,14 @@
     },
     {
       "procedure": "ekg",
+      "metro": "honolulu-hi",
+      "hospitals": 4,
+      "low": 9,
+      "median": 9,
+      "high": 9
+    },
+    {
+      "procedure": "ekg",
       "metro": "knoxville-tn",
       "hospitals": 3,
       "low": 118,
@@ -9089,6 +9681,22 @@
     },
     {
       "procedure": "ekg",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 49,
+      "median": 147,
+      "high": 245
+    },
+    {
+      "procedure": "ekg",
+      "metro": "riverside-ca",
+      "hospitals": 4,
+      "low": 382,
+      "median": 382,
+      "high": 382
+    },
+    {
+      "procedure": "ekg",
       "metro": "colorado-springs-co",
       "hospitals": 5,
       "low": 15,
@@ -9098,7 +9706,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 23,
       "low": 399,
       "median": 649,
       "high": 4452
@@ -9106,7 +9714,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "los-angeles-ca",
-      "hospitals": 27,
+      "hospitals": 29,
       "low": 766,
       "median": 4000,
       "high": 6767
@@ -9114,7 +9722,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "chicago-il",
-      "hospitals": 19,
+      "hospitals": 21,
       "low": 618,
       "median": 1075,
       "high": 3561
@@ -9122,7 +9730,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 540,
       "median": 2456,
       "high": 3673
@@ -9130,7 +9738,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "phoenix-az",
-      "hospitals": 11,
+      "hospitals": 12,
       "low": 474,
       "median": 656,
       "high": 2079
@@ -9145,6 +9753,14 @@
     },
     {
       "procedure": "echocardiogram",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 723,
+      "median": 2198,
+      "high": 3673
+    },
+    {
+      "procedure": "echocardiogram",
       "metro": "san-diego-ca",
       "hospitals": 3,
       "low": 1598,
@@ -9154,7 +9770,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "dallas-tx",
-      "hospitals": 17,
+      "hospitals": 18,
       "low": 1048,
       "median": 2590,
       "high": 4160
@@ -9162,7 +9778,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 2590,
       "median": 2590,
       "high": 4967
@@ -9178,7 +9794,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "fort-worth-tx",
-      "hospitals": 15,
+      "hospitals": 16,
       "low": 1177,
       "median": 1859,
       "high": 3673
@@ -9210,7 +9826,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "seattle-wa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 984,
       "median": 1708,
       "high": 3364
@@ -9218,7 +9834,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "denver-co",
-      "hospitals": 12,
+      "hospitals": 13,
       "low": 868,
       "median": 2207,
       "high": 4521
@@ -9234,7 +9850,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "nashville-tn",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 1496,
       "median": 4556,
       "high": 7446
@@ -9274,7 +9890,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "memphis-tn",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 595,
       "median": 833,
       "high": 833
@@ -9282,7 +9898,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "louisville-ky",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 524,
       "median": 2055,
       "high": 3165
@@ -9298,7 +9914,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "milwaukee-wi",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 1075,
       "median": 2025,
       "high": 2710
@@ -9322,15 +9938,23 @@
     {
       "procedure": "echocardiogram",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 998,
       "median": 1556,
       "high": 3181
     },
     {
       "procedure": "echocardiogram",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 2103,
+      "median": 2905,
+      "high": 3707
+    },
+    {
+      "procedure": "echocardiogram",
       "metro": "miami-fl",
-      "hospitals": 8,
+      "hospitals": 10,
       "low": 450,
       "median": 2563,
       "high": 4869
@@ -9345,8 +9969,16 @@
     },
     {
       "procedure": "echocardiogram",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 1145,
+      "median": 3056,
+      "high": 4967
+    },
+    {
+      "procedure": "echocardiogram",
       "metro": "cleveland-oh",
-      "hospitals": 19,
+      "hospitals": 20,
       "low": 1237,
       "median": 1845,
       "high": 2190
@@ -9394,7 +10026,7 @@
     {
       "procedure": "echocardiogram",
       "metro": "hartford-ct",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 933,
       "median": 1637,
       "high": 2010
@@ -9466,7 +10098,7 @@
     {
       "procedure": "sleep-study",
       "metro": "new-york-ny",
-      "hospitals": 20,
+      "hospitals": 21,
       "low": 1008,
       "median": 1204,
       "high": 10015
@@ -9474,7 +10106,7 @@
     {
       "procedure": "sleep-study",
       "metro": "los-angeles-ca",
-      "hospitals": 6,
+      "hospitals": 21,
       "low": 1422,
       "median": 1953,
       "high": 6214
@@ -9482,7 +10114,7 @@
     {
       "procedure": "sleep-study",
       "metro": "chicago-il",
-      "hospitals": 13,
+      "hospitals": 18,
       "low": 1059,
       "median": 2105,
       "high": 5529
@@ -9490,7 +10122,7 @@
     {
       "procedure": "sleep-study",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 849,
       "median": 4055,
       "high": 6740
@@ -9498,7 +10130,7 @@
     {
       "procedure": "sleep-study",
       "metro": "phoenix-az",
-      "hospitals": 3,
+      "hospitals": 5,
       "low": 2071,
       "median": 2541,
       "high": 3321
@@ -9514,7 +10146,7 @@
     {
       "procedure": "sleep-study",
       "metro": "san-antonio-tx",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 607,
       "median": 607,
       "high": 6740
@@ -9530,7 +10162,7 @@
     {
       "procedure": "sleep-study",
       "metro": "dallas-tx",
-      "hospitals": 13,
+      "hospitals": 16,
       "low": 1227,
       "median": 4659,
       "high": 6740
@@ -9538,7 +10170,7 @@
     {
       "procedure": "sleep-study",
       "metro": "austin-tx",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 4141,
       "median": 4141,
       "high": 6890
@@ -9546,7 +10178,7 @@
     {
       "procedure": "sleep-study",
       "metro": "fort-worth-tx",
-      "hospitals": 10,
+      "hospitals": 12,
       "low": 4659,
       "median": 4830,
       "high": 6740
@@ -9578,7 +10210,7 @@
     {
       "procedure": "sleep-study",
       "metro": "seattle-wa",
-      "hospitals": 7,
+      "hospitals": 9,
       "low": 1881,
       "median": 2611,
       "high": 5035
@@ -9586,7 +10218,7 @@
     {
       "procedure": "sleep-study",
       "metro": "denver-co",
-      "hospitals": 10,
+      "hospitals": 12,
       "low": 2950,
       "median": 4220,
       "high": 5274
@@ -9602,7 +10234,7 @@
     {
       "procedure": "sleep-study",
       "metro": "nashville-tn",
-      "hospitals": 5,
+      "hospitals": 8,
       "low": 4975,
       "median": 10703,
       "high": 11529
@@ -9650,7 +10282,7 @@
     {
       "procedure": "sleep-study",
       "metro": "louisville-ky",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 366,
       "median": 841,
       "high": 5304
@@ -9666,7 +10298,7 @@
     {
       "procedure": "sleep-study",
       "metro": "milwaukee-wi",
-      "hospitals": 5,
+      "hospitals": 10,
       "low": 2711,
       "median": 3176,
       "high": 3240
@@ -9682,7 +10314,7 @@
     {
       "procedure": "sleep-study",
       "metro": "kansas-city-mo",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 322,
       "median": 1218,
       "high": 5406
@@ -9697,8 +10329,16 @@
     },
     {
       "procedure": "sleep-study",
+      "metro": "omaha-ne",
+      "hospitals": 3,
+      "low": 2960,
+      "median": 3352,
+      "high": 3744
+    },
+    {
+      "procedure": "sleep-study",
       "metro": "miami-fl",
-      "hospitals": 4,
+      "hospitals": 10,
       "low": 5175,
       "median": 6069,
       "high": 7995
@@ -9713,8 +10353,16 @@
     },
     {
       "procedure": "sleep-study",
+      "metro": "tulsa-ok",
+      "hospitals": 3,
+      "low": 2909,
+      "median": 4463,
+      "high": 6018
+    },
+    {
+      "procedure": "sleep-study",
       "metro": "cleveland-oh",
-      "hospitals": 15,
+      "hospitals": 18,
       "low": 2533,
       "median": 4196,
       "high": 5837
@@ -9762,7 +10410,7 @@
     {
       "procedure": "sleep-study",
       "metro": "hartford-ct",
-      "hospitals": 8,
+      "hospitals": 10,
       "low": 2616,
       "median": 2738,
       "high": 4212
@@ -9778,7 +10426,7 @@
     {
       "procedure": "sleep-study",
       "metro": "knoxville-tn",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 1411,
       "median": 1411,
       "high": 1411
@@ -9810,7 +10458,7 @@
     {
       "procedure": "sleep-study",
       "metro": "riverside-ca",
-      "hospitals": 4,
+      "hospitals": 6,
       "low": 1600,
       "median": 3490,
       "high": 5805
@@ -9834,7 +10482,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "new-york-ny",
-      "hospitals": 22,
+      "hospitals": 24,
       "low": 912,
       "median": 1079,
       "high": 8704
@@ -9842,7 +10490,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "los-angeles-ca",
-      "hospitals": 11,
+      "hospitals": 23,
       "low": 498,
       "median": 1274,
       "high": 4585
@@ -9850,7 +10498,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "chicago-il",
-      "hospitals": 4,
+      "hospitals": 15,
       "low": 630,
       "median": 1178,
       "high": 3746
@@ -9858,26 +10506,50 @@
     {
       "procedure": "colonoscopy",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 519,
       "median": 941,
       "high": 3804
     },
     {
       "procedure": "colonoscopy",
+      "metro": "phoenix-az",
+      "hospitals": 9,
+      "low": 2468,
+      "median": 2468,
+      "high": 2468
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "philadelphia-pa",
-      "hospitals": 8,
+      "hospitals": 12,
       "low": 1002,
       "median": 1046,
       "high": 3169
     },
     {
       "procedure": "colonoscopy",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 3804,
+      "median": 3804,
+      "high": 3804
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "dallas-tx",
-      "hospitals": 10,
+      "hospitals": 18,
       "low": 1288,
       "median": 1818,
       "high": 3804
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "austin-tx",
+      "hospitals": 8,
+      "low": 4602,
+      "median": 4602,
+      "high": 4602
     },
     {
       "procedure": "colonoscopy",
@@ -9890,7 +10562,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "fort-worth-tx",
-      "hospitals": 11,
+      "hospitals": 15,
       "low": 1291,
       "median": 1899,
       "high": 3804
@@ -9906,7 +10578,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "seattle-wa",
-      "hospitals": 6,
+      "hospitals": 9,
       "low": 1423,
       "median": 2699,
       "high": 5953
@@ -9914,10 +10586,18 @@
     {
       "procedure": "colonoscopy",
       "metro": "denver-co",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 566,
       "median": 1587,
       "high": 3419
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "nashville-tn",
+      "hospitals": 4,
+      "low": 2347,
+      "median": 2347,
+      "high": 2347
     },
     {
       "procedure": "colonoscopy",
@@ -9929,8 +10609,16 @@
     },
     {
       "procedure": "colonoscopy",
+      "metro": "portland-or",
+      "hospitals": 3,
+      "low": 2104,
+      "median": 2104,
+      "high": 2104
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "detroit-mi",
-      "hospitals": 4,
+      "hospitals": 6,
       "low": 1145,
       "median": 1145,
       "high": 1145
@@ -9945,6 +10633,14 @@
     },
     {
       "procedure": "colonoscopy",
+      "metro": "louisville-ky",
+      "hospitals": 5,
+      "low": 4180,
+      "median": 4180,
+      "high": 4180
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "milwaukee-wi",
       "hospitals": 6,
       "low": 2090,
@@ -9953,11 +10649,35 @@
     },
     {
       "procedure": "colonoscopy",
+      "metro": "tucson-az",
+      "hospitals": 4,
+      "low": 4602,
+      "median": 4602,
+      "high": 4602
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "fresno-ca",
       "hospitals": 3,
       "low": 1319,
       "median": 1451,
       "high": 1641
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 2974,
+      "median": 2974,
+      "high": 2974
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "miami-fl",
+      "hospitals": 10,
+      "low": 3057,
+      "median": 4284,
+      "high": 5511
     },
     {
       "procedure": "colonoscopy",
@@ -9970,7 +10690,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "cleveland-oh",
-      "hospitals": 17,
+      "hospitals": 19,
       "low": 1166,
       "median": 2445,
       "high": 2503
@@ -9986,7 +10706,7 @@
     {
       "procedure": "colonoscopy",
       "metro": "pittsburgh-pa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 1500,
       "median": 1500,
       "high": 2000
@@ -10001,6 +10721,22 @@
     },
     {
       "procedure": "colonoscopy",
+      "metro": "birmingham-al",
+      "hospitals": 4,
+      "low": 2600,
+      "median": 2600,
+      "high": 2600
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "hartford-ct",
+      "hospitals": 5,
+      "low": 1813,
+      "median": 1813,
+      "high": 1813
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "knoxville-tn",
       "hospitals": 4,
       "low": 1074,
@@ -10009,8 +10745,32 @@
     },
     {
       "procedure": "colonoscopy",
+      "metro": "spokane-wa",
+      "hospitals": 4,
+      "low": 1621,
+      "median": 1666,
+      "high": 1711
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "albany-ny",
+      "hospitals": 3,
+      "low": 217,
+      "median": 217,
+      "high": 217
+    },
+    {
+      "procedure": "colonoscopy",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 575,
+      "median": 615,
+      "high": 656
+    },
+    {
+      "procedure": "colonoscopy",
       "metro": "riverside-ca",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 1747,
       "median": 3911,
       "high": 4863
@@ -10018,7 +10778,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "new-york-ny",
-      "hospitals": 21,
+      "hospitals": 24,
       "low": 906,
       "median": 1109,
       "high": 4065
@@ -10026,7 +10786,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "los-angeles-ca",
-      "hospitals": 11,
+      "hospitals": 22,
       "low": 407,
       "median": 1076,
       "high": 4721
@@ -10034,7 +10794,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "chicago-il",
-      "hospitals": 4,
+      "hospitals": 8,
       "low": 583,
       "median": 986,
       "high": 3720
@@ -10042,26 +10802,50 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "houston-tx",
-      "hospitals": 8,
+      "hospitals": 11,
       "low": 426,
       "median": 893,
       "high": 3826
     },
     {
       "procedure": "upper-endoscopy",
+      "metro": "phoenix-az",
+      "hospitals": 9,
+      "low": 2537,
+      "median": 2537,
+      "high": 2537
+    },
+    {
+      "procedure": "upper-endoscopy",
       "metro": "philadelphia-pa",
-      "hospitals": 10,
+      "hospitals": 12,
       "low": 504,
       "median": 1037,
       "high": 3077
     },
     {
       "procedure": "upper-endoscopy",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 3826,
+      "median": 3826,
+      "high": 3826
+    },
+    {
+      "procedure": "upper-endoscopy",
       "metro": "dallas-tx",
-      "hospitals": 9,
+      "hospitals": 17,
       "low": 1300,
       "median": 1825,
       "high": 3826
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "austin-tx",
+      "hospitals": 9,
+      "low": 4217,
+      "median": 4223,
+      "high": 4229
     },
     {
       "procedure": "upper-endoscopy",
@@ -10074,10 +10858,18 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "fort-worth-tx",
-      "hospitals": 8,
+      "hospitals": 12,
       "low": 1825,
       "median": 1825,
       "high": 3826
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "columbus-oh",
+      "hospitals": 6,
+      "low": 2169,
+      "median": 2169,
+      "high": 2169
     },
     {
       "procedure": "upper-endoscopy",
@@ -10090,7 +10882,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "seattle-wa",
-      "hospitals": 6,
+      "hospitals": 9,
       "low": 964,
       "median": 2425,
       "high": 5517
@@ -10098,10 +10890,18 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "denver-co",
-      "hospitals": 7,
+      "hospitals": 8,
       "low": 514,
       "median": 1030,
       "high": 3178
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "nashville-tn",
+      "hospitals": 4,
+      "low": 1609,
+      "median": 1609,
+      "high": 1609
     },
     {
       "procedure": "upper-endoscopy",
@@ -10121,11 +10921,51 @@
     },
     {
       "procedure": "upper-endoscopy",
+      "metro": "portland-or",
+      "hospitals": 4,
+      "low": 459,
+      "median": 1004,
+      "high": 1548
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "las-vegas-nv",
+      "hospitals": 3,
+      "low": 6985,
+      "median": 6985,
+      "high": 6985
+    },
+    {
+      "procedure": "upper-endoscopy",
       "metro": "detroit-mi",
-      "hospitals": 5,
+      "hospitals": 7,
       "low": 1135,
       "median": 1135,
       "high": 2231
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "memphis-tn",
+      "hospitals": 6,
+      "low": 191,
+      "median": 191,
+      "high": 191
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "louisville-ky",
+      "hospitals": 5,
+      "low": 3818,
+      "median": 3818,
+      "high": 3819
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "milwaukee-wi",
+      "hospitals": 7,
+      "low": 1376,
+      "median": 1376,
+      "high": 1376
     },
     {
       "procedure": "upper-endoscopy",
@@ -10145,6 +10985,22 @@
     },
     {
       "procedure": "upper-endoscopy",
+      "metro": "kansas-city-mo",
+      "hospitals": 4,
+      "low": 882,
+      "median": 1872,
+      "high": 2861
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "miami-fl",
+      "hospitals": 10,
+      "low": 3033,
+      "median": 4235,
+      "high": 5438
+    },
+    {
+      "procedure": "upper-endoscopy",
       "metro": "minneapolis-mn",
       "hospitals": 3,
       "low": 322,
@@ -10154,7 +11010,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "cleveland-oh",
-      "hospitals": 17,
+      "hospitals": 19,
       "low": 1158,
       "median": 2426,
       "high": 2523
@@ -10170,7 +11026,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "pittsburgh-pa",
-      "hospitals": 8,
+      "hospitals": 9,
       "low": 1895,
       "median": 2843,
       "high": 3909
@@ -10194,7 +11050,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "buffalo-ny",
-      "hospitals": 5,
+      "hospitals": 6,
       "low": 488,
       "median": 773,
       "high": 773
@@ -10202,7 +11058,7 @@
     {
       "procedure": "upper-endoscopy",
       "metro": "hartford-ct",
-      "hospitals": 3,
+      "hospitals": 7,
       "low": 1330,
       "median": 1597,
       "high": 1597
@@ -10217,6 +11073,22 @@
     },
     {
       "procedure": "upper-endoscopy",
+      "metro": "spokane-wa",
+      "hospitals": 4,
+      "low": 1583,
+      "median": 1597,
+      "high": 1610
+    },
+    {
+      "procedure": "upper-endoscopy",
+      "metro": "albany-ny",
+      "hospitals": 3,
+      "low": 383,
+      "median": 383,
+      "high": 383
+    },
+    {
+      "procedure": "upper-endoscopy",
       "metro": "baton-rouge-la",
       "hospitals": 3,
       "low": 1390,
@@ -10225,8 +11097,16 @@
     },
     {
       "procedure": "upper-endoscopy",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 437,
+      "median": 586,
+      "high": 735
+    },
+    {
+      "procedure": "upper-endoscopy",
       "metro": "riverside-ca",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 1349,
       "median": 3717,
       "high": 4721
@@ -10234,7 +11114,7 @@
     {
       "procedure": "cataract-surgery",
       "metro": "new-york-ny",
-      "hospitals": 10,
+      "hospitals": 14,
       "low": 1812,
       "median": 2643,
       "high": 5600
@@ -10242,7 +11122,7 @@
     {
       "procedure": "cataract-surgery",
       "metro": "los-angeles-ca",
-      "hospitals": 3,
+      "hospitals": 20,
       "low": 3188,
       "median": 4019,
       "high": 7774
@@ -10257,6 +11137,14 @@
     },
     {
       "procedure": "cataract-surgery",
+      "metro": "houston-tx",
+      "hospitals": 10,
+      "low": 2281,
+      "median": 2281,
+      "high": 2281
+    },
+    {
+      "procedure": "cataract-surgery",
       "metro": "philadelphia-pa",
       "hospitals": 11,
       "low": 585,
@@ -10265,8 +11153,16 @@
     },
     {
       "procedure": "cataract-surgery",
+      "metro": "dallas-tx",
+      "hospitals": 8,
+      "low": 4054,
+      "median": 4054,
+      "high": 4054
+    },
+    {
+      "procedure": "cataract-surgery",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 4302,
       "median": 4302,
       "high": 4302
@@ -10297,11 +11193,27 @@
     },
     {
       "procedure": "cataract-surgery",
+      "metro": "san-francisco-ca",
+      "hospitals": 5,
+      "low": 8624,
+      "median": 8624,
+      "high": 8624
+    },
+    {
+      "procedure": "cataract-surgery",
       "metro": "seattle-wa",
       "hospitals": 7,
       "low": 4705,
       "median": 5815,
       "high": 6279
+    },
+    {
+      "procedure": "cataract-surgery",
+      "metro": "denver-co",
+      "hospitals": 10,
+      "low": 2667,
+      "median": 2667,
+      "high": 2667
     },
     {
       "procedure": "cataract-surgery",
@@ -10313,8 +11225,16 @@
     },
     {
       "procedure": "cataract-surgery",
+      "metro": "nashville-tn",
+      "hospitals": 7,
+      "low": 2933,
+      "median": 2933,
+      "high": 2933
+    },
+    {
+      "procedure": "cataract-surgery",
       "metro": "boston-ma",
-      "hospitals": 5,
+      "hospitals": 7,
       "low": 612,
       "median": 4330,
       "high": 4330
@@ -10330,7 +11250,7 @@
     {
       "procedure": "cataract-surgery",
       "metro": "detroit-mi",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 2918,
       "median": 2918,
       "high": 2918
@@ -10361,11 +11281,27 @@
     },
     {
       "procedure": "cataract-surgery",
+      "metro": "tucson-az",
+      "hospitals": 3,
+      "low": 583,
+      "median": 583,
+      "high": 583
+    },
+    {
+      "procedure": "cataract-surgery",
       "metro": "fresno-ca",
       "hospitals": 3,
       "low": 2876,
       "median": 3196,
       "high": 3225
+    },
+    {
+      "procedure": "cataract-surgery",
+      "metro": "sacramento-ca",
+      "hospitals": 6,
+      "low": 8624,
+      "median": 8624,
+      "high": 8624
     },
     {
       "procedure": "cataract-surgery",
@@ -10386,7 +11322,7 @@
     {
       "procedure": "cataract-surgery",
       "metro": "tampa-fl",
-      "hospitals": 6,
+      "hospitals": 13,
       "low": 7482,
       "median": 7482,
       "high": 8581
@@ -10398,6 +11334,14 @@
       "low": 2180,
       "median": 2738,
       "high": 3229
+    },
+    {
+      "procedure": "cataract-surgery",
+      "metro": "orlando-fl",
+      "hospitals": 4,
+      "low": 7789,
+      "median": 7789,
+      "high": 7789
     },
     {
       "procedure": "cataract-surgery",
@@ -10414,6 +11358,14 @@
       "low": 2609,
       "median": 2853,
       "high": 4861
+    },
+    {
+      "procedure": "cataract-surgery",
+      "metro": "little-rock-ar",
+      "hospitals": 4,
+      "low": 2002,
+      "median": 2002,
+      "high": 2002
     },
     {
       "procedure": "cataract-surgery",
@@ -10449,6 +11401,22 @@
     },
     {
       "procedure": "cataract-surgery",
+      "metro": "san-jose-ca",
+      "hospitals": 4,
+      "low": 8624,
+      "median": 8624,
+      "high": 8624
+    },
+    {
+      "procedure": "cataract-surgery",
+      "metro": "riverside-ca",
+      "hospitals": 5,
+      "low": 6080,
+      "median": 6080,
+      "high": 6080
+    },
+    {
+      "procedure": "cataract-surgery",
       "metro": "colorado-springs-co",
       "hospitals": 5,
       "low": 542,
@@ -10458,10 +11426,18 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "new-york-ny",
-      "hospitals": 20,
+      "hospitals": 24,
       "low": 1985,
       "median": 6904,
       "high": 24617
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "los-angeles-ca",
+      "hospitals": 19,
+      "low": 8154,
+      "median": 8154,
+      "high": 8154
     },
     {
       "procedure": "gallbladder-removal",
@@ -10470,6 +11446,14 @@
       "low": 3578,
       "median": 5709,
       "high": 14082
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "houston-tx",
+      "hospitals": 9,
+      "low": 5976,
+      "median": 5976,
+      "high": 5976
     },
     {
       "procedure": "gallbladder-removal",
@@ -10489,11 +11473,27 @@
     },
     {
       "procedure": "gallbladder-removal",
+      "metro": "dallas-tx",
+      "hospitals": 13,
+      "low": 9965,
+      "median": 9965,
+      "high": 9965
+    },
+    {
+      "procedure": "gallbladder-removal",
       "metro": "austin-tx",
       "hospitals": 7,
       "low": 5792,
       "median": 7703,
       "high": 7784
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "fort-worth-tx",
+      "hospitals": 9,
+      "low": 10940,
+      "median": 10940,
+      "high": 10940
     },
     {
       "procedure": "gallbladder-removal",
@@ -10506,7 +11506,7 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "indianapolis-in",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 7706,
       "median": 8962,
       "high": 20767
@@ -10521,11 +11521,35 @@
     },
     {
       "procedure": "gallbladder-removal",
+      "metro": "denver-co",
+      "hospitals": 6,
+      "low": 6437,
+      "median": 6437,
+      "high": 6437
+    },
+    {
+      "procedure": "gallbladder-removal",
       "metro": "washington-dc",
       "hospitals": 6,
       "low": 7228,
       "median": 7707,
       "high": 12893
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "nashville-tn",
+      "hospitals": 10,
+      "low": 8030,
+      "median": 8030,
+      "high": 8030
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "boston-ma",
+      "hospitals": 3,
+      "low": 13413,
+      "median": 13413,
+      "high": 13413
     },
     {
       "procedure": "gallbladder-removal",
@@ -10538,7 +11562,7 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "detroit-mi",
-      "hospitals": 4,
+      "hospitals": 6,
       "low": 7226,
       "median": 7226,
       "high": 7226
@@ -10585,6 +11609,14 @@
     },
     {
       "procedure": "gallbladder-removal",
+      "metro": "sacramento-ca",
+      "hospitals": 6,
+      "low": 19219,
+      "median": 19219,
+      "high": 19219
+    },
+    {
+      "procedure": "gallbladder-removal",
       "metro": "omaha-ne",
       "hospitals": 3,
       "low": 4728,
@@ -10602,7 +11634,7 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "cleveland-oh",
-      "hospitals": 7,
+      "hospitals": 18,
       "low": 15438,
       "median": 15438,
       "high": 15438
@@ -10610,7 +11642,7 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "tampa-fl",
-      "hospitals": 6,
+      "hospitals": 8,
       "low": 21993,
       "median": 21993,
       "high": 25225
@@ -10622,6 +11654,14 @@
       "low": 4847,
       "median": 4996,
       "high": 7684
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "orlando-fl",
+      "hospitals": 4,
+      "low": 13976,
+      "median": 13976,
+      "high": 13976
     },
     {
       "procedure": "gallbladder-removal",
@@ -10650,7 +11690,7 @@
     {
       "procedure": "gallbladder-removal",
       "metro": "little-rock-ar",
-      "hospitals": 3,
+      "hospitals": 5,
       "low": 3345,
       "median": 3558,
       "high": 5004
@@ -10673,6 +11713,22 @@
     },
     {
       "procedure": "gallbladder-removal",
+      "metro": "albany-ny",
+      "hospitals": 3,
+      "low": 1640,
+      "median": 1640,
+      "high": 1640
+    },
+    {
+      "procedure": "gallbladder-removal",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 697,
+      "median": 944,
+      "high": 1190
+    },
+    {
+      "procedure": "gallbladder-removal",
       "metro": "lexington-ky",
       "hospitals": 3,
       "low": 5914,
@@ -10680,9 +11736,17 @@
       "high": 6649
     },
     {
+      "procedure": "gallbladder-removal",
+      "metro": "riverside-ca",
+      "hospitals": 6,
+      "low": 11442,
+      "median": 12190,
+      "high": 12938
+    },
+    {
       "procedure": "carpal-tunnel-surgery",
       "metro": "new-york-ny",
-      "hospitals": 11,
+      "hospitals": 14,
       "low": 1011,
       "median": 2157,
       "high": 6154
@@ -10690,7 +11754,7 @@
     {
       "procedure": "carpal-tunnel-surgery",
       "metro": "los-angeles-ca",
-      "hospitals": 7,
+      "hospitals": 18,
       "low": 792,
       "median": 992,
       "high": 2729
@@ -10698,10 +11762,18 @@
     {
       "procedure": "carpal-tunnel-surgery",
       "metro": "chicago-il",
-      "hospitals": 3,
+      "hospitals": 7,
       "low": 655,
       "median": 793,
       "high": 3218
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "houston-tx",
+      "hospitals": 10,
+      "low": 1930,
+      "median": 1930,
+      "high": 1930
     },
     {
       "procedure": "carpal-tunnel-surgery",
@@ -10714,7 +11786,7 @@
     {
       "procedure": "carpal-tunnel-surgery",
       "metro": "philadelphia-pa",
-      "hospitals": 3,
+      "hospitals": 10,
       "low": 2152,
       "median": 2227,
       "high": 2362
@@ -10729,8 +11801,16 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "dallas-tx",
+      "hospitals": 14,
+      "low": 5108,
+      "median": 5108,
+      "high": 5108
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 3899,
       "median": 3899,
       "high": 3899
@@ -10761,8 +11841,24 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "indianapolis-in",
+      "hospitals": 7,
+      "low": 4305,
+      "median": 4307,
+      "high": 4308
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "seattle-wa",
+      "hospitals": 6,
+      "low": 2629,
+      "median": 2760,
+      "high": 2892
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "denver-co",
-      "hospitals": 3,
+      "hospitals": 11,
       "low": 1333,
       "median": 2220,
       "high": 2243
@@ -10777,6 +11873,14 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "nashville-tn",
+      "hospitals": 4,
+      "low": 3724,
+      "median": 3724,
+      "high": 3724
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "boston-ma",
       "hospitals": 3,
       "low": 4183,
@@ -10785,8 +11889,16 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "portland-or",
+      "hospitals": 3,
+      "low": 8401,
+      "median": 8401,
+      "high": 8401
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "detroit-mi",
-      "hospitals": 5,
+      "hospitals": 7,
       "low": 2418,
       "median": 2418,
       "high": 6795
@@ -10825,8 +11937,40 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "fresno-ca",
+      "hospitals": 4,
+      "low": 5790,
+      "median": 6622,
+      "high": 7454
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "sacramento-ca",
+      "hospitals": 6,
+      "low": 5309,
+      "median": 5309,
+      "high": 5309
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 672,
+      "median": 1661,
+      "high": 2650
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "miami-fl",
+      "hospitals": 7,
+      "low": 9686,
+      "median": 9686,
+      "high": 9686
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "cleveland-oh",
-      "hospitals": 9,
+      "hospitals": 19,
       "low": 2556,
       "median": 7749,
       "high": 7749
@@ -10834,7 +11978,7 @@
     {
       "procedure": "carpal-tunnel-surgery",
       "metro": "pittsburgh-pa",
-      "hospitals": 6,
+      "hospitals": 8,
       "low": 1533,
       "median": 4064,
       "high": 4949
@@ -10849,11 +11993,35 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "hartford-ct",
+      "hospitals": 4,
+      "low": 2250,
+      "median": 2988,
+      "high": 3726
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "grand-rapids-mi",
+      "hospitals": 3,
+      "low": 550,
+      "median": 591,
+      "high": 632
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "knoxville-tn",
       "hospitals": 4,
       "low": 1885,
       "median": 1892,
       "high": 1936
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
+      "metro": "spokane-wa",
+      "hospitals": 4,
+      "low": 4255,
+      "median": 4358,
+      "high": 4460
     },
     {
       "procedure": "carpal-tunnel-surgery",
@@ -10873,6 +12041,14 @@
     },
     {
       "procedure": "carpal-tunnel-surgery",
+      "metro": "riverside-ca",
+      "hospitals": 3,
+      "low": 9070,
+      "median": 9070,
+      "high": 9070
+    },
+    {
+      "procedure": "carpal-tunnel-surgery",
       "metro": "colorado-springs-co",
       "hospitals": 5,
       "low": 444,
@@ -10882,7 +12058,7 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "new-york-ny",
-      "hospitals": 10,
+      "hospitals": 15,
       "low": 3889,
       "median": 4001,
       "high": 5567
@@ -10890,15 +12066,23 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "los-angeles-ca",
-      "hospitals": 7,
+      "hospitals": 19,
       "low": 1561,
       "median": 1955,
       "high": 4932
     },
     {
       "procedure": "inguinal-hernia-repair",
+      "metro": "chicago-il",
+      "hospitals": 6,
+      "low": 2066,
+      "median": 2283,
+      "high": 2501
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
       "metro": "houston-tx",
-      "hospitals": 5,
+      "hospitals": 8,
       "low": 3539,
       "median": 7802,
       "high": 9390
@@ -10913,8 +12097,16 @@
     },
     {
       "procedure": "inguinal-hernia-repair",
+      "metro": "philadelphia-pa",
+      "hospitals": 8,
+      "low": 3158,
+      "median": 3696,
+      "high": 4233
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
       "metro": "dallas-tx",
-      "hospitals": 11,
+      "hospitals": 15,
       "low": 2864,
       "median": 6211,
       "high": 8353
@@ -10922,7 +12114,7 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 8365,
       "median": 8365,
       "high": 8365
@@ -10930,7 +12122,7 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "fort-worth-tx",
-      "hospitals": 5,
+      "hospitals": 8,
       "low": 2864,
       "median": 6211,
       "high": 6211
@@ -10946,10 +12138,26 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "indianapolis-in",
-      "hospitals": 3,
+      "hospitals": 4,
       "low": 6847,
       "median": 7306,
       "high": 9166
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
+      "metro": "seattle-wa",
+      "hospitals": 8,
+      "low": 27500,
+      "median": 27500,
+      "high": 27500
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
+      "metro": "denver-co",
+      "hospitals": 11,
+      "low": 4374,
+      "median": 4374,
+      "high": 4374
     },
     {
       "procedure": "inguinal-hernia-repair",
@@ -10969,8 +12177,24 @@
     },
     {
       "procedure": "inguinal-hernia-repair",
-      "metro": "detroit-mi",
+      "metro": "boston-ma",
       "hospitals": 4,
+      "low": 1915,
+      "median": 1915,
+      "high": 1915
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
+      "metro": "portland-or",
+      "hospitals": 3,
+      "low": 10554,
+      "median": 10554,
+      "high": 10554
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
+      "metro": "detroit-mi",
+      "hospitals": 5,
       "low": 4333,
       "median": 4333,
       "high": 4333
@@ -11017,6 +12241,14 @@
     },
     {
       "procedure": "inguinal-hernia-repair",
+      "metro": "sacramento-ca",
+      "hospitals": 6,
+      "low": 18726,
+      "median": 18726,
+      "high": 18726
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
       "metro": "atlanta-ga",
       "hospitals": 3,
       "low": 7450,
@@ -11042,10 +12274,18 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "cleveland-oh",
-      "hospitals": 7,
+      "hospitals": 18,
       "low": 9257,
       "median": 9257,
       "high": 9257
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
+      "metro": "pittsburgh-pa",
+      "hospitals": 7,
+      "low": 5322,
+      "median": 6886,
+      "high": 8450
     },
     {
       "procedure": "inguinal-hernia-repair",
@@ -11073,11 +12313,27 @@
     },
     {
       "procedure": "inguinal-hernia-repair",
+      "metro": "little-rock-ar",
+      "hospitals": 5,
+      "low": 4145,
+      "median": 4484,
+      "high": 4824
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
       "metro": "knoxville-tn",
       "hospitals": 4,
       "low": 3027,
       "median": 3037,
       "high": 3090
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
+      "metro": "spokane-wa",
+      "hospitals": 4,
+      "low": 8385,
+      "median": 8587,
+      "high": 8789
     },
     {
       "procedure": "inguinal-hernia-repair",
@@ -11097,6 +12353,14 @@
     },
     {
       "procedure": "inguinal-hernia-repair",
+      "metro": "wichita-ks",
+      "hospitals": 3,
+      "low": 552,
+      "median": 800,
+      "high": 1048
+    },
+    {
+      "procedure": "inguinal-hernia-repair",
       "metro": "lexington-ky",
       "hospitals": 3,
       "low": 3891,
@@ -11106,7 +12370,7 @@
     {
       "procedure": "inguinal-hernia-repair",
       "metro": "riverside-ca",
-      "hospitals": 3,
+      "hospitals": 6,
       "low": 758,
       "median": 9385,
       "high": 9473
@@ -11122,7 +12386,7 @@
     {
       "procedure": "vasectomy",
       "metro": "new-york-ny",
-      "hospitals": 20,
+      "hospitals": 23,
       "low": 1490,
       "median": 2424,
       "high": 13957
@@ -11130,10 +12394,26 @@
     {
       "procedure": "vasectomy",
       "metro": "los-angeles-ca",
-      "hospitals": 4,
+      "hospitals": 21,
       "low": 2863,
       "median": 3655,
       "high": 8023
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "chicago-il",
+      "hospitals": 8,
+      "low": 3810,
+      "median": 4307,
+      "high": 4805
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "houston-tx",
+      "hospitals": 10,
+      "low": 2066,
+      "median": 2066,
+      "high": 2066
     },
     {
       "procedure": "vasectomy",
@@ -11146,10 +12426,18 @@
     {
       "procedure": "vasectomy",
       "metro": "philadelphia-pa",
-      "hospitals": 6,
+      "hospitals": 10,
       "low": 2233,
       "median": 2305,
       "high": 2492
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "san-antonio-tx",
+      "hospitals": 3,
+      "low": 736,
+      "median": 736,
+      "high": 736
     },
     {
       "procedure": "vasectomy",
@@ -11161,11 +12449,27 @@
     },
     {
       "procedure": "vasectomy",
+      "metro": "dallas-tx",
+      "hospitals": 11,
+      "low": 596,
+      "median": 596,
+      "high": 596
+    },
+    {
+      "procedure": "vasectomy",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 4572,
       "median": 4572,
       "high": 4572
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "fort-worth-tx",
+      "hospitals": 8,
+      "low": 2140,
+      "median": 2140,
+      "high": 2140
     },
     {
       "procedure": "vasectomy",
@@ -11186,7 +12490,7 @@
     {
       "procedure": "vasectomy",
       "metro": "seattle-wa",
-      "hospitals": 3,
+      "hospitals": 8,
       "low": 1371,
       "median": 1371,
       "high": 2574
@@ -11194,7 +12498,7 @@
     {
       "procedure": "vasectomy",
       "metro": "denver-co",
-      "hospitals": 3,
+      "hospitals": 7,
       "low": 2069,
       "median": 2287,
       "high": 2291
@@ -11206,6 +12510,14 @@
       "low": 2550,
       "median": 3626,
       "high": 5124
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "nashville-tn",
+      "hospitals": 6,
+      "low": 2714,
+      "median": 2714,
+      "high": 2714
     },
     {
       "procedure": "vasectomy",
@@ -11241,6 +12553,14 @@
     },
     {
       "procedure": "vasectomy",
+      "metro": "milwaukee-wi",
+      "hospitals": 7,
+      "low": 2363,
+      "median": 2667,
+      "high": 2971
+    },
+    {
+      "procedure": "vasectomy",
       "metro": "tucson-az",
       "hospitals": 3,
       "low": 2174,
@@ -11249,8 +12569,24 @@
     },
     {
       "procedure": "vasectomy",
+      "metro": "kansas-city-mo",
+      "hospitals": 3,
+      "low": 622,
+      "median": 622,
+      "high": 622
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "miami-fl",
+      "hospitals": 7,
+      "low": 6308,
+      "median": 6308,
+      "high": 6308
+    },
+    {
+      "procedure": "vasectomy",
       "metro": "cleveland-oh",
-      "hospitals": 11,
+      "hospitals": 19,
       "low": 2270,
       "median": 5046,
       "high": 5046
@@ -11273,11 +12609,27 @@
     },
     {
       "procedure": "vasectomy",
+      "metro": "hartford-ct",
+      "hospitals": 5,
+      "low": 5102,
+      "median": 5102,
+      "high": 5102
+    },
+    {
+      "procedure": "vasectomy",
       "metro": "honolulu-hi",
       "hospitals": 3,
       "low": 2689,
       "median": 2868,
       "high": 3223
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "little-rock-ar",
+      "hospitals": 4,
+      "low": 1543,
+      "median": 1543,
+      "high": 1543
     },
     {
       "procedure": "vasectomy",
@@ -11304,12 +12656,52 @@
       "high": 1852
     },
     {
+      "procedure": "vasectomy",
+      "metro": "san-jose-ca",
+      "hospitals": 4,
+      "low": 8378,
+      "median": 8378,
+      "high": 8378
+    },
+    {
+      "procedure": "vasectomy",
+      "metro": "riverside-ca",
+      "hospitals": 3,
+      "low": 2940,
+      "median": 6055,
+      "high": 9169
+    },
+    {
       "procedure": "tonsillectomy",
       "metro": "new-york-ny",
-      "hospitals": 19,
+      "hospitals": 23,
       "low": 2562,
       "median": 3838,
       "high": 13170
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "los-angeles-ca",
+      "hospitals": 19,
+      "low": 4533,
+      "median": 4533,
+      "high": 4533
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "chicago-il",
+      "hospitals": 6,
+      "low": 668,
+      "median": 738,
+      "high": 808
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "houston-tx",
+      "hospitals": 10,
+      "low": 3277,
+      "median": 3277,
+      "high": 3277
     },
     {
       "procedure": "tonsillectomy",
@@ -11329,8 +12721,16 @@
     },
     {
       "procedure": "tonsillectomy",
+      "metro": "dallas-tx",
+      "hospitals": 13,
+      "low": 8266,
+      "median": 8266,
+      "high": 8266
+    },
+    {
+      "procedure": "tonsillectomy",
       "metro": "austin-tx",
-      "hospitals": 6,
+      "hospitals": 7,
       "low": 4424,
       "median": 4424,
       "high": 4424
@@ -11350,6 +12750,22 @@
       "low": 1006,
       "median": 1385,
       "high": 1596
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "seattle-wa",
+      "hospitals": 8,
+      "low": 28521,
+      "median": 28521,
+      "high": 28521
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "denver-co",
+      "hospitals": 6,
+      "low": 3514,
+      "median": 3514,
+      "high": 3514
     },
     {
       "procedure": "tonsillectomy",
@@ -11378,7 +12794,7 @@
     {
       "procedure": "tonsillectomy",
       "metro": "detroit-mi",
-      "hospitals": 4,
+      "hospitals": 5,
       "low": 4032,
       "median": 4032,
       "high": 4032
@@ -11417,6 +12833,14 @@
     },
     {
       "procedure": "tonsillectomy",
+      "metro": "sacramento-ca",
+      "hospitals": 6,
+      "low": 8658,
+      "median": 8658,
+      "high": 8658
+    },
+    {
+      "procedure": "tonsillectomy",
       "metro": "miami-fl",
       "hospitals": 7,
       "low": 1407,
@@ -11434,7 +12858,7 @@
     {
       "procedure": "tonsillectomy",
       "metro": "tampa-fl",
-      "hospitals": 6,
+      "hospitals": 14,
       "low": 12299,
       "median": 12299,
       "high": 14106
@@ -11446,6 +12870,14 @@
       "low": 2803,
       "median": 2948,
       "high": 4271
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "orlando-fl",
+      "hospitals": 4,
+      "low": 5901,
+      "median": 5901,
+      "high": 5901
     },
     {
       "procedure": "tonsillectomy",
@@ -11473,6 +12905,14 @@
     },
     {
       "procedure": "tonsillectomy",
+      "metro": "little-rock-ar",
+      "hospitals": 5,
+      "low": 1903,
+      "median": 2646,
+      "high": 3389
+    },
+    {
+      "procedure": "tonsillectomy",
       "metro": "knoxville-tn",
       "hospitals": 4,
       "low": 2782,
@@ -11489,11 +12929,35 @@
     },
     {
       "procedure": "tonsillectomy",
+      "metro": "albany-ny",
+      "hospitals": 3,
+      "low": 895,
+      "median": 895,
+      "high": 895
+    },
+    {
+      "procedure": "tonsillectomy",
       "metro": "lexington-ky",
       "hospitals": 3,
       "low": 3662,
       "median": 3696,
       "high": 3818
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "san-jose-ca",
+      "hospitals": 4,
+      "low": 8658,
+      "median": 8658,
+      "high": 8658
+    },
+    {
+      "procedure": "tonsillectomy",
+      "metro": "riverside-ca",
+      "hospitals": 4,
+      "low": 6749,
+      "median": 6749,
+      "high": 6749
     }
   ]
 }
