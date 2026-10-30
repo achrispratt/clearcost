@@ -3,8 +3,10 @@ import {
   collapseSharedPriceLists,
   feeScope,
   inpatientStayLabel,
+  pricedCount,
   summarizeAnswer,
 } from "@/lib/results/summarize";
+import { comparableScope } from "@/lib/pricing";
 import type { CPTCode, ChargeResult } from "@/types";
 
 let seq = 0;
@@ -244,6 +246,33 @@ describe("summarizeAnswer", () => {
     expect(summary.basis).toBe("insured");
   });
 
+  it("keeps insured stay prices next to one hospital's cash price (DQ-33)", () => {
+    const transplant: CPTCode[] = [
+      { code: "50360", description: "Kidney transplant", category: "Surgery" },
+    ];
+    const row = (price: Partial<ChargeResult>) =>
+      charge({
+        cpt: undefined,
+        msDrg: "652",
+        setting: "inpatient",
+        description: "KIDNEY TRANSPLANT",
+        ...price,
+      });
+    const summary = summarizeAnswer(
+      [
+        row({ cashPrice: 23644 }),
+        row({ avgNegotiatedRate: 78860 }),
+        row({ avgNegotiatedRate: 25010 }),
+      ],
+      transplant
+    );
+    expect(summary.stayDrg).toBe("652");
+    expect(summary.low).toBe(23644);
+    expect(summary.rangeCount).toBe(1);
+    expect(summary.insured?.count).toBe(2);
+    expect(summary.priced).toHaveLength(3);
+  });
+
   it("prices an inpatient procedure normally when DRG rows exist", () => {
     const summary = summarizeAnswer([stayRow("236", 45000)], bypass);
     expect(summary.state).toBe("priced");
@@ -341,6 +370,41 @@ describe("comparable headline prices", () => {
     expect(summary.basis).toBe("cash");
     expect(summary.rangeCount).toBe(1);
     expect(summary.entries).toHaveLength(2);
+  });
+  it("keeps insured prices beside a lone cash price (DQ-33)", () => {
+    const summary = summarizeAnswer(
+      [
+        charge({ cashPrice: 500, billingClass: "facility" }),
+        charge({ avgNegotiatedRate: 900, billingClass: "facility" }),
+        charge({ avgNegotiatedRate: 300, billingClass: "facility" }),
+        charge({ avgNegotiatedRate: 700, billingClass: "facility" }),
+      ],
+      kneeMri
+    );
+    expect(summary.low).toBe(500);
+    expect(summary.rangeCount).toBe(1);
+    expect(summary.insured).toEqual({
+      low: 300,
+      median: 700,
+      high: 900,
+      count: 3,
+    });
+    expect(pricedCount(summary)).toBe(4);
+    expect(comparableScope(summary.priced).map((e) => e.price.type)).toEqual([
+      "cash",
+      "insured",
+      "insured",
+      "insured",
+    ]);
+  });
+  it("adds no insured range when insured prices set the range", () => {
+    const summary = summarizeAnswer(
+      [charge({ avgNegotiatedRate: 900, billingClass: "facility" })],
+      kneeMri
+    );
+    expect(summary.basis).toBe("insured");
+    expect(summary.insured).toBeUndefined();
+    expect(pricedCount(summary)).toBe(1);
   });
   it("does not combine hospital-only, complete and unknown coverage", () => {
     const summary = summarizeAnswer(

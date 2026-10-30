@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { comparablePrices } from "@/lib/pricing";
+import { comparableScope } from "@/lib/pricing";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -27,6 +27,7 @@ import {
 } from "@/lib/seo/links";
 import {
   priceTypeLabel,
+  pricedCount,
   scopeLabel,
   type AnswerSummary,
 } from "@/lib/results/summarize";
@@ -97,7 +98,7 @@ export async function generateMetadata({
 }
 
 function basisPhrase(summary: AnswerSummary): string {
-  if (summary.basis === "cash") return "cash prices";
+  if (summary.basis === "cash" && !summary.insured) return "cash prices";
   if (summary.basis === "insured") return "average insured rates";
   return "cash prices and average insured rates";
 }
@@ -123,8 +124,10 @@ export default async function CityPricePage({
   const { procedure, metro, summary } = page;
   const place = metroLabel(metro);
   // Same rule as the range: doctor-only fees don't lead when hospitals list
-  // a hospital-side or complete price (#174).
-  const list = comparablePrices(summary.priced).slice(0, LIST_LIMIT);
+  // a hospital-side or complete price (#174). Cash prices first, then
+  // insured averages, so both stay in view (DQ-33).
+  const list = comparableScope(summary.priced).slice(0, LIST_LIMIT);
+  const cashLabel = summary.insured ? "cash price" : "published price";
   const note = scopeNote(summary);
 
   const otherCities = pagesForProcedure(procedure.slug)
@@ -173,23 +176,36 @@ export default async function CityPricePage({
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed" style={secondaryText}>
         {procedure.summary} Prices below are {basisPhrase(summary)} published by{" "}
-        {summary.rangeCount} hospitals within {SEO_RADIUS_MILES} miles of{" "}
+        {pricedCount(summary)} hospitals within {SEO_RADIUS_MILES} miles of{" "}
         {metro.city}.
       </p>
 
       <section className="slip mt-6" aria-label="Price range">
         <div className="slip-row">
-          <span>Lowest published price</span>
+          <span>Lowest {cashLabel}</span>
           <span className="num">{formatPrice(summary.low)}</span>
         </div>
         <div className="slip-row">
-          <span>Typical price (median)</span>
+          <span>Typical {cashLabel} (median)</span>
           <span className="num">{formatPrice(summary.median)}</span>
         </div>
         <div className="slip-row">
-          <span>Highest published price</span>
+          <span>Highest {cashLabel}</span>
           <span className="num">{formatPrice(summary.high)}</span>
         </div>
+        {summary.insured && (
+          <div className="slip-row">
+            <span>
+              Average insured rates at {summary.insured.count} other hospital
+              {summary.insured.count === 1 ? "" : "s"}
+            </span>
+            <span className="num">
+              {formatPrice(summary.insured.low)}
+              {summary.insured.high !== summary.insured.low &&
+                ` – ${formatPrice(summary.insured.high)}`}
+            </span>
+          </div>
+        )}
       </section>
       {note && (
         <p className="mt-3 text-[13px] leading-relaxed" style={secondaryText}>

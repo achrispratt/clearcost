@@ -11,7 +11,7 @@ export { inpatientStayFor };
 // ============================================================================
 
 export { feeScope } from "@/lib/pricing";
-import { comparablePrices, feeScope } from "@/lib/pricing";
+import { comparablePrices, comparableScope, feeScope } from "@/lib/pricing";
 import type { FeeScope } from "@/types";
 export type { FeeScope } from "@/types";
 
@@ -149,6 +149,23 @@ export interface AnswerSummary {
   inpatientLabel?: string;
   /** MS-DRG the stay price comes from, when one is priced. */
   stayDrg?: string;
+  /**
+   * Insured prices with the same fee coverage, when cash prices set the main
+   * range. Kept beside it so they stay comparable, never folded in (DQ-33).
+   */
+  insured?: PriceRange;
+}
+
+export interface PriceRange {
+  low: number;
+  median: number;
+  high: number;
+  count: number;
+}
+
+/** Hospitals priced on either basis: the cash range plus insured beside it. */
+export function pricedCount(summary: AnswerSummary): number {
+  return (summary.rangeCount ?? 0) + (summary.insured?.count ?? 0);
 }
 
 function median(sorted: number[]): number {
@@ -156,6 +173,30 @@ function median(sorted: number[]): number {
   return sorted.length % 2
     ? sorted[mid]
     : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+/** Insured prices left out of a cash headline range, as their own range. */
+function insuredBeside(
+  scoped: PriceEntry[],
+  headline: PriceEntry[]
+): PriceRange | undefined {
+  if (headline[0]?.price.type === "insured") return undefined;
+  if (headline[0]?.price.basis === "insured") return undefined;
+  const amounts = scoped
+    .filter(
+      (e) =>
+        !headline.includes(e) &&
+        (e.price.type === "insured" || e.price.basis === "insured")
+    )
+    .map((e) => e.price.amount as number)
+    .sort((a, b) => a - b);
+  if (amounts.length === 0) return undefined;
+  return {
+    low: amounts[0],
+    median: median(amounts),
+    high: amounts[amounts.length - 1],
+    count: amounts.length,
+  };
 }
 
 export function summarizeAnswer(
@@ -192,11 +233,12 @@ export function summarizeAnswer(
       priced.some((e) => isStayRow(e, d))
     );
     if (stayDrg) {
-      const stayEntries = comparablePrices(
+      const stayScoped = comparableScope(
         priced
           .filter((e) => isStayRow(e, stayDrg))
           .map((e) => ({ ...e, scope: "facility" as FeeScope }))
       );
+      const stayEntries = comparablePrices(stayScoped);
       const amounts = stayEntries.map((e) => e.price.amount as number);
       const cashCount = stayEntries.filter(
         (e) => e.price.type === "cash"
@@ -206,7 +248,7 @@ export function summarizeAnswer(
         entries: entries
           .filter((e) => isStayRow(e, stayDrg))
           .map((e) => ({ ...e, scope: "facility" as FeeScope })),
-        priced: stayEntries,
+        priced: stayScoped,
         low: amounts[0],
         high: amounts[amounts.length - 1],
         median: median(amounts),
@@ -221,6 +263,7 @@ export function summarizeAnswer(
         scope: "facility",
         inpatientLabel,
         stayDrg,
+        insured: insuredBeside(stayScoped, stayEntries),
       };
     }
   }
@@ -247,6 +290,7 @@ export function summarizeAnswer(
   // A doctor's fee is a fraction of the procedure price, so when any hospital
   // lists a hospital-side or complete price, doctor-only lines don't set the
   // range or the "Lowest" tag (#174). They stay in the list, labeled.
+  const scoped = comparableScope(priced);
   const headline = comparablePrices(priced);
 
   const amounts = headline.map((e) => e.price.amount as number);
@@ -273,6 +317,7 @@ export function summarizeAnswer(
     basis,
     estimated: headline[0].price.type === "estimate",
     scope,
+    insured: insuredBeside(scoped, headline),
   };
 }
 

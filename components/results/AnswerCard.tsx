@@ -280,6 +280,18 @@ export function AnswerCard({
             <span>{MAIN_LINE_LABEL[summary.scope ?? "complete"]}</span>
             <span>{range(summary.low, summary.high)}</span>
           </div>
+          {summary.insured && (
+            <div className="slip-row">
+              <span>
+                Average insured rates, {summary.insured.count} more place
+                {summary.insured.count === 1 ? "" : "s"}
+              </span>
+              <span>
+                {range(summary.insured.low, summary.insured.high)}
+                <span className="slip-note">what insurance plans pay</span>
+              </span>
+            </div>
+          )}
           {doctorOnly ? (
             <div className="slip-row">
               <span>Hospital or facility fee</span>
