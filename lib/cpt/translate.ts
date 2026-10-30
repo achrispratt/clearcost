@@ -104,16 +104,23 @@ const IMAGING_FAMILIES: ImagingFamily[] = [
 ];
 
 /**
- * Strips markdown code fences and parses JSON from Claude's response text.
+ * Parses the JSON object in Claude's response text. Claude sometimes wraps it
+ * in a code fence or puts a sentence before it ("Laterality matters here...
+ * {...}"), so when the whole text isn't JSON, parse the outermost {...}.
  */
-function parseJsonResponse(text: string): Record<string, unknown> {
-  let cleaned = text.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned
-      .replace(/^```(?:json)?\s*\n?/, "")
-      .replace(/\n?```\s*$/, "");
+export function parseJsonResponse(text: string): Record<string, unknown> {
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/, "")
+    .replace(/\n?```\s*$/, "");
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start === -1 || end <= start) throw err;
+    return JSON.parse(cleaned.slice(start, end + 1));
   }
-  return JSON.parse(cleaned);
 }
 
 type RawCode = {
